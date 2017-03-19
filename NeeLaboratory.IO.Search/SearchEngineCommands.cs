@@ -185,7 +185,7 @@ namespace NeeLaboratory.IO.Search
             get
             {
                 var current = _command;
-                if (current == null)
+                if (current == null && !_queue.Any())
                     return SearchEngineState.Idle;
                 else if (current is ResetAreaCommand)
                     return SearchEngineState.Collect;
