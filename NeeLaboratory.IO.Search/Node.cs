@@ -208,7 +208,7 @@ namespace NeeLaboratory.IO.Search
 
             if (dirInfo == null || !dirInfo.Exists) return null;
 
-            Node node = new Node(dirInfo.Name, parent);
+            Node node = parent == null ? new Node(dirInfo.FullName, null) : new Node(dirInfo.Name, parent);
 
             try
             {
