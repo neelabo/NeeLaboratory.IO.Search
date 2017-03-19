@@ -100,7 +100,11 @@ namespace NeeLaboratory.IO.Search
         // 正規化された文字列に変換する
         public static string ToNormalisedWord(string src, bool isFazy)
         {
-            string s = src.Normalize(NormalizationForm.FormKC); // 正規化
+            string s = src;
+
+            s = s.Replace("う゛", "ゔ"); // ゔ
+            s = s.Replace("ウ゛", "ヴ"); // ヴ
+            s = s.Normalize(NormalizationForm.FormKC); // 正規化
 
             s = s.ToUpper(); // アルファベットを大文字にする
             if (isFazy)
