@@ -97,7 +97,7 @@ namespace NeeLaboratory.IO.Search
             _fileSystemWatcher.EnableRaisingEvents = true;
 
             // node
-            Root = Node.Collect(Path, null, true, token);
+            Root = Node.Collect(Path, null, token);
             DumpTree();
         }
 

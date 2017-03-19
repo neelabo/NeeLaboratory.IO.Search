@@ -62,10 +62,12 @@ namespace NeeLaboratory.IO.Search.Tests
 
             // エンジン初期化
             var engine = new SearchEngine();
+            SearchEngine.Logger.SetLevel(SourceLevels.All);
             engine.SearchAreas.Add(_folderRoot);
             engine.SearchAreas.Add(_folderSub1);
             engine.SearchAreas.Add(_folderSub2);
             engine.Start();
+            engine.CommandEngineLogger.SetLevel(SourceLevels.All);
 
             return engine;
         }
@@ -116,6 +118,7 @@ namespace NeeLaboratory.IO.Search.Tests
             // ファイル追加 ...
             using (FileStream stream = File.Create(_fileAppend1)) { }
             using (FileStream stream = File.Create(_fileAppend2)) { }
+
             await Task.Delay(100);
             Debug.Assert(result.Items.Count == resultCount + 1);
 

@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F8053574-48A7-4D8D-A55E-63C26D01E519}</ProjectGuid>
+    <ProjectGuid>{676F29F6-FA46-408A-BC02-60ECCF0756FA}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>NeeLaboratory.IO.Search</RootNamespace>

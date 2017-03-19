@@ -21,8 +21,8 @@ namespace NeeLaboratory.IO.Search
     public class Node
     {
         // WIN32API: 自然順ソート
-        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
-        private static extern int StrCmpLogicalW(string psz1, string psz2);
+        ////[DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+        ////private static extern int StrCmpLogicalW(string psz1, string psz2);
 
         // Logger
         private static Utility.Logger Logger => Development.Logger;
@@ -175,55 +175,69 @@ namespace NeeLaboratory.IO.Search
         }
 
 
-        // TODO: DirectoryInfoを使った最適化
-        // TODO: ソートは不要じゃね？
         /// <summary>
         /// ノード収拾
         /// </summary>
-        /// <param name="name"></param>
+        /// <param name="path">パス</param>
         /// <param name="parent"></param>
-        /// <param name="isDirectoryMaybe"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(string name, Node parent, bool isDirectoryMaybe, CancellationToken token)
+        public static Node Collect(string path, Node parent, CancellationToken token)
+        {
+            var dirInfo = new DirectoryInfo(path);
+            if (dirInfo.Exists)
+            {
+                return Collect(dirInfo, parent, token);
+            }
+            else
+            {
+                return new Node(path, parent);
+            }
+        }
+
+        /// <summary>
+        /// ノード収拾 (ディレクトリ)
+        /// </summary>
+        /// <param name="dirInfo">ディレクトリ情報</param>
+        /// <param name="parent"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static Node Collect(DirectoryInfo dirInfo, Node parent, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
-            Node node = new Node(name, parent);
+            if (dirInfo == null || !dirInfo.Exists) return null;
 
-            if (isDirectoryMaybe && Directory.Exists(node.Path))
+            Node node = new Node(dirInfo.Name, parent);
+
+            try
             {
-                //Debug.WriteLine(node.Path);
+                var directories = dirInfo.GetDirectories().ToList();
+                ////directories.Sort(StrCmpLogicalW);
 
-                try
+                var files = dirInfo.GetFiles().ToList();
+                ////files.Sort(StrCmpLogicalW);
+
+                var directoryNodes = new Node[directories.Count];
+                ParallelOptions options = new ParallelOptions() { CancellationToken = token };
+                Parallel.ForEach(directories, options, (s, state, index) =>
                 {
-                    var directories = Directory.GetDirectories(node.Path).Select(s => System.IO.Path.GetFileName(s)).ToList();
-                    directories.Sort(StrCmpLogicalW);
+                    Debug.Assert(directoryNodes[(int)index] == null);
+                    directoryNodes[(int)index] = Collect(s, node, options.CancellationToken);
+                });
 
-                    var files = Directory.GetFiles(node.Path).Select(s => System.IO.Path.GetFileName(s)).ToList();
-                    files.Sort(StrCmpLogicalW);
+                var fileNodes = files.Select(s => new Node(s.Name, node));
 
-                    var directoryNodes = new Node[directories.Count];
-                    ParallelOptions options = new ParallelOptions() { CancellationToken = token };
-                    Parallel.ForEach(directories, options, (s, state, index) =>
-                    {
-                        Debug.Assert(directoryNodes[(int)index] == null);
-                        directoryNodes[(int)index] = Collect(s, node, true, options.CancellationToken);
-                    });
-
-                    var fileNodes = files.Select(s => Collect(s, node, false, token));
-
-                    node.Children = directoryNodes.Concat(fileNodes).ToList();
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    Logger.Warning(e.Message);
-                    node.Children = new List<Node>();
-                }
+                node.Children = directoryNodes.Concat(fileNodes).ToList();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e.Message);
+                node.Children = new List<Node>();
             }
 
             return node;
@@ -259,7 +273,7 @@ namespace NeeLaboratory.IO.Search
 
             // 作成
             var tokens = childPath.Split(s_splitter, 2);
-            var childNode = Collect(tokens[0], this, true, CancellationToken.None);
+            var childNode = Collect(tokens[0], this, CancellationToken.None);
             this.Children.Add(childNode);
             childNode.Content.IsAdded = true;
             return childNode;
@@ -276,7 +290,7 @@ namespace NeeLaboratory.IO.Search
             return Scanning(path, false);
         }
 
-        
+
         /// <summary>
         /// ノードの追加
         /// </summary>
