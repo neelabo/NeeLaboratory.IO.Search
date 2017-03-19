@@ -12,10 +12,27 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class SearchResult
     {
+        /// <summary>
+        /// 検索キーワード
+        /// </summary>
         public string Keyword { get; private set; }
+
+        /// <summary>
+        /// 検索オプション
+        /// </summary>
         public SearchOption SearchOption { get; private set; }
+
+        /// <summary>
+        /// 検索結果
+        /// </summary>
         public ObservableCollection<NodeContent> Items { get; private set; }
 
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="option"></param>
+        /// <param name="items"></param>
         public SearchResult(string keyword, SearchOption option, ObservableCollection<NodeContent> items)
         {
             Keyword = keyword;

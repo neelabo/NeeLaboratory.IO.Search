@@ -15,32 +15,9 @@ using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search
 {
-    [DataContract]
-    public class SearchOption
-    {
-        // 単語一致
-        [DataMember]
-        public bool IsWord { get; set; }
-
-        // 完全一致
-        [DataMember]
-        public bool IsPerfect { get; set; }
-
-        // 順番一致 (未対応)
-        [DataMember]
-        public bool IsOrder { get; set; }
-
-        // フォルダーを含める
-        [DataMember]
-        public bool AllowFolder { get; set; }
-
-        public SearchOption Clone()
-        {
-            return (SearchOption)(this.MemberwiseClone());
-        }
-    }
-
-
+    /// <summary>
+    /// ノード変更イベント種類
+    /// </summary>
     public enum NodeChangedAction
     {
         None,
@@ -49,9 +26,19 @@ namespace NeeLaboratory.IO.Search
         Rename,
     }
 
+    /// <summary>
+    /// ノード変更イベントデータ
+    /// </summary>
     public class NodeChangedEventArgs : EventArgs
     {
+        /// <summary>
+        /// イベント種類
+        /// </summary>
         public NodeChangedAction Action { get; set; }
+
+        /// <summary>
+        /// 変更ノード
+        /// </summary>
         public Node Node { get; set; }
 
         public NodeChangedEventArgs(NodeChangedAction action, Node node)
@@ -68,14 +55,21 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class SearchCore
     {
-        private List<string> _roots;
+        /// <summary>
+        /// ファイルシステム変更イベント
+        /// </summary>
+        internal event EventHandler<NodeTreeFileSystemEventArgs> FileSystemChanged;
 
+        /// <summary>
+        /// ノード変更イベント
+        /// </summary>
+        public event EventHandler<NodeChangedEventArgs> NodeChanged;
+
+
+        /// <summary>
+        /// ノード群
+        /// </summary>
         private Dictionary<string, NodeTree> _fileIndexDirectory;
-
-        private List<string> _keys;
-
-        public ObservableCollection<NodeContent> SearchResult { get; private set; }
-
 
 
         /// <summary>
@@ -83,42 +77,38 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public SearchCore()
         {
-            _roots = new List<string>();
-            _keys = new List<string>();
             _fileIndexDirectory = new Dictionary<string, NodeTree>();
-            SearchResult = new ObservableCollection<NodeContent>();
         }
 
 
         /// <summary>
         /// 検索フォルダのインデックス化
+        /// TODO: キャンセル処理
         /// </summary>
-        /// <param name="roots">検索フォルダ群</param>
-        public void Collect(string[] roots, CancellationToken token)
+        /// <param name="areas">検索フォルダ群</param>
+        public void Collect(string[] areas, CancellationToken token)
         {
-            _roots.Clear();
+            var roots = new List<string>();
 
             // 他のパスに含まれるなら除外
-            foreach (var path in roots)
+            foreach (var path in areas)
             {
-                if (!roots.Any(p => path != p && path.StartsWith(p.TrimEnd('\\') + "\\")))
+                if (!areas.Any(p => path != p && path.StartsWith(p.TrimEnd('\\') + "\\")))
                 {
-                    _roots.Add(path);
+                    roots.Add(path);
                 }
             }
 
-            Collect(token);
+            Collect(roots, token);
         }
 
 
-        //
-        internal event EventHandler<NodeTreeFileSystemEventArgs> FileSystemChanged;
 
         /// <summary>
         /// 検索フォルダのインデックス化
         /// 更新分のみ
         /// </summary>
-        public void Collect(CancellationToken token)
+        public void Collect(List<string> _roots, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -164,16 +154,14 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
-        /// 
+        /// ノード数取得
         /// </summary>
         /// <returns></returns>
         public int NodeCount()
         {
             return _fileIndexDirectory.Sum(e => e.Value.NodeCount());
         }
-
-
-        public event EventHandler<NodeChangedEventArgs> NodeChanged;
+        
 
         /// <summary>
         /// インデックス追加
@@ -229,10 +217,7 @@ namespace NeeLaboratory.IO.Search
 
             return node;
         }
-
-
-
-
+        
         /// <summary>
         /// インデックスの情報更新
         /// </summary>
@@ -249,7 +234,13 @@ namespace NeeLaboratory.IO.Search
         }
 
 
-        //
+        #region 検索
+
+        /// <summary>
+        /// 単語区切り用の正規表現生成
+        /// </summary>
+        /// <param name="c"></param>
+        /// <returns></returns>
         private string GetNotCodeBlockRegexString(char c)
         {
             if ('0' <= c && c <= '9')
@@ -267,25 +258,20 @@ namespace NeeLaboratory.IO.Search
             else
                 return null;
         }
-
-
+        
         /// <summary>
-        /// 検索キーを設定する
+        /// 検索キーを生成する
         /// </summary>
         /// <param name="source">検索キーの元</param>
-        public void SetKeys(string source, SearchOption option)
+        private List<string> CreateKeys(string source, SearchOption option)
         {
-            //bool isFazy = false;
-
             // 単語検索。
             // ひらがな、カタカナは区別する
             // 開始文字が{[0-9],[a-zA-Z],\p{IsHiragana},\p{IsKatanaka},\p{IsCJKUnifiedIdeographsExtensionA}}であるならば、区切り文字はそれ以外のものとする
             //  でないなら、区切り区別はしない
             // 終端文字が..
 
-
-            // 単語の順番。固定化。
-
+            // TODO: 単語の順番。固定化フラグ対応。
 
             const string splitter = @"[\s]+";
 
@@ -295,7 +281,7 @@ namespace NeeLaboratory.IO.Search
             s = new Regex(splitter + "$").Replace(s, "");
             var tokens = new Regex(splitter).Split(s);
 
-            _keys.Clear();
+            var keys = new List<string>();
 
             foreach (var token in tokens)
             {
@@ -323,8 +309,10 @@ namespace NeeLaboratory.IO.Search
                     if (end != null) t = t + $"({end}|$)";
                 }
 
-                _keys.Add(t);
+                keys.Add(t);
             }
+
+            return keys;
         }
 
 
@@ -332,7 +320,7 @@ namespace NeeLaboratory.IO.Search
         /// すべてのNodeを走査
         /// </summary>
         /// <returns></returns>
-        private IEnumerable<Node> AllNodes
+        public IEnumerable<Node> AllNodes
         {
             get
             {
@@ -344,38 +332,15 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        //
-        private object _lock = new object();
-
-        //
-        public void ClearSearchResult()
-        {
-            lock (_lock)
-            {
-                SearchResult.Clear();
-            }
-        }
-
         /// <summary>
-        /// 検索 -- 検索結果を更新する
+        /// 検索
         /// </summary>
-        /// <param name="keyword">検索キーワード</param>
-        /// <param name="isSearchFolder">フォルダを検索対象に含めるフラグ</param>
-        public void UpdateSearchResult(string keyword, SearchOption option)
-        {
-            lock (_lock)
-            {
-                SearchResult = new ObservableCollection<NodeContent>(Search(keyword, AllNodes, option).Select(e => e.Content));
-            }
-        }
-
-        //
+        /// <param name="keyword"></param>
+        /// <param name="option"></param>
+        /// <returns></returns>
         public ObservableCollection<NodeContent> Search(string keyword, SearchOption option)
         {
-            lock (_lock)
-            {
-                return new ObservableCollection<NodeContent>(Search(keyword, AllNodes, option).Select(e => e.Content));
-            }
+            return new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes).Select(e => e.Content));
         }
 
         /// <summary>
@@ -385,7 +350,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="entries">検索対象</param>
         /// <param name="isSearchFolder">フォルダを検索対象に含めるフラグ</param>
         /// <returns></returns>
-        public IEnumerable<Node> Search(string keyword, IEnumerable<Node> entries, SearchOption option)
+        public IEnumerable<Node> Search(string keyword, SearchOption option, IEnumerable<Node> entries)
         {
             // pushpin保存
             var pushpins = entries.Where(f => f.Content.IsPushPin);
@@ -394,15 +359,15 @@ namespace NeeLaboratory.IO.Search
             if (string.IsNullOrWhiteSpace(keyword)) return pushpins;
 
             // キーワード登録
-            SetKeys(keyword, option);
-            if (_keys == null || _keys[0] == "^$")
+            var keys = CreateKeys(keyword, option);
+            if (keys == null || keys[0] == "^$")
             {
                 return pushpins;
             }
 
 
             // キーワードによる絞込
-            foreach (var key in _keys)
+            foreach (var key in keys)
             {
                 var regex = new Regex(key, RegexOptions.Compiled);
                 if (option.IsPerfect)
@@ -431,5 +396,7 @@ namespace NeeLaboratory.IO.Search
             // pushpinを先頭に連結して返す
             return pushpins.Concat(entries);
         }
+
+        #endregion
     }
 }

@@ -14,6 +14,9 @@ using System.Windows.Media.Imaging;
 
 namespace NeeLaboratory.IO.Search
 {
+    /// <summary>
+    /// ファイル情報
+    /// </summary>
     public class FileInfo
     {
         #region SHGetFileInfo
@@ -70,18 +73,29 @@ namespace NeeLaboratory.IO.Search
         };
         #endregion
 
+        /// <summary>
+        /// パス
+        /// </summary>
         private string _path;
+
+        /// <summary>
+        /// ディレクトリ？
+        /// </summary>
         private bool _isDirectory;
 
-
-        // constructor
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="path"></param>
         public FileInfo(string path)
         {
             _path = path;
             _isDirectory = System.IO.Directory.Exists(path);
         }
 
-
+        /// <summary>
+        /// ファイルの種類
+        /// </summary>
         private string _typeName;
         public string TypeName
         {
@@ -92,7 +106,9 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        //
+        /// <summary>
+        /// アイコン
+        /// </summary>
         private BitmapSource _iconSource;
         public BitmapSource IconSource
         {
@@ -103,7 +119,9 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-
+        /// <summary>
+        /// ファイルサイズ
+        /// </summary>
         private long? _size;
         public long Size
         {
@@ -114,7 +132,9 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-
+        /// <summary>
+        /// 最終更新日
+        /// </summary>
         private DateTime? _lastWriteTime;
         public DateTime LastWriteTime
         {
@@ -124,8 +144,6 @@ namespace NeeLaboratory.IO.Search
                 return (DateTime)_lastWriteTime;
             }
         }
-
-
 
         #region アイコンリソース取得 (簡易版)
 
@@ -348,21 +366,5 @@ namespace NeeLaboratory.IO.Search
             var fileInfo = new System.IO.FileInfo(path);
             return fileInfo.LastWriteTime;
         }
-
-#if false
-        /// <summary>
-        /// プロパティウィンドウを開く
-        /// </summary>
-        /// <param name="path"></param>
-        public static void OpenProperty(System.Windows.Window window, string path)
-        {
-            var handle = new System.Windows.Interop.WindowInteropHelper(window).Handle;
-
-            if (!SHObjectProperties(handle, SHOP_FILEPATH, path, string.Empty))
-            {
-                throw new ApplicationException("プロパティウィンドウを開けませんでした");
-            }
-        }
-#endif
     }
 }

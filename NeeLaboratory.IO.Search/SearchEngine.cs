@@ -12,8 +12,16 @@ using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search
 {
+    /// <summary>
+    /// 検索エンジン
+    /// </summary>
     public class SearchEngine : IDisposable
     {
+        public static Utility.Logger Logger => Development.Logger;
+
+        /// <summary>
+        /// 検索エリア
+        /// </summary>
         private ObservableCollection<string> _searchAreas;
         public ObservableCollection<string> SearchAreas
         {
@@ -31,29 +39,51 @@ namespace NeeLaboratory.IO.Search
                     {
                         _searchAreas.CollectionChanged += Areas_CollectionChanged;
                     }
-                    ResetArea();
+                    Collect();
                 }
             }
         }
 
+        /// <summary>
+        /// 検索エリア設定
+        /// </summary>
+        /// <param name="areas"></param>
         public void SetSearchAreas(IEnumerable<string> areas)
         {
             this.SearchAreas = new ObservableCollection<string>(areas);
         }
 
+        /// <summary>
+        /// コア検索エンジン
+        /// </summary>
         private SearchCore _core;
         internal SearchCore Core => _core;
 
+        /// <summary>
+        /// 検索エンジン状態
+        /// </summary>
         public SearchEngineState State => _commandEngine.State;
 
         /// <summary>
         /// ノード数(おおよそ)
+        /// 通知用
         /// </summary>
-        public int NodeCountMaybe => Node.TotalCount; // _core.NodeCount();
+        public int NodeCountMaybe => Node.TotalCount;
 
+        /// <summary>
+        /// コマンドエンジン
+        /// </summary>
         private SerarchCommandEngine _commandEngine;
 
+        /// <summary>
+        /// コマンドエンジン Logger
+        /// </summary>
+        public Utility.Logger CommandEngineLogger => _commandEngine.Logger;
 
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
         public SearchEngine()
         {
             this.SearchAreas = new ObservableCollection<string>();
@@ -62,44 +92,58 @@ namespace NeeLaboratory.IO.Search
             _core.FileSystemChanged += Core_FileSystemChanged;
         }
 
-        //
+        
+        /// <summary>
+        /// ファイルシステムの変更をノードに反映させる
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Core_FileSystemChanged(object sender, NodeTreeFileSystemEventArgs e)
         {
             switch (e.FileSystemEventArgs.ChangeType)
             {
                 case WatcherChangeTypes.Created:
-                    AddIndex(e.NodePath, e.FileSystemEventArgs.FullPath);
+                    AddNode(e.NodePath, e.FileSystemEventArgs.FullPath);
                     break;
                 case WatcherChangeTypes.Deleted:
-                    RemoveIndex(e.NodePath, e.FileSystemEventArgs.FullPath);
+                    RemoveNode(e.NodePath, e.FileSystemEventArgs.FullPath);
                     break;
                 case WatcherChangeTypes.Renamed:
                     var rename = e.FileSystemEventArgs as RenamedEventArgs;
-                    RenameIndex(e.NodePath, rename.OldFullPath, rename.FullPath);
+                    RenameNode(e.NodePath, rename.OldFullPath, rename.FullPath);
                     break;
                 case WatcherChangeTypes.Changed:
-                    RefleshIndex(e.NodePath, e.FileSystemEventArgs.FullPath);
+                    RefleshNode(e.NodePath, e.FileSystemEventArgs.FullPath);
                     break;
                 default:
                     throw new NotSupportedException();
             }
         }
 
-        //
+        /// <summary>
+        /// 開始
+        /// </summary>
         public void Start()
         {
             _commandEngine = new SerarchCommandEngine();
             _commandEngine.Initialize();
 
-            if (_searchAreas != null) ResetArea();
+            if (_searchAreas != null) Collect();
         }
 
+        /// <summary>
+        /// 停止
+        /// </summary>
         public void Stop()
         {
             _commandEngine.Dispose();
             _commandEngine = null;
         }
 
+        /// <summary>
+        /// 全てのコマンドの完了待機
+        /// </summary>
+        /// <returns></returns>
         public async Task WaitAsync()
         {
             if (_commandEngine == null) throw new InvalidOperationException("engine stopped.");
@@ -111,7 +155,11 @@ namespace NeeLaboratory.IO.Search
         }
 
 
-        //
+        /// <summary>
+        /// 検索範囲の変更イベント処理
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Areas_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
@@ -119,7 +167,7 @@ namespace NeeLaboratory.IO.Search
                 case NotifyCollectionChangedAction.Add:
                 case NotifyCollectionChangedAction.Remove:
                 case NotifyCollectionChangedAction.Reset:
-                    ResetArea();
+                    Collect();
                     break;
 
                 default:
@@ -128,13 +176,17 @@ namespace NeeLaboratory.IO.Search
         }
 
 
+        
+        /// <summary>
+        /// ノード構築処理のキャンセルトークン
+        /// </summary>
         private CancellationTokenSource _resetAreaCancellationTokenSource;
 
 
         /// <summary>
-        /// 検索範囲の再構築
+        /// ノード構築
         /// </summary>
-        private void ResetArea()
+        private void Collect()
         {
             if (_commandEngine == null) return;
 
@@ -142,18 +194,19 @@ namespace NeeLaboratory.IO.Search
             _resetAreaCancellationTokenSource?.Cancel();
             _resetAreaCancellationTokenSource = new CancellationTokenSource();
 
-            var command = new ResetAreaCommand(this, new ResetAreaCommandArgs() { Area = _searchAreas?.ToArray() });
+            var command = new CollectCommand(this, new CollectCommandArgs() { Area = _searchAreas?.ToArray() });
             _commandEngine.Enqueue(command, _resetAreaCancellationTokenSource.Token);
         }
 
-        internal void ResetArea_Execute(ResetAreaCommandArgs args, CancellationToken token)
+        //
+        internal void Collect_Execute(CollectCommandArgs args, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
-            // 設計不十分のため、コマンド実行中のキャンセル不可
+            // TODO: 設計不十分のため、現状ではコマンド実行中のキャンセル不可
             _core.Collect(args.Area, CancellationToken.None);
-            ////Debug.WriteLine($"NodeCount = {_core.NodeCount()}");
         }
+
 
         /// <summary>
         /// 検索
@@ -177,22 +230,27 @@ namespace NeeLaboratory.IO.Search
         {
             if (_commandEngine == null) throw new InvalidOperationException("engine stopped.");
 
-            var command = new SearchCommand(this, new SearchExCommandArgs() { Keyword = keyword, Option = option });
+            var command = new SearchCommand(this, new SearchExCommandArgs() { Keyword = keyword, Option = option.Clone() });
             _commandEngine.Enqueue(command, token);
 
             await command.WaitAsync(token);
             return command.SearchResult;
         }
 
+        //
         internal SearchResult Search_Execute(SearchExCommandArgs args)
         {
-            ////Thread.Sleep(3000); //##
             return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option));
         }
 
 
 
-        internal void AddIndex(string root, string path)
+        /// <summary>
+        /// 内部コマンド用：ノード追加
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="path"></param>
+        internal void AddNode(string root, string path)
         {
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
@@ -203,8 +261,12 @@ namespace NeeLaboratory.IO.Search
             _commandEngine.Enqueue(command);
         }
 
-
-        internal void RemoveIndex(string root, string path)
+        /// <summary>
+        /// 内部コマンド用：ノード削除
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="path"></param>
+        internal void RemoveNode(string root, string path)
         {
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
@@ -215,8 +277,13 @@ namespace NeeLaboratory.IO.Search
             _commandEngine.Enqueue(command);
         }
 
-
-        internal void RenameIndex(string root, string oldPath, string newPath)
+        /// <summary>
+        /// 内部コマンド用：ノード名前変更
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="oldPath"></param>
+        /// <param name="newPath"></param>
+        internal void RenameNode(string root, string oldPath, string newPath)
         {
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
@@ -228,8 +295,12 @@ namespace NeeLaboratory.IO.Search
             _commandEngine.Enqueue(command);
         }
 
-
-        internal void RefleshIndex(string root, string path)
+        /// <summary>
+        /// 内部コマンド用：ノード情報更新
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="path"></param>
+        internal void RefleshNode(string root, string path)
         {
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
@@ -240,6 +311,10 @@ namespace NeeLaboratory.IO.Search
             _commandEngine.Enqueue(command);
         }
 
+        /// <summary>
+        /// 内部コマンド用：ノード変更
+        /// </summary>
+        /// <param name="args"></param>
         internal void NodeChange_Execute(NodeChangeCommandArgs args)
         {
             switch (args.ChangeType)
@@ -271,39 +346,20 @@ namespace NeeLaboratory.IO.Search
             {
                 if (disposing)
                 {
-                    // TODO: マネージ状態を破棄します (マネージ オブジェクト)。
                     Stop();
                 }
-
-                // TODO: アンマネージ リソース (アンマネージ オブジェクト) を解放し、下のファイナライザーをオーバーライドします。
-                // TODO: 大きなフィールドを null に設定します。
 
                 disposedValue = true;
             }
         }
-
-        // TODO: 上の Dispose(bool disposing) にアンマネージ リソースを解放するコードが含まれる場合にのみ、ファイナライザーをオーバーライドします。
-        // ~SearchEngineEx() {
-        //   // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
-        //   Dispose(false);
-        // }
 
         // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
         public void Dispose()
         {
             // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
             Dispose(true);
-            // TODO: 上のファイナライザーがオーバーライドされる場合は、次の行のコメントを解除してください。
-            // GC.SuppressFinalize(this);
         }
         #endregion
     }
-
-
-    public class SearchedEventArgs : EventArgs
-    {
-        public SearchResult Result { get; set; }
-    }
-
 
 }

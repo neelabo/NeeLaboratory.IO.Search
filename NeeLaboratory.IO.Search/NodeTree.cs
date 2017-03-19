@@ -15,11 +15,26 @@ using System.Threading;
 
 namespace NeeLaboratory.IO.Search
 {
+    /// <summary>
+    /// ファイル監視による変更イベンのトデータ
+    /// </summary>
     internal class NodeTreeFileSystemEventArgs
     {
+        /// <summary>
+        /// 所属ノード
+        /// </summary>
         public string NodePath { get; private set; }
+
+        /// <summary>
+        /// ファイル変更イベントのデータ
+        /// </summary>
         public FileSystemEventArgs FileSystemEventArgs { get; private set; }
 
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="args"></param>
         public NodeTreeFileSystemEventArgs(string path, FileSystemEventArgs args)
         {
             this.NodePath = path;
@@ -28,18 +43,33 @@ namespace NeeLaboratory.IO.Search
     }
 
     /// <summary>
-    /// 
+    /// ノード木
+    /// １かたまりのノード。この単位で監視する。
     /// </summary>
     public class NodeTree : IDisposable
     {
+        private Utility.Logger Logger => Development.Logger;
+
+        /// <summary>
+        /// パス
+        /// </summary>
         public string Path { get; private set; }
 
+        /// <summary>
+        /// 基準ノード
+        /// </summary>
         public Node Root { get; private set; }
 
+        /// <summary>
+        /// 更新必要フラグ
+        /// </summary>
         public bool IsDarty { get; private set; }
 
 
-        // constructor
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
+        /// <param name="path"></param>
         public NodeTree(string path)
         {
             Path = path;
@@ -48,7 +78,10 @@ namespace NeeLaboratory.IO.Search
             InitializeWatcher();
         }
 
-        //
+        /// <summary>
+        /// ノード収拾
+        /// </summary>
+        /// <param name="token"></param>
         public void Collect(CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
@@ -64,46 +97,66 @@ namespace NeeLaboratory.IO.Search
             _fileSystemWatcher.EnableRaisingEvents = true;
 
             // node
-            Root = Node.CreateTree(Path, null, true, token);
+            Root = Node.Collect(Path, null, true, token);
             DumpTree();
         }
 
-        //
+
+        /// <summary>
+        /// 開発用：ツリー表示
+        /// </summary>
         [Conditional("DEBUG")]
         public void DumpTree()
         {
-            Debug.WriteLine("---- " + Path);
-            Root.Dump();
+            Logger.Trace($"---- {Path}");
+            ////Root.Dump();
         }
 
-        // ノード数を返す
+        /// <summary>
+        /// ノード数を数える
+        /// </summary>
+        /// <returns></returns>
         public int NodeCount()
         {
             return Root.AllNodes.Count();
         }
 
 
-        // 追加
+        /// <summary>
+        /// ノードの追加
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public Node AddNode(string path)
         {
             var node = Root.Add(path);
-            Debug.WriteLine("Add: " + node?.Path);
-            DumpTree();
+            Logger.Trace($"Add: {node?.Path}");
+            ////DumpTree();
             return node;
         }
 
-        // 削除
+        /// <summary>
+        /// ノードの削除
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public Node RemoveNode(string path)
         {
             var node = Root.Remove(path);
-            Debug.WriteLine("Del: " + node?.Path);
-            DumpTree();
+            Logger.Trace($"Del: {node?.Path}");
+            ////DumpTree();
             return node;
         }
 
-        // 名前変更
+        /// <summary>
+        /// 名前変更
+        /// </summary>
+        /// <param name="oldPath"></param>
+        /// <param name="newPath"></param>
+        /// <returns></returns>
         public Node Rename(string oldPath, string newPath)
         {
+            Logger.Trace($"Rename: {oldPath} -> {newPath}");
             var node = Root.Search(oldPath);
             if (node != null)
             {
@@ -114,13 +167,16 @@ namespace NeeLaboratory.IO.Search
                 }
 
                 node.Rename(System.IO.Path.GetFileName(newPath));
-                DumpTree();
+                ////DumpTree();
             }
 
             return node;
         }
 
-        // 更新
+        /// <summary>
+        /// 情報更新
+        /// </summary>
+        /// <param name="path"></param>
         public void RefleshNode(string path)
         {
             var node = Root.Search(path);
@@ -136,21 +192,24 @@ namespace NeeLaboratory.IO.Search
         // ファイル変更監視
         private FileSystemWatcher _fileSystemWatcher;
 
+        /// <summary>
+        /// 監視初期化
+        /// </summary>
         private void InitializeWatcher()
         {
             _fileSystemWatcher = new FileSystemWatcher();
             _fileSystemWatcher.Path = Path;
             _fileSystemWatcher.IncludeSubdirectories = true;
             _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
-            ////_fileSystemWatcher.Created += Watcher_Created;
-            ////_fileSystemWatcher.Deleted += Watcher_Deleted;
-            ////_fileSystemWatcher.Renamed += Watcher_Renamed;
             _fileSystemWatcher.Created += Watcher_Changed;
             _fileSystemWatcher.Deleted += Watcher_Changed;
             _fileSystemWatcher.Renamed += Watcher_Changed;
             _fileSystemWatcher.Changed += Watcher_Changed;
         }
 
+        /// <summary>
+        /// 監視終了処理
+        /// </summary>
         private void TerminateWatcher()
         {
             FileSystemChanged = null;
@@ -159,35 +218,28 @@ namespace NeeLaboratory.IO.Search
             _fileSystemWatcher = null;
         }
 
-
-
+        
+        /// <summary>
+        /// ファイル変更イベント
+        /// </summary>
         internal event EventHandler<NodeTreeFileSystemEventArgs> FileSystemChanged;
 
-#if false
-        private void Watcher_Created(object sender, FileSystemEventArgs e)
-        {
-            SearchEngine.Current.AddIndexRequest(Path, e.FullPath);
-        }
-
-        private void Watcher_Deleted(object sender, FileSystemEventArgs e)
-        {
-            SearchEngine.Current.RemoveIndexRequest(Path, e.FullPath);
-        }
-
-        private void Watcher_Renamed(object sender, RenamedEventArgs e)
-        {
-            SearchEngine.Current.RenameIndexRequest(Path, e.OldFullPath, e.FullPath);
-        }
-#endif
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Watcher_Changed(object sender, FileSystemEventArgs e)
         {
-            ////SearchEngine.Current.RefleshIndexRequest(Path, e.FullPath);
             FileSystemChanged?.Invoke(sender, new NodeTreeFileSystemEventArgs(Path, e));
         }
 
-#endregion
+        #endregion
 
+
+        /// <summary>
+        /// Dispose
+        /// </summary>
         public void Dispose()
         {
             TerminateWatcher();

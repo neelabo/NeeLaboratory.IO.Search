@@ -7,11 +7,15 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search
 {
+    /// <summary>
+    /// Node属性
+    /// </summary>
     [Flags]
     public enum NodeFlag
     {
@@ -26,6 +30,10 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class NodeContent : INotifyPropertyChanged, IComparable
     {
+        // 参考：自然順ソート
+        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+        private static extern int StrCmpLogicalW(string psz1, string psz2);
+
         #region NotifyPropertyChanged
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
 
@@ -49,6 +57,9 @@ namespace NeeLaboratory.IO.Search
             set { if (_path != value) { _path = value; RaisePropertyChanged(); UpdateName(); } }
         }
 
+        /// <summary>
+        /// 名前更新
+        /// </summary>
         private void UpdateName()
         {
             Name = System.IO.Path.GetFileName(Path);
@@ -64,9 +75,9 @@ namespace NeeLaboratory.IO.Search
             set { if (_name != value) { _name = value; RaisePropertyChanged(); } }
         }
 
-
-
-        // フォルダ表示名
+        /// <summary>
+        /// フォルダ名表示
+        /// </summary>
         public string DirectoryName
         {
             get
@@ -77,7 +88,9 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        // 詳細表示
+        /// <summary>
+        /// 詳細表示
+        /// </summary>
         public string Detail
         {
             get
@@ -87,17 +100,31 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        // ファイル情報
+        /// <summary>
+        /// ファイル情報
+        /// </summary>
         public FileInfo FileInfo { get; private set; }
 
-        // flag control
+        /// <summary>
+        /// ノード属性
+        /// </summary>
         private NodeFlag Flags { get; set; }
 
+        /// <summary>
+        /// 属性判定
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
         private bool IsFlag(NodeFlag flag)
         {
             return (Flags & flag) == flag;
         }
 
+        /// <summary>
+        /// 属性設定
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <param name="state"></param>
         private void SetFlag(NodeFlag flag, bool state)
         {
             if (state)
@@ -106,21 +133,27 @@ namespace NeeLaboratory.IO.Search
                 Flags = Flags & ~flag;
         }
 
-        // 追加されたフラグ
+        /// <summary>
+        /// 属性：追加された
+        /// </summary>
         public bool IsAdded
         {
             get { return IsFlag(NodeFlag.Added); }
             set { SetFlag(NodeFlag.Added, value); }
         }
 
-        // 削除されたフラグ
+        /// <summary>
+        /// 属性：削除された
+        /// </summary>
         public bool IsRemoved
         {
             get { return IsFlag(NodeFlag.Removed); }
             set { SetFlag(NodeFlag.Removed, value); }
         }
 
-        // 検索結果に残す
+        /// <summary>
+        /// 属性：ピン留め。検索結果に残す
+        /// </summary>
         public bool IsPushPin
         {
             get { return IsFlag(NodeFlag.PushPin); }
@@ -128,46 +161,49 @@ namespace NeeLaboratory.IO.Search
         }
 
 
-        // コンストラクタ
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
+        /// <param name="path"></param>
         public NodeContent(string path)
         {
             Path = path;
             FileInfo = new FileInfo(Path);
         }
 
-        // ファイル情報更新
+        /// <summary>
+        /// ファイル情報更新
+        /// </summary>
         public void Reflesh()
         {
             FileInfo = new FileInfo(Path);
             RaisePropertyChanged(nameof(Path));
-            //RaisePropertyChanged(nameof(Name));
             UpdateName();
             RaisePropertyChanged(nameof(FileInfo));
             RaisePropertyChanged(nameof(DirectoryName));
             RaisePropertyChanged(nameof(Detail));
         }
 
-#if false
-        // プロパティウィンドウを開く
-        public void OpenProperty(System.Windows.Window window)
-        {
-            FileInfo.OpenProperty(window, Path);
-        }
-#endif
-
-        // 表示文字列
+        /// <summary>
+        /// 表示文字列
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return Name;
         }
 
-        // CompareTo
+        /// <summary>
+        /// 名前で比較
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public int CompareTo(object obj)
         {
             if (obj == null) return 1;
 
             NodeContent other = (NodeContent)obj;
-            return Win32Api.StrCmpLogicalW(this.Name, other.Name);
+            return StrCmpLogicalW(this.Name, other.Name);
         }
     }
 }

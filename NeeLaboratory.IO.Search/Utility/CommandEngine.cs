@@ -14,190 +14,50 @@ using System.Threading.Tasks;
 namespace NeeLaboratory.IO.Search.Utility
 {
     /// <summary>
-    /// コマンドインターフェイス
-    /// </summary>
-    public interface ICommand
-    {
-        /// <summary>
-        /// コマンドキャンセル
-        /// </summary>
-        //void Cancel();
-
-        /// <summary>
-        /// コマンド実行
-        /// </summary>
-        /// <returns></returns>
-        Task ExecuteAsync();
-    }
-
-
-    /// <summary>
-    /// コマンド実行結果
-    /// </summary>
-    public enum CommandResult
-    {
-        None,
-        Completed,
-        Canceled,
-    }
-
-    /// <summary>
-    /// コマンド基底
-    /// キャンセル、終了待機対応
-    /// </summary>
-    public abstract class CommandBase : ICommand
-    {
-        // キャンセルトークン
-        private CancellationToken _cancellationToken;
-        public CancellationToken CancellationToken
-        {
-            get { return _cancellationToken; }
-            set { _cancellationToken = value; }
-        }
-
-        // コマンド終了通知
-        private ManualResetEventSlim _complete = new ManualResetEventSlim(false);
-
-        // コマンド実行結果
-        private CommandResult _result;
-        public CommandResult Result
-        {
-            get { return _result; }
-            set { _result = value; _complete.Set(); }
-        }
-
-        // キャンセル可能フラグ
-        public bool CanBeCanceled => _cancellationToken.CanBeCanceled;
-
-        /// <summary>
-        /// constructor
-        /// </summary>
-        public CommandBase()
-        {
-            _cancellationToken = CancellationToken.None;
-        }
-
-        /// <summary>
-        /// constructor
-        /// </summary>
-        /// <param name="token"></param>
-        public CommandBase(CancellationToken token)
-        {
-            _cancellationToken = token;
-        }
-
-
-        /// <summary>
-        /// コマンド実行
-        /// </summary>
-        /// <returns></returns>
-        public async Task ExecuteAsync()
-        {
-            if (_complete.IsSet) return;
-
-            // cancel ?
-            if (_cancellationToken.IsCancellationRequested)
-            {
-                Result = CommandResult.Canceled;
-                return;
-            }
-
-            // execute
-            try
-            {
-                await ExecuteAsync(_cancellationToken);
-                Result = CommandResult.Completed;
-            }
-            catch (OperationCanceledException)
-            {
-                Result = CommandResult.Canceled;
-                Debug.WriteLine($"{this}: canceled.");
-                OnCanceled();
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine($"{this}: excepted!!");
-                OnException(e);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// コマンド終了待機
-        /// </summary>
-        /// <returns></returns>
-        public async Task WaitAsync()
-        {
-            await Task.Run(() => _complete.Wait());
-        }
-
-        static int _serial;
-
-        /// <summary>
-        /// コマンド終了待機
-        /// </summary>
-        /// <returns></returns>
-        public async Task WaitAsync(CancellationToken token)
-        {
-            var serial = _serial++;
-
-            var sw = Stopwatch.StartNew();
-            await Task.Run(async () =>
-            {
-                await Task.Yield();
-                _complete.Wait(token);
-                Debug.WriteLine($"{serial}: WaitTask done.");
-            });
-            Debug.WriteLine($"{serial}: WaitTime = {sw.ElapsedMilliseconds}ms");
-        }
-
-
-        /// <summary>
-        /// コマンド実行(abstract)
-        /// </summary>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        protected abstract Task ExecuteAsync(CancellationToken token);
-
-
-        /// <summary>
-        /// コマンドキャンセル時
-        /// </summary>
-        protected virtual void OnCanceled()
-        {
-        }
-
-        /// <summary>
-        /// コマンド例外時
-        /// </summary>
-        /// <param name="e"></param>
-        protected virtual void OnException(Exception e)
-        {
-        }
-
-    }
-
-
-
-    /// <summary>
     /// コマンドエンジン
     /// </summary>
     public class CommandEngine : IDisposable
     {
-        // ワーカータスクのキャンセルトークン
+        /// <summary>
+        /// Logger
+        /// </summary>
+        private Logger _logger;
+        public Logger Logger => _logger;
+
+        /// <summary>
+        /// ワーカータスクのキャンセルトークン
+        /// </summary>
         private CancellationTokenSource _cancellationTokenSource;
 
-        // 予約コマンド存在通知
+        /// <summary>
+        /// 予約コマンド存在通知
+        /// </summary>
         private ManualResetEventSlim _ready = new ManualResetEventSlim(false);
 
-        // 排他処理用ロックオブジェクト
+        /// <summary>
+        /// lock
+        /// </summary>
         private object _lock = new object();
 
-        // コマンドリスト
+        /// <summary>
+        /// 予約コマンドリスト
+        /// </summary>
         protected Queue<ICommand> _queue = new Queue<ICommand>();
 
-        // 実行中コマンド
+        /// <summary>
+        /// 実行中コマンド
+        /// </summary>
         protected ICommand _command;
+
+
+        /// <summary>
+        /// constructor
+        /// </summary>
+        public CommandEngine()
+        {
+            _logger = new Logger(nameof(CommandEngine));
+        }
+
 
         /// <summary>
         /// コマンド登録
@@ -259,8 +119,9 @@ namespace NeeLaboratory.IO.Search.Utility
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine($"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
+                    Logger.TraceEvent(TraceEventType.Critical, 0, $"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
                     Debugger.Break();
+                    throw;
                 }
             });
         }
@@ -272,8 +133,8 @@ namespace NeeLaboratory.IO.Search.Utility
         {
             lock (_lock)
             {
+                // 停止命令発行
                 _cancellationTokenSource?.Cancel();
-                //_command?.Cancel();
             }
         }
 
@@ -304,9 +165,13 @@ namespace NeeLaboratory.IO.Search.Utility
                             _command = _queue.Dequeue();
                         }
 
-                        Debug.WriteLine($"{_command}: rest={_queue.Count}");
+                        Logger.Trace($"{_command}: start... :rest={_queue.Count}");
                         await _command?.ExecuteAsync();
-                        Debug.WriteLine($"{_command} done.");
+                        Logger.Trace($"{_command}: done.");
+                        if (_command is CommandBase cmd)
+                        {
+                            Logger.Trace($"{cmd}: result={cmd.Result}");
+                        }
 
                         _command = null;
                     }

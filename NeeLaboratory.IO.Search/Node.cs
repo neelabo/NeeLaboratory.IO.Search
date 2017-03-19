@@ -20,9 +20,23 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class Node
     {
-        // 非同期で加算されるため、正確な値にならない
+        // WIN32API: 自然順ソート
+        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+        private static extern int StrCmpLogicalW(string psz1, string psz2);
+
+        // Logger
+        private static Utility.Logger Logger => Development.Logger;
+
+        /// <summary>
+        /// 通知用のノード総数.
+        /// 非同期で加算されるため、正確な値にならない
+        /// </summary>
         public static int TotalCount { get; set; }
 
+
+        /// <summary>
+        /// ノード名
+        /// </summary>
         private string _name;
         public string Name
         {
@@ -35,7 +49,10 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        //
+        /// <summary>
+        /// 名前変更
+        /// </summary>
+        /// <param name="name"></param>
         public void Rename(string name)
         {
             Name = name;
@@ -46,6 +63,9 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
+        /// <summary>
+        /// ノード情報更新
+        /// </summary>
         private void RefleshPath()
         {
             if (Content != null)
@@ -55,24 +75,46 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
+        /// <summary>
+        /// 親ノード
+        /// </summary>
         public Node Parent { get; private set; }
+
+        /// <summary>
+        /// 子ノード
+        /// </summary>
         public List<Node> Children { get; set; }
 
+        /// <summary>
+        /// フルパス
+        /// </summary>
         public string Path => Parent == null ? Name : System.IO.Path.Combine(Parent.Path, Name);
 
-        // ディレクトリ？
+        /// <summary>
+        /// ディレクトリ？
+        /// </summary>
         public bool IsDirectory => Children != null;
 
-        // 検索用正規化ファイル名
+        /// <summary>
+        /// 検索用正規化ファイル名
+        /// </summary>
         public string NormalizedFazyWord { get; private set; }
 
-        // 検索用正規化ファイル名。ひらかな、カタカナを区別する
+        /// <summary>
+        /// 検索用正規化ファイル名。ひらかな、カタカナを区別する
+        /// </summary>
         public string NormalizedUnitWord { get; private set; }
 
-        // コンテンツ
+        /// <summary>
+        /// コンテンツ
+        /// </summary>
         public NodeContent Content;
 
-        // コンストラクタ
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="parent"></param>
         public Node(string name, Node parent)
         {
             Name = name;
@@ -82,7 +124,9 @@ namespace NeeLaboratory.IO.Search
             TotalCount++;
         }
 
-        // ファイル情報更新
+        /// <summary>
+        /// ファイル情報更新
+        /// </summary>
         public void Reflesh()
         {
             Content.Reflesh();
@@ -96,8 +140,12 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-
-        // 正規化された文字列に変換する
+        /// <summary>
+        /// 正規化された文字列に変換する
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="isFazy"></param>
+        /// <returns></returns>
         public static string ToNormalisedWord(string src, bool isFazy)
         {
             string s = src;
@@ -117,15 +165,27 @@ namespace NeeLaboratory.IO.Search
             return s;
         }
 
-
-        // 表示文字列
+        /// <summary>
+        /// 表示文字列
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return Name;
         }
 
-        //
-        public static Node CreateTree(string name, Node parent, bool isDirectoryMaybe, CancellationToken token)
+
+        // TODO: DirectoryInfoを使った最適化
+        // TODO: ソートは不要じゃね？
+        /// <summary>
+        /// ノード収拾
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="parent"></param>
+        /// <param name="isDirectoryMaybe"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public static Node Collect(string name, Node parent, bool isDirectoryMaybe, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -138,20 +198,20 @@ namespace NeeLaboratory.IO.Search
                 try
                 {
                     var directories = Directory.GetDirectories(node.Path).Select(s => System.IO.Path.GetFileName(s)).ToList();
-                    directories.Sort(Win32Api.StrCmpLogicalW);
+                    directories.Sort(StrCmpLogicalW);
 
                     var files = Directory.GetFiles(node.Path).Select(s => System.IO.Path.GetFileName(s)).ToList();
-                    files.Sort(Win32Api.StrCmpLogicalW);
+                    files.Sort(StrCmpLogicalW);
 
                     var directoryNodes = new Node[directories.Count];
                     ParallelOptions options = new ParallelOptions() { CancellationToken = token };
                     Parallel.ForEach(directories, options, (s, state, index) =>
                     {
                         Debug.Assert(directoryNodes[(int)index] == null);
-                        directoryNodes[(int)index] = CreateTree(s, node, true, options.CancellationToken);
+                        directoryNodes[(int)index] = Collect(s, node, true, options.CancellationToken);
                     });
 
-                    var fileNodes = files.Select(s => CreateTree(s, node, false, token));
+                    var fileNodes = files.Select(s => Collect(s, node, false, token));
 
                     node.Children = directoryNodes.Concat(fileNodes).ToList();
                 }
@@ -161,7 +221,7 @@ namespace NeeLaboratory.IO.Search
                 }
                 catch (Exception e)
                 {
-                    Debug.WriteLine(e.Message);
+                    Logger.Warning(e.Message);
                     node.Children = new List<Node>();
                 }
             }
@@ -169,9 +229,18 @@ namespace NeeLaboratory.IO.Search
             return node;
         }
 
+        /// <summary>
+        /// Splitter
+        /// </summary>
         private static readonly char[] s_splitter = new char[] { '\\' };
 
-        //
+
+        /// <summary>
+        /// ノードの存在確認
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="isCreate">なければ追加する</param>
+        /// <returns></returns>
         private Node Scanning(string path, bool isCreate)
         {
             if (path == Name) return this;
@@ -190,19 +259,29 @@ namespace NeeLaboratory.IO.Search
 
             // 作成
             var tokens = childPath.Split(s_splitter, 2);
-            var childNode = CreateTree(tokens[0], this, true, CancellationToken.None);
+            var childNode = Collect(tokens[0], this, true, CancellationToken.None);
             this.Children.Add(childNode);
             childNode.Content.IsAdded = true;
             return childNode;
         }
 
-        //
+
+        /// <summary>
+        /// ノードの存在確認
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public Node Search(string path)
         {
             return Scanning(path, false);
         }
 
-        //
+        
+        /// <summary>
+        /// ノードの追加
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public Node Add(string path)
         {
             var node = Scanning(path, true);
@@ -217,7 +296,11 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        //
+        /// <summary>
+        /// ノードの削除
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public Node Remove(string path)
         {
             var node = Scanning(path, false);
@@ -273,13 +356,17 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        //
+
+
+        /// <summary>
+        /// 開発用：ツリー出力
+        /// </summary>
+        /// <param name="level"></param>
         [Conditional("DEBUG")]
         public void Dump(int level = 0)
         {
-#if false
             var text = new string(' ', level * 4) + Name + (IsDirectory ? "\\" : "");
-            Debug.WriteLine(text);
+            Logger.Trace(text);
             if (IsDirectory)
             {
                 foreach (var child in Children)
@@ -287,8 +374,8 @@ namespace NeeLaboratory.IO.Search
                     child.Dump(level + 1);
                 }
             }
-#endif
-            //Debug.WriteLine($"{Path}:({AllNodes().Count()})");
+
+            ////Logger.Trace($"{Path}:({AllNodes.Count()})");
         }
     }
 }
