@@ -316,6 +316,12 @@ namespace NeeLaboratory.IO.Search
                 keys.Add(t);
             }
 
+            // 順番固定
+            if (option.IsOrder)
+            {
+                keys = new List<string>() { string.Join(".*", keys) };
+            }
+
             return keys;
         }
 
