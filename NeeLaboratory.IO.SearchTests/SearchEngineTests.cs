@@ -53,12 +53,15 @@ namespace NeeLaboratory.IO.Search.Tests
 
         private static string _fileAppend1 = @"TestFolders\SubFolder1\append1.txt";
         private static string _fileAppend2 = @"TestFolders\SubFolder1\append2.bin";
+        private static string _fileAppend2Ex = @"TestFolders\SubFolder1\append2.txt";
 
 
         public SearchEngine CreateTestEnvironment()
         {
             // 不要ファイル削除
             if (File.Exists(_fileAppend1)) File.Delete(_fileAppend1);
+            if (File.Exists(_fileAppend2)) File.Delete(_fileAppend2);
+            if (File.Exists(_fileAppend2Ex)) File.Delete(_fileAppend2Ex);
 
             // エンジン初期化
             var engine = new SearchEngine();
@@ -134,7 +137,7 @@ namespace NeeLaboratory.IO.Search.Tests
                 stream.WriteByte(0x00);
             }
             await Task.Delay(100);
-            var item = result.Items.First(e => e.Path == fileAppend2Ex);
+            var item = result.Items.First(e => e.Path == Path.GetFullPath(fileAppend2Ex));
             Debug.Assert(item.FileInfo.Size == 1);
 
             // ファイル削除...

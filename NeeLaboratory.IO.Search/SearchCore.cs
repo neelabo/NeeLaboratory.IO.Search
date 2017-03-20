@@ -12,6 +12,7 @@ using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Data;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -88,6 +89,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="areas">検索フォルダ群</param>
         public void Collect(string[] areas, CancellationToken token)
         {
+            // フルパスに変換
+            areas = areas.Select(e => Path.GetFullPath(e)).ToArray();
+
             var roots = new List<string>();
 
             // 他のパスに含まれるなら除外
@@ -340,7 +344,12 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public ObservableCollection<NodeContent> Search(string keyword, SearchOption option)
         {
-            return new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes).Select(e => e.Content));
+            var items =  new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes).Select(e => e.Content));
+
+            // 複数スレッドからコレクション操作できるようにする
+            //BindingOperations.EnableCollectionSynchronization(items, new object());
+
+            return items;
         }
 
         /// <summary>

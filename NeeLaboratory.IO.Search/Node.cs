@@ -178,20 +178,21 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ノード収拾
         /// </summary>
-        /// <param name="path">パス</param>
-        /// <param name="parent"></param>
+        /// <param name="name">ノード名。親がnullの場合はフルパス</param>
+        /// <param name="parent">親ノード</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(string path, Node parent, CancellationToken token)
+        public static Node Collect(string name, Node parent, CancellationToken token)
         {
-            var dirInfo = new DirectoryInfo(path);
+            var fullpath = parent != null ? System.IO.Path.Combine(parent.Path, name) : name;
+            var dirInfo = new DirectoryInfo(fullpath);
             if (dirInfo.Exists)
             {
                 return Collect(dirInfo, parent, token);
             }
             else
             {
-                return new Node(path, parent);
+                return new Node(name, parent);
             }
         }
 
