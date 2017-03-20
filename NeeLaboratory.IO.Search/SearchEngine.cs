@@ -86,6 +86,8 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public SearchEngine()
         {
+            FileInfo.InitializeDefaultResource();
+
             this.SearchAreas = new ObservableCollection<string>();
 
             _core = new SearchCore();

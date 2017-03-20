@@ -160,6 +160,8 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public static void InitializeDefaultResource()
         {
+            if (s_folderTypeName != null) return;
+
             const string path = "__dummy_file__";
             s_folderTypeName = GetTypeNameWithAttribute(path, FILE_ATTRIBUTE_DIRECTORY);
             s_folderIcon = GetTypeIconSourceWithAttribute(path, IconSize.Small, FILE_ATTRIBUTE_DIRECTORY);
@@ -365,6 +367,21 @@ namespace NeeLaboratory.IO.Search
         {
             var fileInfo = new System.IO.FileInfo(path);
             return fileInfo.LastWriteTime;
+        }
+
+
+        /// <summary>
+        /// プロパティウィンドウを開く
+        /// </summary>
+        /// <param name="path"></param>
+        public static void OpenProperty(System.Windows.Window window, string path)
+        {
+            var handle = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+
+            if (!SHObjectProperties(handle, SHOP_FILEPATH, path, string.Empty))
+            {
+                throw new ApplicationException("プロパティウィンドウを開けませんでした");
+            }
         }
     }
 }
