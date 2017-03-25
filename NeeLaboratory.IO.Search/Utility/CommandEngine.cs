@@ -120,7 +120,7 @@ namespace NeeLaboratory.IO.Search.Utility
                 catch (Exception e)
                 {
                     Logger.TraceEvent(TraceEventType.Critical, 0, $"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
-                    Debugger.Break();
+                    //Debugger.Break();
                     throw;
                 }
             });

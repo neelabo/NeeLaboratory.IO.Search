@@ -141,6 +141,11 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
+        /// ひらがなカタカナ変換サポート
+        /// </summary>
+        public static bool _supportedHiraganaKatakana = true;
+
+        /// <summary>
         /// 正規化された文字列に変換する
         /// </summary>
         /// <param name="src"></param>
@@ -149,7 +154,8 @@ namespace NeeLaboratory.IO.Search
         public static string ToNormalisedWord(string src, bool isFazy)
         {
             string s = src;
-
+            
+            
             s = s.Replace("う゛", "ゔ"); // ゔ
             s = s.Replace("ウ゛", "ヴ"); // ヴ
             s = s.Normalize(NormalizationForm.FormKC); // 正規化
@@ -157,7 +163,20 @@ namespace NeeLaboratory.IO.Search
             s = s.ToUpper(); // アルファベットを大文字にする
             if (isFazy)
             {
-                s = Microsoft.VisualBasic.Strings.StrConv(s, Microsoft.VisualBasic.VbStrConv.Katakana); // ひらがなをカタカナにする
+                if (_supportedHiraganaKatakana)
+                {
+                    try
+                    {
+                        s = Microsoft.VisualBasic.Strings.StrConv(s, Microsoft.VisualBasic.VbStrConv.Katakana); // ひらがなをカタカナにする
+                    }
+                    catch (Exception e)
+                    {
+                        // 例外が発生したら以後変換しない
+                        Debug.WriteLine(e.Message);
+                        _supportedHiraganaKatakana = false;
+                    }
+                }
+
                 s = s.Replace("ー", "-"); // 長音をハイフンにする 
                 s = s.Replace(" ", ""); // 空白を削除する
             }
