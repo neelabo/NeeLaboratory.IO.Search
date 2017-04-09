@@ -94,7 +94,10 @@ namespace NeeLaboratory.IO.Search
             IsDarty = false;
 
             // フォルダ監視開始
-            _fileSystemWatcher.EnableRaisingEvents = true;
+            if (_fileSystemWatcher != null)
+            {
+                _fileSystemWatcher.EnableRaisingEvents = true;
+            }
 
             // node
             Root = Node.Collect(Path, null, token);
@@ -197,14 +200,22 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private void InitializeWatcher()
         {
-            _fileSystemWatcher = new FileSystemWatcher();
-            _fileSystemWatcher.Path = Path;
-            _fileSystemWatcher.IncludeSubdirectories = true;
-            _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
-            _fileSystemWatcher.Created += Watcher_Changed;
-            _fileSystemWatcher.Deleted += Watcher_Changed;
-            _fileSystemWatcher.Renamed += Watcher_Changed;
-            _fileSystemWatcher.Changed += Watcher_Changed;
+            try
+            {
+                _fileSystemWatcher = new FileSystemWatcher();
+                _fileSystemWatcher.Path = Path;
+                _fileSystemWatcher.IncludeSubdirectories = true;
+                _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
+                _fileSystemWatcher.Created += Watcher_Changed;
+                _fileSystemWatcher.Deleted += Watcher_Changed;
+                _fileSystemWatcher.Renamed += Watcher_Changed;
+                _fileSystemWatcher.Changed += Watcher_Changed;
+            }
+            catch(Exception e)
+            {
+                Debug.WriteLine(e.Message);
+                TerminateWatcher();
+            }
         }
 
         /// <summary>
@@ -214,11 +225,11 @@ namespace NeeLaboratory.IO.Search
         {
             FileSystemChanged = null;
 
-            _fileSystemWatcher.Dispose();
+            _fileSystemWatcher?.Dispose();
             _fileSystemWatcher = null;
         }
 
-        
+
         /// <summary>
         /// ファイル変更イベント
         /// </summary>
