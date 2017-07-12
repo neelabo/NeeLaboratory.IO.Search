@@ -40,7 +40,7 @@ namespace NeeLaboratory.IO.Search.Tests
 
 
             // 検索１：通常検索
-            SearchOption option = new SearchOption() { IsPerfect = false };
+            SearchOption option = new SearchOption(); // { IsPerfect = false };
             SearchResult result = await engine.SearchAsync("File1", option);
 
             // 結果表示

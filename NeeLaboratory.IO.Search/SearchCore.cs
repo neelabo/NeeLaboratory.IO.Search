@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -165,7 +166,7 @@ namespace NeeLaboratory.IO.Search
         {
             return _fileIndexDirectory.Sum(e => e.Value.NodeCount());
         }
-        
+
 
         /// <summary>
         /// インデックス追加
@@ -221,7 +222,7 @@ namespace NeeLaboratory.IO.Search
 
             return node;
         }
-        
+
         /// <summary>
         /// インデックスの情報更新
         /// </summary>
@@ -262,21 +263,92 @@ namespace NeeLaboratory.IO.Search
             else
                 return null;
         }
-        
-        /// <summary>
-        /// 検索キーを生成する
-        /// </summary>
-        /// <param name="source">検索キーの元</param>
-        private List<string> CreateKeys(string source, SearchOption option)
+
+
+        //
+        private List<SearchKey> CreateOptionedKeys(string source)
         {
-            // 単語検索。
-            // ひらがな、カタカナは区別する
-            // 開始文字が{[0-9],[a-zA-Z],\p{IsHiragana},\p{IsKatanaka},\p{IsCJKUnifiedIdeographsExtensionA}}であるならば、区切り文字はそれ以外のものとする
-            //  でないなら、区切り区別はしない
-            // 終端文字が..
+            string s = source;
 
-            // TODO: 単語の順番。固定化フラグ対応。
+            // スプリッター
+            var regexStartSplitter = new Regex(@"^[\s]+");
+            var regexQuatSentence = new Regex("^\"(.*?)\"");
+            var regexSentence = new Regex(@"^[^\s]+");
 
+            var keys = new List<SearchKey>();
+
+            SearchKey key = null;
+
+            while (s.Length > 0)
+            {
+                key = key ?? new SearchKey();
+
+                // 先頭の空白を削除
+                s = regexStartSplitter.Replace(s, "");
+
+                // 除外オプション
+                if (s[0] == '-')
+                {
+                    key.IsExclude = true;
+                    s = s.Substring(1);
+                    continue;
+                }
+
+                // 単語オプション
+                if (s[0] == '@')
+                {
+                    key.IsWord = true;
+                    s = s.Substring(1);
+                    continue;
+                }
+
+                // 完全一致オプション
+                if (s[0] == '"')
+                {
+                    var match = regexQuatSentence.Match(s);
+                    if (match.Success)
+                    {
+                        key.IsPerfect = true;
+                        key.Word = match.Groups[1].Value;
+                        keys.Add(key);
+                        key = null;
+                        s = s.Substring(match.Length);
+                        continue;
+                    }
+                }
+
+                //
+                {
+                    var match = regexSentence.Match(s);
+                    if (match.Success)
+                    {
+                        key.Word = match.Value;
+                        keys.Add(key);
+                        key = null;
+                        s = s.Substring(match.Length);
+                        continue;
+                    }
+                    else
+                    {
+                        Debugger.Break();
+                        break;
+                    }
+                }
+            }
+
+            keys = keys.Where(e => !string.IsNullOrEmpty(e.Word)).Select(e => ValidateKey(e)).ToList();
+
+            return keys;
+        }
+
+
+        /// <summary>
+        /// 拡張キーワードとして検索キーリスト生成
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        private List<SearchKey> CreateSimpleKeys(string source)
+        {
             const string splitter = @"[\s]+";
 
             // 入力文字列を整列
@@ -285,46 +357,59 @@ namespace NeeLaboratory.IO.Search
             s = new Regex(splitter + "$").Replace(s, "");
             var tokens = new Regex(splitter).Split(s);
 
-            var keys = new List<string>();
+            return tokens.Select(e => ValidateKey(new SearchKey() { Word = e })).ToList();
+        }
 
-            foreach (var token in tokens)
+        /// <summary>
+        /// 拡張キーワードなしで検索キーリスト生成
+        /// </summary>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        private SearchKey ValidateKey(SearchKey source)
+        {
+            var key = source.Clone();
+
+            var word = key.IsPerfect ? key.Word : Node.ToNormalisedWord(key.Word, !key.IsWord);
+
+            // 正規表現記号をエスケープ
+            var t = Regex.Escape(word);
+
+            if (!key.IsPerfect)
             {
-                if (token == "") continue;
-
-                var key = option.IsPerfect ? token : Node.ToNormalisedWord(token, !option.IsWord);
-
-                // 正規表現記号をエスケープ
-                var t = Regex.Escape(key);
-
-                if (!option.IsPerfect)
-                {
-                    // (数値)部分を0*(数値)という正規表現に変換
-                    t = new Regex(@"0*(\d+)").Replace(t, match => "0*" + match.Groups[1]);
-                }
-
-                if (option.IsWord)
-                {
-                    // 先頭文字
-                    var start = GetNotCodeBlockRegexString(key.First());
-                    if (start != null) t = $"(^|{start})" + t;
-
-                    // 終端文字
-                    var end = GetNotCodeBlockRegexString(key.Last());
-                    if (end != null) t = t + $"({end}|$)";
-                }
-
-                keys.Add(t);
+                // (数値)部分を0*(数値)という正規表現に変換
+                t = new Regex(@"0*(\d+)").Replace(t, match => "0*" + match.Groups[1]);
             }
 
-            // 順番固定
-            if (option.IsOrder)
+            if (key.IsWord)
             {
-                keys = new List<string>() { string.Join(".*", keys) };
+                // 先頭文字
+                var start = GetNotCodeBlockRegexString(word.First());
+                if (start != null) t = $"(^|{start})" + t;
+
+                // 終端文字
+                var end = GetNotCodeBlockRegexString(word.Last());
+                if (end != null) t = t + $"({end}|$)";
             }
+
+            key.Word = t;
+            return key;
+        }
+
+
+        /// <summary>
+        /// 検索キーリスト生成
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="option"></param>
+        /// <returns></returns>
+        private List<SearchKey> CreateKeys(string source, SearchOption option)
+        {
+            var keys = option.IsOptionEnabled ? CreateOptionedKeys(source) : CreateSimpleKeys(source);
+
+            Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString()))); // ##
 
             return keys;
         }
-
 
         /// <summary>
         /// すべてのNodeを走査
@@ -350,7 +435,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public ObservableCollection<NodeContent> Search(string keyword, SearchOption option)
         {
-            var items =  new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes).Select(e => e.Content));
+            var items = new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes).Select(e => e.Content));
 
             // 複数スレッドからコレクション操作できるようにする
             //BindingOperations.EnableCollectionSynchronization(items, new object());
@@ -375,7 +460,7 @@ namespace NeeLaboratory.IO.Search
 
             // キーワード登録
             var keys = CreateKeys(keyword, option);
-            if (keys == null || keys[0] == "^$")
+            if (keys == null || keys.Count == 0)
             {
                 return pushpins;
             }
@@ -384,18 +469,18 @@ namespace NeeLaboratory.IO.Search
             // キーワードによる絞込
             foreach (var key in keys)
             {
-                var regex = new Regex(key, RegexOptions.Compiled);
-                if (option.IsPerfect)
+                var regex = new Regex(key.Word, RegexOptions.Compiled);
+                if (key.IsPerfect)
                 {
-                    entries = entries.Where(f => regex.Match(f.Name).Success);
+                    entries = entries.Where(f => Inverse(regex.Match(f.Name).Success, key.IsExclude));
                 }
-                else if (option.IsWord)
+                else if (key.IsWord)
                 {
-                    entries = entries.Where(f => regex.Match(f.NormalizedUnitWord).Success);
+                    entries = entries.Where(f => Inverse(regex.Match(f.NormalizedUnitWord).Success, key.IsExclude));
                 }
                 else
                 {
-                    entries = entries.Where(f => regex.Match(f.NormalizedFazyWord).Success);
+                    entries = entries.Where(f => Inverse(regex.Match(f.NormalizedFazyWord).Success, key.IsExclude));
                 }
             }
 
@@ -410,6 +495,17 @@ namespace NeeLaboratory.IO.Search
 
             // pushpinを先頭に連結して返す
             return pushpins.Concat(entries);
+        }
+
+        /// <summary>
+        /// boolean反転
+        /// </summary>
+        /// <param name="value">入力値</param>
+        /// <param name="inverse">反転フラグ</param>
+        /// <returns></returns>
+        private bool Inverse(bool value, bool inverse)
+        {
+            return inverse ? !value : value;
         }
 
         #endregion

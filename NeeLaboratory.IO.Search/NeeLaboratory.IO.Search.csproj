@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Development.cs" />
+    <Compile Include="SearchKey.cs" />
     <Compile Include="SearchOption.cs" />
     <Compile Include="Utility\CommandBase.cs" />
     <Compile Include="Utility\Logger.cs" />

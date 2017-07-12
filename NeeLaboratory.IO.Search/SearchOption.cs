@@ -14,28 +14,22 @@ namespace NeeLaboratory.IO.Search
     public class SearchOption
     {
         /// <summary>
-        /// 単語一致
+        /// 検索オプション有効
         /// </summary>
-        [DataMember]
-        public bool IsWord { get; set; }
-
-        /// <summary>
-        /// 完全一致
-        /// </summary>
-        [DataMember]
-        public bool IsPerfect { get; set; }
-
-        /// <summary>
-        /// 順番一致（未対応）
-        /// </summary>
-        [DataMember]
-        public bool IsOrder { get; set; }
+        public bool IsOptionEnabled { get; set; } = true;
 
         /// <summary>
         /// フォルダーを含める
         /// </summary>
         [DataMember]
         public bool AllowFolder { get; set; }
+        
+        //
+        [OnDeserializing]
+        public void OnDeserializing(StreamingContext context)
+        {
+            this.IsOptionEnabled = true;
+        }
 
         /// <summary>
         /// 複製
@@ -46,5 +40,4 @@ namespace NeeLaboratory.IO.Search
             return (SearchOption)(this.MemberwiseClone());
         }
     }
-
 }
