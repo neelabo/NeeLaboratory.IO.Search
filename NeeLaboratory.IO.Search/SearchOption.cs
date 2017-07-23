@@ -16,6 +16,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索オプション有効
         /// </summary>
+        [DataMember]
         public bool IsOptionEnabled { get; set; } = true;
 
         /// <summary>
