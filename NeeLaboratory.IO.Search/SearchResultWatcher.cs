@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -11,10 +12,12 @@ namespace NeeLaboratory.IO.Search
     /// 結果の変更を監視する。
     /// ファイルの状態が変化を検索結果に反映させる
     /// </summary>
-    public class SearchResultWatcher : IDisposable
+    public class SearchResultWatcher : IDisposable, ISearchResult
     {
         // Logger
         private static Utility.Logger Logger => Development.Logger;
+
+        #region Fields
 
         /// <summary>
         /// 所属する検索エンジン
@@ -26,6 +29,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private SearchResult _result;
 
+        #endregion
+
+        #region Constructors
+
         /// <summary>
         /// コンストラクタ
         /// </summary>
@@ -36,6 +43,23 @@ namespace NeeLaboratory.IO.Search
             _engine = engine;
             _result = result;
         }
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// 検索結果変更
+        /// </summary>
+        public event EventHandler<SearchResultChangedEventArgs> SearchResultChanged;
+
+        #endregion
+
+        #region Properties
+
+        #endregion
+
+        #region Methods
 
         /// <summary>
         /// 開始
@@ -50,7 +74,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public void Stop()
         {
-            _engine.Core.NodeChanged -= Core_NodeChanged;
+            if (_engine.Core != null)
+            {
+                _engine.Core.NodeChanged -= Core_NodeChanged;
+            }
         }
 
         /// <summary>
@@ -70,6 +97,7 @@ namespace NeeLaboratory.IO.Search
                 {
                     Logger.Trace($"Add: {item.Name}");
                     _result.Items.Add(item.Content);
+                    SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
                 }
             }
             else if (e.Action == NodeChangedAction.Remove)
@@ -79,29 +107,36 @@ namespace NeeLaboratory.IO.Search
                 {
                     Logger.Trace($"Remove: {item.Name}");
                     _result.Items.Remove(item);
+                    SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Remove, item));
                 }
             }
             else if (e.Action == NodeChangedAction.Rename)
             {
-                if (!_result.Items.Contains(node.Content))
+                if (_result.Items.Contains(node.Content))
+                {
+                    SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Rename, node.Content) { OldPath = e.OldPath });
+                }
+                else
                 {
                     var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node });
                     foreach (var item in items)
                     {
                         Logger.Trace($"Add: {item.Name}");
                         _result.Items.Add(item.Content);
+                        SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
                     }
                 }
             }
         }
 
+        #endregion
 
         #region IDisposable Support
-        private bool disposedValue = false; // 重複する呼び出しを検出するには
+        private bool _disposedValue = false; // 重複する呼び出しを検出するには
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
@@ -109,7 +144,7 @@ namespace NeeLaboratory.IO.Search
                     Stop();
                 }
 
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
 
@@ -119,6 +154,25 @@ namespace NeeLaboratory.IO.Search
             // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
             Dispose(true);
         }
+        #endregion
+
+        #region ISearchResult Support
+
+        /// <summary>
+        /// 検索結果項目
+        /// </summary>
+        public ObservableCollection<NodeContent> Items => _result.Items;
+
+        /// <summary>
+        /// 検索キーワード
+        /// </summary>
+        public string Keyword => _result.Keyword;
+
+        /// <summary>
+        /// 検索オプション
+        /// </summary>
+        public SearchOption SearchOption => _result.SearchOption;
+
         #endregion
     }
 }

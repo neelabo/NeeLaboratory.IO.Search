@@ -46,8 +46,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Development.cs" />
+    <Compile Include="ISearchResult.cs" />
     <Compile Include="SearchKey.cs" />
     <Compile Include="SearchOption.cs" />
+    <Compile Include="SearchResultChangedEventArgs.cs" />
     <Compile Include="Utility\CommandBase.cs" />
     <Compile Include="Utility\Logger.cs" />
     <Compile Include="SearchEngineCommands.cs" />

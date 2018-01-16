@@ -82,6 +82,7 @@ namespace NeeLaboratory.IO.Search
         /// ディレクトリ？
         /// </summary>
         private bool _isDirectory;
+        public bool IsDirectory => _isDirectory;
 
         /// <summary>
         /// コンストラクタ

@@ -140,6 +140,8 @@ namespace NeeLaboratory.IO.Search
         {
             _commandEngine.Dispose();
             _commandEngine = null;
+            _core.Dispose();
+            _core = null;
         }
 
         /// <summary>

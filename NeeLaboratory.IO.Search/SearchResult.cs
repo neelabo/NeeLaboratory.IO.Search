@@ -10,8 +10,27 @@ namespace NeeLaboratory.IO.Search
     /// <summary>
     /// 検索結果
     /// </summary>
-    public class SearchResult
+    public class SearchResult : ISearchResult
     {
+        #region Constructors
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <param name="option"></param>
+        /// <param name="items"></param>
+        public SearchResult(string keyword, SearchOption option, ObservableCollection<NodeContent> items)
+        {
+            Keyword = keyword;
+            SearchOption = option;
+            Items = items;
+        }
+
+        #endregion
+
+        #region ISearchResult Support
+
         /// <summary>
         /// 検索キーワード
         /// </summary>
@@ -27,18 +46,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public ObservableCollection<NodeContent> Items { get; private set; }
 
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="option"></param>
-        /// <param name="items"></param>
-        public SearchResult(string keyword, SearchOption option, ObservableCollection<NodeContent> items)
-        {
-            Keyword = keyword;
-            SearchOption = option;
-            Items = items;
-        }
+        #endregion
     }
 
 }

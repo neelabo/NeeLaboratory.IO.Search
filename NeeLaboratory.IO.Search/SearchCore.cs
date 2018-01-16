@@ -43,6 +43,16 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public Node Node { get; set; }
 
+        /// <summary>
+        /// リネーム時の旧パス
+        /// </summary>
+        public string OldPath { get; set; }
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        /// <param name="action"></param>
+        /// <param name="node"></param>
         public NodeChangedEventArgs(NodeChangedAction action, Node node)
         {
             this.Action = action;
@@ -51,11 +61,12 @@ namespace NeeLaboratory.IO.Search
     }
 
 
+
     /// <summary>
     /// 検索コア
     /// 検索フォルダのファイルをインデックス化して保存し、検索を行う
     /// </summary>
-    internal class SearchCore
+    internal class SearchCore : IDisposable
     {
         /// <summary>
         /// ファイルシステム変更イベント
@@ -218,7 +229,7 @@ namespace NeeLaboratory.IO.Search
             }
 
             var node = _fileIndexDirectory[root].Rename(oldFileName, newFileName);
-            NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Rename, node));
+            NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Rename, node) { OldPath = oldFileName });
 
             return node;
         }
@@ -507,6 +518,48 @@ namespace NeeLaboratory.IO.Search
         {
             return inverse ? !value : value;
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // 重複する呼び出しを検出するには
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    if (_fileIndexDirectory != null)
+                    {
+                        foreach (var pair in _fileIndexDirectory)
+                        {
+                            pair.Value.Dispose();
+                        }
+                    }
+                    _fileIndexDirectory = null;
+                }
+
+                // TODO: アンマネージ リソース (アンマネージ オブジェクト) を解放し、下のファイナライザーをオーバーライドします。
+                // TODO: 大きなフィールドを null に設定します。
+
+                disposedValue = true;
+            }
+        }
+
+        // TODO: 上の Dispose(bool disposing) にアンマネージ リソースを解放するコードが含まれる場合にのみ、ファイナライザーをオーバーライドします。
+        // ~SearchCore() {
+        //   // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
+        //   Dispose(false);
+        // }
+
+        // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
+        public void Dispose()
+        {
+            // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
+            Dispose(true);
+            // TODO: 上のファイナライザーがオーバーライドされる場合は、次の行のコメントを解除してください。
+            // GC.SuppressFinalize(this);
+        }
+        #endregion
 
         #endregion
     }
