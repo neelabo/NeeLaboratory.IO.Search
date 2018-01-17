@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 
+using CSharp.Japanese.Kanaxs;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -141,11 +142,6 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
-        /// ひらがなカタカナ変換サポート
-        /// </summary>
-        public static bool _supportedHiraganaKatakana = true;
-
-        /// <summary>
         /// 正規化された文字列に変換する
         /// </summary>
         /// <param name="src"></param>
@@ -154,35 +150,81 @@ namespace NeeLaboratory.IO.Search
         public static string ToNormalisedWord(string src, bool isFazy)
         {
             string s = src;
-            
-            
-            s = s.Replace("う゛", "ゔ"); // ゔ
-            s = s.Replace("ウ゛", "ヴ"); // ヴ
-            s = s.Normalize(NormalizationForm.FormKC); // 正規化
 
+            s = KanaEx.ToPadding(s); // 濁点を１文字にまとめる
+            s = s.Normalize(NormalizationForm.FormKC); // 正規化
             s = s.ToUpper(); // アルファベットを大文字にする
+
             if (isFazy)
             {
-                if (_supportedHiraganaKatakana)
-                {
-                    try
-                    {
-                        s = Microsoft.VisualBasic.Strings.StrConv(s, Microsoft.VisualBasic.VbStrConv.Katakana); // ひらがなをカタカナにする
-                    }
-                    catch (Exception e)
-                    {
-                        // 例外が発生したら以後変換しない
-                        Debug.WriteLine(e.Message);
-                        _supportedHiraganaKatakana = false;
-                    }
-                }
-
-                s = s.Replace("ー", "-"); // 長音をハイフンにする 
-                s = s.Replace(" ", ""); // 空白を削除する
+                s = ToKatakanaWithNormalize(s); // ひらがなをカタカナにする ＋ 特定文字の正規化
             }
 
             return s;
         }
+
+
+        /// <summary>
+        /// ひらがなをカタカナにする ＋ 特定文字の正規化
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        private static string ToKatakanaWithNormalize(string str)
+        {
+            if (str == null || str.Length == 0)
+            {
+                return str;
+            }
+
+            char[] cs = str.ToCharArray();
+            int f = cs.Length;
+
+            for (int i = 0; i < f; i++)
+            {
+                char c = cs[i];
+                // ぁ(0x3041) ～ ゖ(0x3096)
+                // ゝ(0x309D) ゞ(0x309E)
+                if (('ぁ' <= c && c <= 'ゖ') ||
+                    ('ゝ' <= c && c <= 'ゞ'))
+                {
+                    cs[i] = (char)(c + 0x0060);
+                }
+
+                else
+                {
+                    // 一分文字の正規化
+                    cs[i] = ToNormalisedChar(c);
+                }
+            }
+
+            return new string(cs);
+        }
+
+        /// <summary>
+        /// 特定文字の正規化
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
+        private static char ToNormalisedChar(char src)
+        {
+            switch (src)
+            {
+                case 'ー': return '-';
+                case '　': return ' ';
+                case '♠': return '♤';
+                case '♥': return '♡';
+                case '❤': return '♡';
+                case '❥': return '♡';
+                case '♢': return '◇';
+                case '♦': return '◇';
+                case '◆': return '◇';
+                case '♣': return '♧';
+                default: return src;
+            }
+
+        }
+
+
 
         /// <summary>
         /// 表示文字列

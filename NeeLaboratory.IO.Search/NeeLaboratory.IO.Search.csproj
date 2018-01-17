@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="Development.cs" />
     <Compile Include="ISearchResult.cs" />
+    <Compile Include="Kanaxs.cs" />
     <Compile Include="SearchKey.cs" />
     <Compile Include="SearchOption.cs" />
     <Compile Include="SearchResultChangedEventArgs.cs" />

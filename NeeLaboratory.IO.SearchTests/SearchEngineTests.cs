@@ -151,6 +151,27 @@ namespace NeeLaboratory.IO.Search.Tests
 
             watcher.Stop();
         }
+
+        [TestMethod()]
+        public void SearchEngineNormalizeTest()
+        {
+            string normalized;
+
+            normalized = Node.ToNormalisedWord("ひらがなゔう゛か゛", true);
+            Debug.Assert(normalized == "ヒラガナヴヴガ");
+
+            normalized = Node.ToNormalisedWord("ﾊﾝｶｸｶﾞﾅｳﾞ", true);
+            Debug.Assert(normalized == "ハンカクガナヴ");
+
+            normalized = Node.ToNormalisedWord("混合された日本語ﾃﾞス。", true);
+            Debug.Assert(normalized == "混合サレタ日本語デス。");
+
+            normalized = Node.ToNormalisedWord("㌫", true);
+            Debug.Assert(normalized == "パ-セント");
+
+            normalized = Node.ToNormalisedWord("♡♥❤?", true);
+            Debug.Assert(normalized == "♡♡♡?");
+        }
     }
 
 }
