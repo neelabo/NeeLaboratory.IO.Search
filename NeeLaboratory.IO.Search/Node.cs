@@ -245,6 +245,8 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public static Node Collect(string name, Node parent, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             var fullpath = parent != null ? System.IO.Path.Combine(parent.Path, name) : name;
             var dirInfo = new DirectoryInfo(fullpath);
             if (dirInfo.Exists)
@@ -284,6 +286,7 @@ namespace NeeLaboratory.IO.Search
                 ParallelOptions options = new ParallelOptions() { CancellationToken = token };
                 Parallel.ForEach(directories, options, (s, state, index) =>
                 {
+                    options.CancellationToken.ThrowIfCancellationRequested();
                     Debug.Assert(directoryNodes[(int)index] == null);
                     directoryNodes[(int)index] = Collect(s, node, options.CancellationToken);
                 });
@@ -317,8 +320,10 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         /// <param name="isCreate">なければ追加する</param>
         /// <returns></returns>
-        private Node Scanning(string path, bool isCreate)
+        private Node Scanning(string path, bool isCreate, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             if (path == Name) return this;
 
             if (!IsDirectory) return null;
@@ -327,7 +332,7 @@ namespace NeeLaboratory.IO.Search
 
             foreach (var child in Children)
             {
-                var node = child.Scanning(childPath, isCreate);
+                var node = child.Scanning(childPath, isCreate, token);
                 if (node != null) return node;
             }
 
@@ -335,7 +340,7 @@ namespace NeeLaboratory.IO.Search
 
             // 作成
             var tokens = childPath.Split(s_splitter, 2);
-            var childNode = Collect(tokens[0], this, CancellationToken.None);
+            var childNode = Collect(tokens[0], this, token);
             this.Children.Add(childNode);
             childNode.Content.IsAdded = true;
             return childNode;
@@ -347,9 +352,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Search(string path)
+        public Node Search(string path, CancellationToken token)
         {
-            return Scanning(path, false);
+            return Scanning(path, false, token);
         }
 
 
@@ -358,9 +363,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Add(string path)
+        public Node Add(string path, CancellationToken token)
         {
-            var node = Scanning(path, true);
+            var node = Scanning(path, true, token);
             if (node != null && node.Content.IsAdded)
             {
                 node.Content.IsAdded = false; // 追加フラグをOFFにしておく
@@ -379,7 +384,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public Node Remove(string path)
         {
-            var node = Scanning(path, false);
+            var node = Scanning(path, false, CancellationToken.None);
             if (node == null) return null;
 
             node.Parent?.Children.Remove(node);

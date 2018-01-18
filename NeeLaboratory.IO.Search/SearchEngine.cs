@@ -138,6 +138,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public void Stop()
         {
+            _resetAreaCancellationTokenSource?.Cancel();
+            _searchCancellationTokenSource?.Cancel();
+
             _commandEngine.Dispose();
             _commandEngine = null;
             _core.Dispose();
@@ -186,7 +189,6 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private CancellationTokenSource _resetAreaCancellationTokenSource;
 
-
         /// <summary>
         /// ノード構築
         /// </summary>
@@ -208,9 +210,15 @@ namespace NeeLaboratory.IO.Search
             token.ThrowIfCancellationRequested();
 
             // TODO: 設計不十分のため、現状ではコマンド実行中のキャンセル不可
-            _core.Collect(args.Area, CancellationToken.None);
+            _core.Collect(args.Area, token);
         }
 
+
+
+        /// <summary>
+        /// 検索処理のキャンセルトークン
+        /// </summary>
+        private CancellationTokenSource _searchCancellationTokenSource;
 
         /// <summary>
         /// 検索
@@ -220,7 +228,11 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public async Task<SearchResult> SearchAsync(string keyword, SearchOption option)
         {
-            return await SearchAsync(keyword, option, CancellationToken.None);
+            // one command only.
+            _searchCancellationTokenSource?.Cancel();
+            _searchCancellationTokenSource = new CancellationTokenSource();
+
+            return await SearchAsync(keyword, option, _searchCancellationTokenSource.Token);
         }
 
         /// <summary>
@@ -232,7 +244,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public async Task<SearchResult> SearchAsync(string keyword, SearchOption option, CancellationToken token)
         {
-            if (_commandEngine == null) throw new InvalidOperationException("engine stopped.");
+            if (_commandEngine == null) return new SearchResult(keyword, option, new ObservableCollection<NodeContent>());
 
             var command = new SearchCommand(this, new SearchExCommandArgs() { Keyword = keyword, Option = option.Clone() });
             _commandEngine.Enqueue(command, token);
@@ -242,9 +254,9 @@ namespace NeeLaboratory.IO.Search
         }
 
         //
-        internal SearchResult Search_Execute(SearchExCommandArgs args)
+        internal SearchResult Search_Execute(SearchExCommandArgs args, CancellationToken token)
         {
-            return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option));
+            return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, token));
         }
 
 
@@ -256,6 +268,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         internal void AddNode(string root, string path)
         {
+            if (_commandEngine == null) return;
+
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
                 ChangeType = NodeChangeType.Add,
@@ -272,6 +286,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         internal void RemoveNode(string root, string path)
         {
+            if (_commandEngine == null) return;
+
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
                 ChangeType = NodeChangeType.Remove,
@@ -289,6 +305,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="newPath"></param>
         internal void RenameNode(string root, string oldPath, string newPath)
         {
+            if (_commandEngine == null) return;
+
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
                 ChangeType = NodeChangeType.Rename,
@@ -306,6 +324,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         internal void RefleshNode(string root, string path)
         {
+            if (_commandEngine == null) return;
+
             var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
             {
                 ChangeType = NodeChangeType.Reflesh,
@@ -319,12 +339,16 @@ namespace NeeLaboratory.IO.Search
         /// 内部コマンド用：ノード変更
         /// </summary>
         /// <param name="args"></param>
-        internal void NodeChange_Execute(NodeChangeCommandArgs args)
+        internal void NodeChange_Execute(NodeChangeCommandArgs args, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
+            if (_core == null) return;
+
             switch (args.ChangeType)
             {
                 case NodeChangeType.Add:
-                    _core.AddPath(args.Root, args.Path);
+                    _core.AddPath(args.Root, args.Path, token);
                     break;
                 case NodeChangeType.Remove:
                     _core.RemovePath(args.Root, args.Path);

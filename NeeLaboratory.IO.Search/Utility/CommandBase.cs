@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -100,12 +101,12 @@ namespace NeeLaboratory.IO.Search.Utility
             catch (OperationCanceledException)
             {
                 Result = CommandResult.Canceled;
-                ////Debug.WriteLine($"{this}: canceled.");
+                Debug.WriteLine($"command {this}: canceled.");
                 OnCanceled();
             }
             catch (Exception e)
             {
-                //// Debug.WriteLine($"{this}: excepted!!");
+                Debug.WriteLine($"command {this}: excepted!!");
                 OnException(e);
                 throw;
             }

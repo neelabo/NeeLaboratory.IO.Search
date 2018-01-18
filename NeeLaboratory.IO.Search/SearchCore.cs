@@ -101,8 +101,11 @@ namespace NeeLaboratory.IO.Search
         /// <param name="areas">検索フォルダ群</param>
         public void Collect(string[] areas, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             // フルパスに変換
-            areas = areas.Select(e => Path.GetFullPath(e)).ToArray();
+            areas = areas.Where(e => e != null).Select(e => Path.GetFullPath(e)).ToArray();
+            if (areas.Count() == 0) return;
 
             var roots = new List<string>();
 
@@ -184,14 +187,14 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="root">検索フォルダ</param>
         /// <param name="paths">追加パス</param>
-        public Node AddPath(string root, string path)
+        public Node AddPath(string root, string path, CancellationToken token)
         {
             if (!_fileIndexDirectory.ContainsKey(root))
             {
                 return null;
             }
 
-            var node = _fileIndexDirectory[root].AddNode(path);
+            var node = _fileIndexDirectory[root].AddNode(path, token);
             NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Add, node));
             return node;
         }
@@ -202,7 +205,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="root">検索フォルダ</param>
         /// <param name="path">削除パス</param>
-        public Node RemovePath(string root, string path)
+        public Node RemovePath(string root, string path )
         {
             if (!_fileIndexDirectory.ContainsKey(root))
             {
@@ -444,9 +447,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="keyword"></param>
         /// <param name="option"></param>
         /// <returns></returns>
-        public ObservableCollection<NodeContent> Search(string keyword, SearchOption option)
+        public ObservableCollection<NodeContent> Search(string keyword, SearchOption option, CancellationToken token)
         {
-            var items = new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes).Select(e => e.Content));
+            var items = new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes, token).Select(e => e.Content));
 
             // 複数スレッドからコレクション操作できるようにする
             //BindingOperations.EnableCollectionSynchronization(items, new object());
@@ -461,7 +464,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="entries">検索対象</param>
         /// <param name="isSearchFolder">フォルダを検索対象に含めるフラグ</param>
         /// <returns></returns>
-        public IEnumerable<Node> Search(string keyword, SearchOption option, IEnumerable<Node> entries)
+        public IEnumerable<Node> Search(string keyword, SearchOption option, IEnumerable<Node> entries, CancellationToken token)
         {
             // pushpin保存
             var pushpins = entries.Where(f => f.Content.IsPushPin);
@@ -476,10 +479,11 @@ namespace NeeLaboratory.IO.Search
                 return pushpins;
             }
 
-
             // キーワードによる絞込
             foreach (var key in keys)
             {
+                token.ThrowIfCancellationRequested();
+
                 var regex = new Regex(key.Word, RegexOptions.Compiled);
                 if (key.IsPerfect)
                 {

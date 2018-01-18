@@ -126,7 +126,7 @@ namespace NeeLaboratory.IO.Search
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             await Task.Yield();
-            SearchResult = _target.Search_Execute(_args);
+            SearchResult = _target.Search_Execute(_args, token);
         }
     }
 
@@ -187,7 +187,7 @@ namespace NeeLaboratory.IO.Search
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             await Task.Yield();
-            _target.NodeChange_Execute(_args);
+            _target.NodeChange_Execute(_args, token);
         }
 
         //

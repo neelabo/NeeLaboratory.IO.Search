@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search
@@ -92,7 +93,7 @@ namespace NeeLaboratory.IO.Search
 
             if (e.Action == NodeChangedAction.Add)
             {
-                var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes);
+                var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
                 foreach (var item in items)
                 {
                     Logger.Trace($"Add: {item.Name}");
@@ -118,7 +119,7 @@ namespace NeeLaboratory.IO.Search
                 }
                 else
                 {
-                    var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node });
+                    var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
                     foreach (var item in items)
                     {
                         Logger.Trace($"Add: {item.Name}");

@@ -130,9 +130,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node AddNode(string path)
+        public Node AddNode(string path, CancellationToken token)
         {
-            var node = Root.Add(path);
+            var node = Root.Add(path, token);
             Logger.Trace($"Add: {node?.Path}");
             ////DumpTree();
             return node;
@@ -160,7 +160,7 @@ namespace NeeLaboratory.IO.Search
         public Node Rename(string oldPath, string newPath)
         {
             Logger.Trace($"Rename: {oldPath} -> {newPath}");
-            var node = Root.Search(oldPath);
+            var node = Root.Search(oldPath, CancellationToken.None);
             if (node != null)
             {
                 // 場所の変更は認めない
@@ -182,7 +182,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         public void RefleshNode(string path)
         {
-            var node = Root.Search(path);
+            var node = Root.Search(path, CancellationToken.None);
             if (node != null)
             {
                 node.Reflesh();
