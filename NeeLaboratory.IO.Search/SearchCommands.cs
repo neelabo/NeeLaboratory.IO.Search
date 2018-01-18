@@ -1,12 +1,18 @@
-﻿using System;
+﻿// Copyright (c) 2015-2018 Mitsuhiro Ito (nee)
+//
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search
 {
+    #region CommandBase
+
     /// <summary>
     /// コマンドデータ基底
     /// </summary>
@@ -54,6 +60,9 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
+    #endregion
+
+    #region CollectCommand
 
     /// <summary>
     /// ノード構築コマンドデータ
@@ -87,6 +96,9 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
+    #endregion
+
+    #region SearchCommand
 
     /// <summary>
     /// 検索コマンドデータ
@@ -130,6 +142,10 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
+    #endregion
+
+    #region WaitCommand
+
     /// <summary>
     /// 待機コマンド用（何も処理しない）
     /// </summary>
@@ -147,6 +163,9 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
+    #endregion
+
+    #region NodeChangeCommand
 
     /// <summary>
     /// ノード変更の種類
@@ -204,68 +223,5 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
-
- 
-    /// <summary>
-    /// コマンドエンジン状態
-    /// </summary>
-    public enum SearchEngineState
-    {
-        /// <summary>
-        /// 処理なし
-        /// </summary>
-        Idle,
-
-        /// <summary>
-        /// 収拾中
-        /// </summary>
-        Collect,
-
-        /// <summary>
-        /// 検索中
-        /// </summary>
-        Search,
-
-        /// <summary>
-        /// その他処理中
-        /// </summary>
-        Etc,
-    }
-
-
-    /// <summary>
-    /// コマンドエンジン
-    /// </summary>
-    internal class SerarchCommandEngine : Utility.CommandEngine
-    {
-        /// <summary>
-        /// 状態取得
-        /// </summary>
-        public SearchEngineState State
-        {
-            get
-            {
-                var current = _command;
-                if (current == null && !_queue.Any())
-                    return SearchEngineState.Idle;
-                else if (current is CollectCommand)
-                    return SearchEngineState.Collect;
-                else if (current is SearchCommand)
-                    return SearchEngineState.Search;
-                else
-                    return SearchEngineState.Etc;
-            }
-        }
-
-        /// <summary>
-        /// 登録
-        /// </summary>
-        /// <param name="command"></param>
-        /// <param name="token"></param>
-        internal void Enqueue(CommandBase command, CancellationToken token)
-        {
-            command.CancellationToken = token;
-            Enqueue(command);
-        }
-    }
+    #endregion
 }

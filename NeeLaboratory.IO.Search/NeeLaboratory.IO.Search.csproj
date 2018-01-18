@@ -46,14 +46,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Development.cs" />
+    <Compile Include="FileSystem.cs" />
     <Compile Include="ISearchResult.cs" />
-    <Compile Include="Kanaxs.cs" />
+    <Compile Include="Kanaxs\Kanaxs.cs" />
+    <Compile Include="NodeChangedAction.cs" />
+    <Compile Include="NodeChangedEventArgs.cs" />
+    <Compile Include="NodeFlag.cs" />
+    <Compile Include="NodeTreeFileSystemEventArgs.cs" />
+    <Compile Include="SearchCommandEngineState.cs" />
     <Compile Include="SearchKey.cs" />
     <Compile Include="SearchOption.cs" />
     <Compile Include="SearchResultChangedEventArgs.cs" />
+    <Compile Include="SearchCommandEngine.cs" />
     <Compile Include="Utility\CommandBase.cs" />
     <Compile Include="Utility\Logger.cs" />
-    <Compile Include="SearchEngineCommands.cs" />
+    <Compile Include="SearchCommands.cs" />
     <Compile Include="SearchResult.cs" />
     <Compile Include="SearchResultWatcher.cs" />
     <Compile Include="Utility\CommandEngine.cs" />

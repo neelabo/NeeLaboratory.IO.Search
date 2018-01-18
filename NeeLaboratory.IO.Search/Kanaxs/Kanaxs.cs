@@ -767,5 +767,68 @@ namespace CSharp.Japanese.Kanaxs
                     return '\0';
             }
         }
+
+        #region NeeLaboratory拡張
+
+        /// <summary>
+        /// ひらがなをカタカナにする ＋ 特定文字の正規化
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string ToKatakanaWithNormalize(string str)
+        {
+            if (str == null || str.Length == 0)
+            {
+                return str;
+            }
+
+            char[] cs = str.ToCharArray();
+            int f = cs.Length;
+
+            for (int i = 0; i < f; i++)
+            {
+                char c = cs[i];
+                // ぁ(0x3041) ～ ゖ(0x3096)
+                // ゝ(0x309D) ゞ(0x309E)
+                if (('ぁ' <= c && c <= 'ゖ') ||
+                    ('ゝ' <= c && c <= 'ゞ'))
+                {
+                    cs[i] = (char)(c + 0x0060);
+                }
+
+                else
+                {
+                    // 特定文字の正規化
+                    cs[i] = ToNormalisedChar(c);
+                }
+            }
+
+            return new string(cs);
+        }
+
+        /// <summary>
+        /// 特定文字の正規化
+        /// </summary>
+        /// <param name="src"></param>
+        /// <returns></returns>
+        private static char ToNormalisedChar(char src)
+        {
+            switch (src)
+            {
+                case 'ー': return '-';
+                case '　': return ' ';
+                case '♠': return '♤';
+                case '♥': return '♡';
+                case '❤': return '♡';
+                case '❥': return '♡';
+                case '♢': return '◇';
+                case '♦': return '◇';
+                case '◆': return '◇';
+                case '♣': return '♧';
+                default: return src;
+            }
+        }
+
+        #endregion
     }
 }

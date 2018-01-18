@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2015-2016 Mitsuhiro Ito (nee)
+﻿// Copyright (c) 2015-2018 Mitsuhiro Ito (nee)
 //
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
@@ -21,19 +21,44 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class Node
     {
-        // WIN32API: 自然順ソート
-        ////[DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
-        ////private static extern int StrCmpLogicalW(string psz1, string psz2);
-
         // Logger
         private static Utility.Logger Logger => Development.Logger;
 
         /// <summary>
         /// 通知用のノード総数.
         /// 非同期で加算されるため、正確な値にならない
+        /// TODO: staticはよろしくない
         /// </summary>
         public static int TotalCount { get; set; }
 
+        #region Fields
+
+        /// <summary>
+        /// Splitter
+        /// </summary>
+        private static readonly char[] s_splitter = new char[] { '\\' };
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="parent"></param>
+        public Node(string name, Node parent)
+        {
+            Name = name;
+            Parent = parent;
+            Content = new NodeContent(Path);
+
+            TotalCount++;
+        }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// ノード名
@@ -47,32 +72,6 @@ namespace NeeLaboratory.IO.Search
                 _name = value;
                 NormalizedFazyWord = ToNormalisedWord(_name, true);
                 NormalizedUnitWord = ToNormalisedWord(_name, false);
-            }
-        }
-
-        /// <summary>
-        /// 名前変更
-        /// </summary>
-        /// <param name="name"></param>
-        public void Rename(string name)
-        {
-            Name = name;
-
-            foreach (var node in AllNodes)
-            {
-                node.RefleshPath();
-            }
-        }
-
-        /// <summary>
-        /// ノード情報更新
-        /// </summary>
-        private void RefleshPath()
-        {
-            if (Content != null)
-            {
-                Content.Path = Path;
-                Content.Reflesh();
             }
         }
 
@@ -109,20 +108,74 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// コンテンツ
         /// </summary>
-        public NodeContent Content;
+        public NodeContent Content { get; set; }
 
         /// <summary>
-        /// コンストラクター
+        /// すべてのNodeを走査。自身は含まない
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Node> AllChildren
+        {
+            get
+            {
+                if (Children != null)
+                {
+                    foreach (var child in Children)
+                    {
+                        yield return child;
+                        foreach (var node in child.AllChildren)
+                        {
+                            yield return node;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// すべてのNodeを走査。自身を含む
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Node> AllNodes
+        {
+            get
+            {
+                yield return this;
+                foreach (var child in AllChildren)
+                {
+                    yield return child;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// 名前変更
         /// </summary>
         /// <param name="name"></param>
-        /// <param name="parent"></param>
-        public Node(string name, Node parent)
+        public void Rename(string name)
         {
             Name = name;
-            Parent = parent;
-            Content = new NodeContent(Path);
 
-            TotalCount++;
+            foreach (var node in AllNodes)
+            {
+                node.RefleshPath();
+            }
+        }
+
+        /// <summary>
+        /// ノード情報更新
+        /// </summary>
+        private void RefleshPath()
+        {
+            if (Content != null)
+            {
+                Content.Path = Path;
+                Content.Reflesh();
+            }
         }
 
         /// <summary>
@@ -157,74 +210,11 @@ namespace NeeLaboratory.IO.Search
 
             if (isFazy)
             {
-                s = ToKatakanaWithNormalize(s); // ひらがなをカタカナにする ＋ 特定文字の正規化
+                s = KanaEx.ToKatakanaWithNormalize(s); // ひらがなをカタカナにする ＋ 特定文字の正規化
             }
 
             return s;
         }
-
-
-        /// <summary>
-        /// ひらがなをカタカナにする ＋ 特定文字の正規化
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        private static string ToKatakanaWithNormalize(string str)
-        {
-            if (str == null || str.Length == 0)
-            {
-                return str;
-            }
-
-            char[] cs = str.ToCharArray();
-            int f = cs.Length;
-
-            for (int i = 0; i < f; i++)
-            {
-                char c = cs[i];
-                // ぁ(0x3041) ～ ゖ(0x3096)
-                // ゝ(0x309D) ゞ(0x309E)
-                if (('ぁ' <= c && c <= 'ゖ') ||
-                    ('ゝ' <= c && c <= 'ゞ'))
-                {
-                    cs[i] = (char)(c + 0x0060);
-                }
-
-                else
-                {
-                    // 一分文字の正規化
-                    cs[i] = ToNormalisedChar(c);
-                }
-            }
-
-            return new string(cs);
-        }
-
-        /// <summary>
-        /// 特定文字の正規化
-        /// </summary>
-        /// <param name="src"></param>
-        /// <returns></returns>
-        private static char ToNormalisedChar(char src)
-        {
-            switch (src)
-            {
-                case 'ー': return '-';
-                case '　': return ' ';
-                case '♠': return '♤';
-                case '♥': return '♡';
-                case '❤': return '♡';
-                case '❥': return '♡';
-                case '♢': return '◇';
-                case '♦': return '◇';
-                case '◆': return '◇';
-                case '♣': return '♧';
-                default: return src;
-            }
-
-        }
-
-
 
         /// <summary>
         /// 表示文字列
@@ -234,7 +224,6 @@ namespace NeeLaboratory.IO.Search
         {
             return Name;
         }
-
 
         /// <summary>
         /// ノード収拾
@@ -277,10 +266,7 @@ namespace NeeLaboratory.IO.Search
             try
             {
                 var directories = dirInfo.GetDirectories().ToList();
-                ////directories.Sort(StrCmpLogicalW);
-
                 var files = dirInfo.GetFiles().ToList();
-                ////files.Sort(StrCmpLogicalW);
 
                 var directoryNodes = new Node[directories.Count];
                 ParallelOptions options = new ParallelOptions() { CancellationToken = token };
@@ -307,12 +293,6 @@ namespace NeeLaboratory.IO.Search
 
             return node;
         }
-
-        /// <summary>
-        /// Splitter
-        /// </summary>
-        private static readonly char[] s_splitter = new char[] { '\\' };
-
 
         /// <summary>
         /// ノードの存在確認
@@ -346,7 +326,6 @@ namespace NeeLaboratory.IO.Search
             return childNode;
         }
 
-
         /// <summary>
         /// ノードの存在確認
         /// </summary>
@@ -356,7 +335,6 @@ namespace NeeLaboratory.IO.Search
         {
             return Scanning(path, false, token);
         }
-
 
         /// <summary>
         /// ノードの追加
@@ -398,47 +376,6 @@ namespace NeeLaboratory.IO.Search
             return node;
         }
 
-
-        /// <summary>
-        /// すべてのNodeを走査。自身は含まない
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<Node> AllChildren
-        {
-            get
-            {
-                if (Children != null)
-                {
-                    foreach (var child in Children)
-                    {
-                        yield return child;
-                        foreach (var node in child.AllChildren)
-                        {
-                            yield return node;
-                        }
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// すべてのNodeを走査。自身を含む
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<Node> AllNodes
-        {
-            get
-            {
-                yield return this;
-                foreach (var child in AllChildren)
-                {
-                    yield return child;
-                }
-            }
-        }
-
-
-
         /// <summary>
         /// 開発用：ツリー出力
         /// </summary>
@@ -458,5 +395,7 @@ namespace NeeLaboratory.IO.Search
 
             ////Logger.Trace($"{Path}:({AllNodes.Count()})");
         }
+
+        #endregion
     }
 }

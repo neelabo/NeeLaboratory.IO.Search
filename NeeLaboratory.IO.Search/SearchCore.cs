@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2015-2016 Mitsuhiro Ito (nee)
+﻿// Copyright (c) 2015-2018 Mitsuhiro Ito (nee)
 //
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
@@ -18,56 +18,34 @@ using System.Windows.Data;
 namespace NeeLaboratory.IO.Search
 {
     /// <summary>
-    /// ノード変更イベント種類
-    /// </summary>
-    public enum NodeChangedAction
-    {
-        None,
-        Add,
-        Remove,
-        Rename,
-    }
-
-    /// <summary>
-    /// ノード変更イベントデータ
-    /// </summary>
-    public class NodeChangedEventArgs : EventArgs
-    {
-        /// <summary>
-        /// イベント種類
-        /// </summary>
-        public NodeChangedAction Action { get; set; }
-
-        /// <summary>
-        /// 変更ノード
-        /// </summary>
-        public Node Node { get; set; }
-
-        /// <summary>
-        /// リネーム時の旧パス
-        /// </summary>
-        public string OldPath { get; set; }
-
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        /// <param name="action"></param>
-        /// <param name="node"></param>
-        public NodeChangedEventArgs(NodeChangedAction action, Node node)
-        {
-            this.Action = action;
-            this.Node = node;
-        }
-    }
-
-
-
-    /// <summary>
     /// 検索コア
     /// 検索フォルダのファイルをインデックス化して保存し、検索を行う
     /// </summary>
     internal class SearchCore : IDisposable
     {
+        #region Fields
+
+        /// <summary>
+        /// ノード群
+        /// </summary>
+        private Dictionary<string, NodeTree> _fileIndexDirectory;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public SearchCore()
+        {
+            _fileIndexDirectory = new Dictionary<string, NodeTree>();
+        }
+
+        #endregion
+
+        #region Events
+
         /// <summary>
         /// ファイルシステム変更イベント
         /// </summary>
@@ -78,25 +56,14 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public event EventHandler<NodeChangedEventArgs> NodeChanged;
 
+        #endregion
 
-        /// <summary>
-        /// ノード群
-        /// </summary>
-        private Dictionary<string, NodeTree> _fileIndexDirectory;
+        #region Methods
 
-
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        public SearchCore()
-        {
-            _fileIndexDirectory = new Dictionary<string, NodeTree>();
-        }
-
+        #region Index
 
         /// <summary>
         /// 検索フォルダのインデックス化
-        /// TODO: キャンセル処理
         /// </summary>
         /// <param name="areas">検索フォルダ群</param>
         public void Collect(string[] areas, CancellationToken token)
@@ -120,8 +87,6 @@ namespace NeeLaboratory.IO.Search
 
             Collect(roots, token);
         }
-
-
 
         /// <summary>
         /// 検索フォルダのインデックス化
@@ -181,7 +146,6 @@ namespace NeeLaboratory.IO.Search
             return _fileIndexDirectory.Sum(e => e.Value.NodeCount());
         }
 
-
         /// <summary>
         /// インデックス追加
         /// </summary>
@@ -198,7 +162,6 @@ namespace NeeLaboratory.IO.Search
             NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Add, node));
             return node;
         }
-
 
         /// <summary>
         /// インデックス削除
@@ -252,8 +215,9 @@ namespace NeeLaboratory.IO.Search
             _fileIndexDirectory[root].RefleshNode(path);
         }
 
+        #endregion
 
-        #region 検索
+        #region Search
 
         /// <summary>
         /// 単語区切り用の正規表現生成
@@ -277,7 +241,6 @@ namespace NeeLaboratory.IO.Search
             else
                 return null;
         }
-
 
         //
         private List<SearchKey> CreateOptionedKeys(string source)
@@ -355,7 +318,6 @@ namespace NeeLaboratory.IO.Search
             return keys;
         }
 
-
         /// <summary>
         /// 拡張キーワードとして検索キーリスト生成
         /// </summary>
@@ -408,7 +370,6 @@ namespace NeeLaboratory.IO.Search
             key.Word = t;
             return key;
         }
-
 
         /// <summary>
         /// 検索キーリスト生成
@@ -523,12 +484,16 @@ namespace NeeLaboratory.IO.Search
             return inverse ? !value : value;
         }
 
+        #endregion
+
+        #endregion
+
         #region IDisposable Support
-        private bool disposedValue = false; // 重複する呼び出しを検出するには
+        private bool _disposedValue = false; // 重複する呼び出しを検出するには
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
@@ -542,29 +507,16 @@ namespace NeeLaboratory.IO.Search
                     _fileIndexDirectory = null;
                 }
 
-                // TODO: アンマネージ リソース (アンマネージ オブジェクト) を解放し、下のファイナライザーをオーバーライドします。
-                // TODO: 大きなフィールドを null に設定します。
-
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
-
-        // TODO: 上の Dispose(bool disposing) にアンマネージ リソースを解放するコードが含まれる場合にのみ、ファイナライザーをオーバーライドします。
-        // ~SearchCore() {
-        //   // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
-        //   Dispose(false);
-        // }
 
         // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
         public void Dispose()
         {
             // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
             Dispose(true);
-            // TODO: 上のファイナライザーがオーバーライドされる場合は、次の行のコメントを解除してください。
-            // GC.SuppressFinalize(this);
         }
-        #endregion
-
         #endregion
     }
 }

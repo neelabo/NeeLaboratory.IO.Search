@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2015-2016 Mitsuhiro Ito (nee)
+﻿// Copyright (c) 2015-2018 Mitsuhiro Ito (nee)
 //
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
@@ -16,39 +16,46 @@ using System.Threading;
 namespace NeeLaboratory.IO.Search
 {
     /// <summary>
-    /// ファイル監視による変更イベンのトデータ
-    /// </summary>
-    internal class NodeTreeFileSystemEventArgs
-    {
-        /// <summary>
-        /// 所属ノード
-        /// </summary>
-        public string NodePath { get; private set; }
-
-        /// <summary>
-        /// ファイル変更イベントのデータ
-        /// </summary>
-        public FileSystemEventArgs FileSystemEventArgs { get; private set; }
-
-        /// <summary>
-        /// コンストラクター
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="args"></param>
-        public NodeTreeFileSystemEventArgs(string path, FileSystemEventArgs args)
-        {
-            this.NodePath = path;
-            this.FileSystemEventArgs = args;
-        }
-    }
-
-    /// <summary>
     /// ノード木
     /// １かたまりのノード。この単位で監視する。
     /// </summary>
     public class NodeTree : IDisposable
     {
         private Utility.Logger Logger => Development.Logger;
+
+        #region Fields
+
+        // ファイル変更監視
+        private FileSystemWatcher _fileSystemWatcher;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
+        /// <param name="path"></param>
+        public NodeTree(string path)
+        {
+            Path = path;
+            IsDarty = true;
+
+            InitializeWatcher();
+        }
+
+        #endregion
+
+        #region Events
+
+        /// <summary>
+        /// ファイル変更イベント
+        /// </summary>
+        internal event EventHandler<NodeTreeFileSystemEventArgs> FileSystemChanged;
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// パス
@@ -65,18 +72,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public bool IsDarty { get; private set; }
 
-
-        /// <summary>
-        /// コンストラクター
-        /// </summary>
-        /// <param name="path"></param>
-        public NodeTree(string path)
-        {
-            Path = path;
-            IsDarty = true;
-
-            InitializeWatcher();
-        }
+        #endregion
+        
+        #region Methods
 
         /// <summary>
         /// ノード収拾
@@ -104,7 +102,6 @@ namespace NeeLaboratory.IO.Search
             DumpTree();
         }
 
-
         /// <summary>
         /// 開発用：ツリー表示
         /// </summary>
@@ -123,7 +120,6 @@ namespace NeeLaboratory.IO.Search
         {
             return Root.AllNodes.Count();
         }
-
 
         /// <summary>
         /// ノードの追加
@@ -189,14 +185,8 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-
-        #region FileSystemWatcher 
-
-        // ファイル変更監視
-        private FileSystemWatcher _fileSystemWatcher;
-
         /// <summary>
-        /// 監視初期化
+        /// ファイル監視初期化
         /// </summary>
         private void InitializeWatcher()
         {
@@ -219,7 +209,7 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
-        /// 監視終了処理
+        /// ファイル監視終了処理
         /// </summary>
         private void TerminateWatcher()
         {
@@ -229,14 +219,8 @@ namespace NeeLaboratory.IO.Search
             _fileSystemWatcher = null;
         }
 
-
         /// <summary>
-        /// ファイル変更イベント
-        /// </summary>
-        internal event EventHandler<NodeTreeFileSystemEventArgs> FileSystemChanged;
-
-        /// <summary>
-        /// 
+        /// ファイル変更イベント処理
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -245,9 +229,6 @@ namespace NeeLaboratory.IO.Search
             FileSystemChanged?.Invoke(sender, new NodeTreeFileSystemEventArgs(Path, e));
         }
 
-        #endregion
-
-
         /// <summary>
         /// Dispose
         /// </summary>
@@ -255,5 +236,7 @@ namespace NeeLaboratory.IO.Search
         {
             TerminateWatcher();
         }
+
+        #endregion
     }
 }

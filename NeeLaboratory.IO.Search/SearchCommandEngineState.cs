@@ -3,29 +3,31 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 
-using System.Collections.ObjectModel;
-
 namespace NeeLaboratory.IO.Search
 {
     /// <summary>
-    /// 検索結果インターフェイス
+    /// コマンドエンジン状態
     /// </summary>
-    public interface ISearchResult
+    public enum SearchCommandEngineState
     {
         /// <summary>
-        /// 検索キーワード
+        /// 処理なし
         /// </summary>
-        string Keyword { get; }
+        Idle,
 
         /// <summary>
-        /// 検索オプション
+        /// 収拾中
         /// </summary>
-        SearchOption SearchOption { get; }
+        Collect,
 
         /// <summary>
-        /// 検索結果
+        /// 検索中
         /// </summary>
-        ObservableCollection<NodeContent> Items { get; }
+        Search,
+
+        /// <summary>
+        /// その他処理中
+        /// </summary>
+        Etc,
     }
-
 }

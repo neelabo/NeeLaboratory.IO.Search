@@ -8,9 +8,9 @@ using System;
 namespace NeeLaboratory.IO.Search
 {
     /// <summary>
-    /// 検索結果変更通知イベントデータ
+    /// ノード変更イベントデータ
     /// </summary>
-    public class SearchResultChangedEventArgs : EventArgs
+    public class NodeChangedEventArgs : EventArgs
     {
         /// <summary>
         /// イベント種類
@@ -20,7 +20,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 変更ノード
         /// </summary>
-        public NodeContent Content { get; set; }
+        public Node Node { get; set; }
 
         /// <summary>
         /// リネーム時の旧パス
@@ -28,14 +28,14 @@ namespace NeeLaboratory.IO.Search
         public string OldPath { get; set; }
 
         /// <summary>
-        /// constructor
+        /// コンストラクタ
         /// </summary>
         /// <param name="action"></param>
-        /// <param name="content"></param>
-        public SearchResultChangedEventArgs(NodeChangedAction action, NodeContent content)
+        /// <param name="node"></param>
+        public NodeChangedEventArgs(NodeChangedAction action, Node node)
         {
             this.Action = action;
-            this.Content = content;
+            this.Node = node;
         }
     }
 }

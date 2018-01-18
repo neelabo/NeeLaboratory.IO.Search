@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2015-2016 Mitsuhiro Ito (nee)
+﻿// Copyright (c) 2015-2018 Mitsuhiro Ito (nee)
 //
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
@@ -13,18 +13,6 @@ using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search
 {
-    /// <summary>
-    /// Node属性
-    /// </summary>
-    [Flags]
-    public enum NodeFlag
-    {
-        Added = (1 << 0),
-        Removed = (1 << 1),
-        PushPin = (1 << 2),
-    }
-
-
     /// <summary>
     /// Nodeコンテンツ
     /// </summary>
@@ -46,6 +34,21 @@ namespace NeeLaboratory.IO.Search
         }
         #endregion
 
+        #region Constructors
+
+        /// <summary>
+        /// コンストラクター
+        /// </summary>
+        /// <param name="path"></param>
+        public NodeContent(string path)
+        {
+            Path = path;
+            FileInfo = new FileInfo(Path);
+        }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// Path property.
@@ -55,14 +58,6 @@ namespace NeeLaboratory.IO.Search
         {
             get { return _path; }
             set { if (_path != value) { _path = value; RaisePropertyChanged(); UpdateName(); } }
-        }
-
-        /// <summary>
-        /// 名前更新
-        /// </summary>
-        private void UpdateName()
-        {
-            Name = System.IO.Path.GetFileName(Path);
         }
 
         /// <summary>
@@ -111,29 +106,6 @@ namespace NeeLaboratory.IO.Search
         private NodeFlag Flags { get; set; }
 
         /// <summary>
-        /// 属性判定
-        /// </summary>
-        /// <param name="flag"></param>
-        /// <returns></returns>
-        private bool IsFlag(NodeFlag flag)
-        {
-            return (Flags & flag) == flag;
-        }
-
-        /// <summary>
-        /// 属性設定
-        /// </summary>
-        /// <param name="flag"></param>
-        /// <param name="state"></param>
-        private void SetFlag(NodeFlag flag, bool state)
-        {
-            if (state)
-                Flags = Flags | flag;
-            else
-                Flags = Flags & ~flag;
-        }
-
-        /// <summary>
         /// 属性：追加された
         /// </summary>
         public bool IsAdded
@@ -160,15 +132,39 @@ namespace NeeLaboratory.IO.Search
             set { SetFlag(NodeFlag.PushPin, value); RaisePropertyChanged(); }
         }
 
+        #endregion
+
+        #region Methods
 
         /// <summary>
-        /// コンストラクター
+        /// 名前更新
         /// </summary>
-        /// <param name="path"></param>
-        public NodeContent(string path)
+        private void UpdateName()
         {
-            Path = path;
-            FileInfo = new FileInfo(Path);
+            Name = System.IO.Path.GetFileName(Path);
+        }
+
+        /// <summary>
+        /// 属性判定
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <returns></returns>
+        private bool IsFlag(NodeFlag flag)
+        {
+            return (Flags & flag) == flag;
+        }
+
+        /// <summary>
+        /// 属性設定
+        /// </summary>
+        /// <param name="flag"></param>
+        /// <param name="state"></param>
+        private void SetFlag(NodeFlag flag, bool state)
+        {
+            if (state)
+                Flags = Flags | flag;
+            else
+                Flags = Flags & ~flag;
         }
 
         /// <summary>
@@ -205,5 +201,7 @@ namespace NeeLaboratory.IO.Search
             NodeContent other = (NodeContent)obj;
             return StrCmpLogicalW(this.Name, other.Name);
         }
+
+        #endregion
     }
 }

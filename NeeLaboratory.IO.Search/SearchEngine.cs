@@ -1,4 +1,9 @@
-﻿using System;
+﻿// Copyright (c) 2015-2018 Mitsuhiro Ito (nee)
+//
+// This software is released under the MIT License.
+// http://opensource.org/licenses/mit-license.php
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -18,6 +23,39 @@ namespace NeeLaboratory.IO.Search
     public class SearchEngine : IDisposable
     {
         public static Utility.Logger Logger => Development.Logger;
+
+        #region Fields
+
+        /// <summary>
+        /// ノード構築処理のキャンセルトークン
+        /// </summary>
+        private CancellationTokenSource _resetAreaCancellationTokenSource;
+
+        /// <summary>
+        /// 検索処理のキャンセルトークン
+        /// </summary>
+        private CancellationTokenSource _searchCancellationTokenSource;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// コンストラクタ
+        /// </summary>
+        public SearchEngine()
+        {
+            FileSystem.InitializeDefaultResource();
+
+            this.SearchAreas = new ObservableCollection<string>();
+
+            _core = new SearchCore();
+            _core.FileSystemChanged += Core_FileSystemChanged;
+        }
+
+        #endregion
+
+        #region Properties
 
         /// <summary>
         /// 検索エリア
@@ -44,25 +82,20 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        /// <summary>
-        /// 検索エリア設定
-        /// </summary>
-        /// <param name="areas"></param>
-        public void SetSearchAreas(IEnumerable<string> areas)
-        {
-            this.SearchAreas = new ObservableCollection<string>(areas);
-        }
 
         /// <summary>
         /// コア検索エンジン
         /// </summary>
         private SearchCore _core;
-        internal SearchCore Core => _core;
+        internal SearchCore Core
+        {
+            get { return _core; }
+        }
 
         /// <summary>
         /// 検索エンジン状態
         /// </summary>
-        public SearchEngineState State => _commandEngine.State;
+        public SearchCommandEngineState State => _commandEngine.State;
 
         /// <summary>
         /// ノード数(おおよそ)
@@ -73,7 +106,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// コマンドエンジン
         /// </summary>
-        private SerarchCommandEngine _commandEngine;
+        private SearchCommandEngine _commandEngine;
 
         /// <summary>
         /// コマンドエンジン Logger
@@ -81,20 +114,19 @@ namespace NeeLaboratory.IO.Search
         public Utility.Logger CommandEngineLogger => _commandEngine.Logger;
 
 
+        #endregion
+
+        #region Methods
+
         /// <summary>
-        /// コンストラクタ
+        /// 検索エリア設定
         /// </summary>
-        public SearchEngine()
+        /// <param name="areas"></param>
+        public void SetSearchAreas(IEnumerable<string> areas)
         {
-            FileInfo.InitializeDefaultResource();
-
-            this.SearchAreas = new ObservableCollection<string>();
-
-            _core = new SearchCore();
-            _core.FileSystemChanged += Core_FileSystemChanged;
+            this.SearchAreas = new ObservableCollection<string>(areas);
         }
 
-        
         /// <summary>
         /// ファイルシステムの変更をノードに反映させる
         /// </summary>
@@ -127,7 +159,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public void Start()
         {
-            _commandEngine = new SerarchCommandEngine();
+            _commandEngine = new SearchCommandEngine();
             _commandEngine.Initialize();
 
             if (_searchAreas != null) Collect();
@@ -161,7 +193,6 @@ namespace NeeLaboratory.IO.Search
             await command.WaitAsync();
         }
 
-
         /// <summary>
         /// 検索範囲の変更イベント処理
         /// </summary>
@@ -182,13 +213,6 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-
-        
-        /// <summary>
-        /// ノード構築処理のキャンセルトークン
-        /// </summary>
-        private CancellationTokenSource _resetAreaCancellationTokenSource;
-
         /// <summary>
         /// ノード構築
         /// </summary>
@@ -208,17 +232,8 @@ namespace NeeLaboratory.IO.Search
         internal void Collect_Execute(CollectCommandArgs args, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
-
-            // TODO: 設計不十分のため、現状ではコマンド実行中のキャンセル不可
             _core.Collect(args.Area, token);
         }
-
-
-
-        /// <summary>
-        /// 検索処理のキャンセルトークン
-        /// </summary>
-        private CancellationTokenSource _searchCancellationTokenSource;
 
         /// <summary>
         /// 検索
@@ -258,8 +273,6 @@ namespace NeeLaboratory.IO.Search
         {
             return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, token));
         }
-
-
 
         /// <summary>
         /// 内部コマンド用：ノード追加
@@ -364,20 +377,21 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
+        #endregion
 
         #region IDisposable Support
-        private bool disposedValue = false; // 重複する呼び出しを検出するには
+        private bool _disposedValue = false; // 重複する呼び出しを検出するには
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!_disposedValue)
             {
                 if (disposing)
                 {
                     Stop();
                 }
 
-                disposedValue = true;
+                _disposedValue = true;
             }
         }
 
