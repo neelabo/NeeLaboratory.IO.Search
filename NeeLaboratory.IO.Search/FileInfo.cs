@@ -23,10 +23,11 @@ namespace NeeLaboratory.IO.Search
         /// コンストラクタ
         /// </summary>
         /// <param name="path"></param>
-        public FileInfo(string path)
+        /// <param name="isDirectory"></param>
+        public FileInfo(string path, bool isDirectory)
         {
             _path = path;
-            _isDirectory = System.IO.Directory.Exists(path);
+            _isDirectory = isDirectory;
         }
 
         #endregion

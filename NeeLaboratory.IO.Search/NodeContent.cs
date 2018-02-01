@@ -40,10 +40,10 @@ namespace NeeLaboratory.IO.Search
         /// コンストラクター
         /// </summary>
         /// <param name="path"></param>
-        public NodeContent(string path)
+        public NodeContent(string path, bool isDirectory)
         {
             Path = path;
-            FileInfo = new FileInfo(Path);
+            FileInfo = new FileInfo(Path, isDirectory);
         }
 
         #endregion
@@ -172,7 +172,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public void Reflesh()
         {
-            FileInfo = new FileInfo(Path);
+            FileInfo = new FileInfo(Path, FileInfo != null ? FileInfo.IsDirectory : System.IO.Directory.Exists(Path));
             RaisePropertyChanged(nameof(Path));
             UpdateName();
             RaisePropertyChanged(nameof(FileInfo));

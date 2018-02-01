@@ -47,11 +47,11 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parent"></param>
-        public Node(string name, Node parent)
+        public Node(string name, bool isDirectory, Node parent)
         {
             Name = name;
             Parent = parent;
-            Content = new NodeContent(Path);
+            Content = new NodeContent(Path, isDirectory);
 
             TotalCount++;
         }
@@ -244,7 +244,7 @@ namespace NeeLaboratory.IO.Search
             }
             else
             {
-                return new Node(name, parent);
+                return new Node(name, false, parent);
             }
         }
 
@@ -261,7 +261,7 @@ namespace NeeLaboratory.IO.Search
 
             if (dirInfo == null || !dirInfo.Exists) return null;
 
-            Node node = parent == null ? new Node(dirInfo.FullName, null) : new Node(dirInfo.Name, parent);
+            Node node = parent == null ? new Node(dirInfo.FullName, true, null) : new Node(dirInfo.Name, true, parent);
 
             try
             {
@@ -277,7 +277,7 @@ namespace NeeLaboratory.IO.Search
                     directoryNodes[(int)index] = Collect(s, node, options.CancellationToken);
                 });
 
-                var fileNodes = files.Select(s => new Node(s.Name, node));
+                var fileNodes = files.Select(s => new Node(s.Name, false, node));
 
                 node.Children = directoryNodes.Concat(fileNodes).ToList();
             }

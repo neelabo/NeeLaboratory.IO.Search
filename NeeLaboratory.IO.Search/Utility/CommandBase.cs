@@ -136,11 +136,7 @@ namespace NeeLaboratory.IO.Search.Utility
         {
             var serial = _serial++;
 
-            await Task.Run(async () =>
-            {
-                await Task.Yield();
-                _complete.Wait(token);
-            });
+            await Task.Run(() => _complete.Wait(token), token);
         }
 
 
