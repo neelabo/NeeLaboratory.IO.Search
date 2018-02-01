@@ -275,6 +275,14 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
+        /// 検索キャンセル
+        /// </summary>
+        public void CancelSearch()
+        {
+            _searchCancellationTokenSource?.Cancel();
+        }
+
+        /// <summary>
         /// 内部コマンド用：ノード追加
         /// </summary>
         /// <param name="root"></param>

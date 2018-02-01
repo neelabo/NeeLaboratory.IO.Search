@@ -31,12 +31,26 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public static int TotalCount { get; set; }
 
+
         #region Fields
 
         /// <summary>
         /// Splitter
         /// </summary>
         private static readonly char[] s_splitter = new char[] { '\\' };
+
+        /// <summary>
+        /// IgnorePathCollection
+        /// TODO: staticはよろしくない
+        /// </summary>
+        private static List<string> _IgnorePathCollection = new List<string>();
+
+
+        /// <summary>
+        /// 除外するファイル属性
+        /// TODO: staticはよろしくない
+        /// </summary>
+        private static FileAttributes _IgnoreFileAttributes;
 
         #endregion
 
@@ -148,6 +162,25 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
+        /// <summary>
+        /// IgnorePathCollection property.
+        /// </summary>
+        public static List<string> IgnorePathCollection
+        {
+            get { return _IgnorePathCollection; }
+            set { if (_IgnorePathCollection != value) { _IgnorePathCollection = value; } }
+        }
+
+        /// <summary>
+        /// IgnoreFileAttributes property.
+        /// </summary>
+        public static FileAttributes IgnoreFileAttributes
+        {
+            get { return _IgnoreFileAttributes; }
+            set { if (_IgnoreFileAttributes != value) { _IgnoreFileAttributes = value; } }
+        }
+
+
         #endregion
 
         #region Methods
@@ -240,11 +273,91 @@ namespace NeeLaboratory.IO.Search
             var dirInfo = new DirectoryInfo(fullpath);
             if (dirInfo.Exists)
             {
-                return Collect(dirInfo, parent, token);
+                return Collect(dirInfo, parent, true, token);
             }
             else
             {
                 return new Node(name, false, parent);
+            }
+        }
+
+        /// <summary>
+        /// パス一致結果
+        /// </summary>
+        private enum MatchPath
+        {
+            Failed,
+            FailedMaybe,
+            Success,
+        }
+
+        /// <summary>
+        /// 無効パス一致チェック
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private static MatchPath CompareIgnorePath(string path)
+        {
+            if (_IgnorePathCollection == null || _IgnorePathCollection.Count == 0)
+            {
+                return MatchPath.Failed;
+            }
+
+            MatchPath result = MatchPath.Failed;
+
+            foreach (var s in _IgnorePathCollection)
+            {
+                var match = ComparePath(s, path);
+                if (match == MatchPath.Success)
+                {
+                    return MatchPath.Success;
+                }
+                else if (match == MatchPath.FailedMaybe)
+                {
+                    result = MatchPath.FailedMaybe;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// パス一致チェック
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private static MatchPath ComparePath(string source, string path)
+        {
+            var sourceLength = source.Length;
+            var pathLength = path.Length;
+
+            var size = Math.Min(sourceLength, pathLength);
+            for (int i = 0; i < size; ++i)
+            {
+                if (Char.ToLower(source[i]) != Char.ToLower(path[i]))
+                {
+                    return MatchPath.Failed; // Ignore forever
+                }
+            }
+
+            if (sourceLength == pathLength)
+            {
+                return MatchPath.Success; // same!
+            }
+
+            else if (pathLength < sourceLength)
+            {
+                return MatchPath.FailedMaybe; // Ignore Maybe
+            }
+
+            else if (path[size] == '\\' || path[size] == '/')
+            {
+                return MatchPath.Success; // weak same!
+            }
+            else
+            {
+                return MatchPath.Failed; // Ignore forever
             }
         }
 
@@ -255,7 +368,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(DirectoryInfo dirInfo, Node parent, CancellationToken token)
+        public static Node Collect(DirectoryInfo dirInfo, Node parent, bool checkIgnore, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -265,8 +378,19 @@ namespace NeeLaboratory.IO.Search
 
             try
             {
-                var directories = dirInfo.GetDirectories().ToList();
-                var files = dirInfo.GetFiles().ToList();
+                if (checkIgnore)
+                {
+                    var match = CompareIgnorePath(dirInfo.FullName);
+                    if (match == MatchPath.Success)
+                    {
+                        node.Children = new List<Node>();
+                        return node;
+                    }
+                    checkIgnore = match != MatchPath.Failed;
+                }
+
+                var directories = dirInfo.GetDirectories().Where(e => (e.Attributes & _IgnoreFileAttributes) == 0).ToList();
+                var files = dirInfo.GetFiles().Where(e => (e.Attributes & _IgnoreFileAttributes) == 0).ToList();
 
                 var directoryNodes = new Node[directories.Count];
                 ParallelOptions options = new ParallelOptions() { CancellationToken = token };
@@ -274,7 +398,7 @@ namespace NeeLaboratory.IO.Search
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
                     Debug.Assert(directoryNodes[(int)index] == null);
-                    directoryNodes[(int)index] = Collect(s, node, options.CancellationToken);
+                    directoryNodes[(int)index] = Collect(s, node, checkIgnore, options.CancellationToken);
                 });
 
                 var fileNodes = files.Select(s => new Node(s.Name, false, node));
