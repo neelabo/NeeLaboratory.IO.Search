@@ -118,7 +118,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public int NodeCount()
         {
-            return Root.AllNodes.Count();
+            return Root != null ? Root.AllNodes.Count() : 0;
         }
 
         /// <summary>
@@ -128,7 +128,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public Node AddNode(string path, CancellationToken token)
         {
-            var node = Root.Add(path, token);
+            var node = Root?.Add(path, token);
             Logger.Trace($"Add: {node?.Path}");
             ////DumpTree();
             return node;
@@ -141,7 +141,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public Node RemoveNode(string path)
         {
-            var node = Root.Remove(path);
+            var node = Root?.Remove(path);
             Logger.Trace($"Del: {node?.Path}");
             ////DumpTree();
             return node;
@@ -156,7 +156,7 @@ namespace NeeLaboratory.IO.Search
         public Node Rename(string oldPath, string newPath)
         {
             Logger.Trace($"Rename: {oldPath} -> {newPath}");
-            var node = Root.Search(oldPath, CancellationToken.None);
+            var node = Root?.Search(oldPath, CancellationToken.None);
             if (node != null)
             {
                 // 場所の変更は認めない
@@ -176,12 +176,18 @@ namespace NeeLaboratory.IO.Search
         /// 情報更新
         /// </summary>
         /// <param name="path"></param>
-        public void RefleshNode(string path)
+        /// <returns>更新処理がされたらtrue</returns>
+        public bool RefleshNode(string path)
         {
-            var node = Root.Search(path, CancellationToken.None);
+            var node = Root?.Search(path, CancellationToken.None);
             if (node != null)
             {
                 node.Reflesh();
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 

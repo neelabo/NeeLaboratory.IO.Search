@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -27,11 +28,27 @@ namespace NeeLaboratory.IO.Search
 
         protected void RaisePropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string name = "")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(name));
-            }
+            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
         }
+        #endregion
+
+        #region Fields
+
+        /// <summary>
+        /// パス
+        /// </summary>
+        private NodePath _nodePath;
+
+        /// <summary>
+        /// ファイル情報
+        /// </summary>
+        private FileInfo _fileInfo;
+
+        /// <summary>
+        /// ノード属性
+        /// </summary>
+        private NodeContentFlag _flags;
+
         #endregion
 
         #region Constructors
@@ -40,10 +57,11 @@ namespace NeeLaboratory.IO.Search
         /// コンストラクター
         /// </summary>
         /// <param name="path"></param>
-        public NodeContent(string path, bool isDirectory)
+        public NodeContent(NodePath nodePath, FileSystemInfo fileSystemInfo)
         {
-            Path = path;
-            FileInfo = new FileInfo(Path, isDirectory);
+            _nodePath = nodePath;
+            this.IsDirectory = fileSystemInfo.Attributes.HasFlag(FileAttributes.Directory);
+            _fileInfo = new FileInfo(_nodePath, fileSystemInfo);
         }
 
         #endregion
@@ -53,21 +71,15 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// Path property.
         /// </summary>
-        private string _path;
-        public string Path
-        {
-            get { return _path; }
-            set { if (_path != value) { _path = value; RaisePropertyChanged(); UpdateName(); } }
-        }
+        public string Path => _nodePath.Path;
 
         /// <summary>
         /// Name property.
         /// </summary>
-        private string _name;
         public string Name
         {
-            get { return _name; }
-            set { if (_name != value) { _name = value; RaisePropertyChanged(); } }
+            get { return _nodePath.Name; }
+            set { _nodePath.Name = value; RaisePropertyChanged(); }
         }
 
         /// <summary>
@@ -90,28 +102,27 @@ namespace NeeLaboratory.IO.Search
         {
             get
             {
-                string sizeText = (FileInfo.Size >= 0) ? $"サイズ: {(FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "サイズ: --\n";
-                return $"{Name}\n種類: {FileInfo.TypeName}\n{sizeText}更新日時: {FileInfo.LastWriteTime.ToString("yyyy/MM/dd HH:mm")}\nフォルダー: {DirectoryName}";
+                string sizeText = (this.FileInfo.Size >= 0) ? $"サイズ: {(this.FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "サイズ: --\n";
+                return $"{Name}\n種類: {this.FileInfo.TypeName}\n{sizeText}更新日時: {this.FileInfo.LastWriteTime.ToString("yyyy/MM/dd HH:mm")}\nフォルダー: {DirectoryName}";
             }
         }
 
         /// <summary>
         /// ファイル情報
         /// </summary>
-        public FileInfo FileInfo { get; private set; }
+        public FileInfo FileInfo
+        {
+            get { return _fileInfo; } 
+        }
 
-        /// <summary>
-        /// ノード属性
-        /// </summary>
-        private NodeFlag Flags { get; set; }
 
         /// <summary>
         /// 属性：追加された
         /// </summary>
         public bool IsAdded
         {
-            get { return IsFlag(NodeFlag.Added); }
-            set { SetFlag(NodeFlag.Added, value); }
+            get { return _flags.IsFlag(NodeContentFlag.Added); }
+            set { _flags = _flags.SetFlag(NodeContentFlag.Added, value); RaisePropertyChanged(); }
         }
 
         /// <summary>
@@ -119,8 +130,8 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public bool IsRemoved
         {
-            get { return IsFlag(NodeFlag.Removed); }
-            set { SetFlag(NodeFlag.Removed, value); }
+            get { return _flags.IsFlag(NodeContentFlag.Removed); }
+            set { _flags = _flags.SetFlag(NodeContentFlag.Removed, value); RaisePropertyChanged(); }
         }
 
         /// <summary>
@@ -128,8 +139,17 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public bool IsPushPin
         {
-            get { return IsFlag(NodeFlag.PushPin); }
-            set { SetFlag(NodeFlag.PushPin, value); RaisePropertyChanged(); }
+            get { return _flags.IsFlag(NodeContentFlag.PushPin); }
+            set { _flags = _flags.SetFlag(NodeContentFlag.PushPin, value); RaisePropertyChanged(); }
+        }
+
+        /// <summary>
+        /// 属性：ディレクトリ
+        /// </summary>
+        public bool IsDirectory
+        {
+            get { return _flags.IsFlag(NodeContentFlag.Directory); }
+            set { _flags = _flags.SetFlag(NodeContentFlag.Directory, value); RaisePropertyChanged(); }
         }
 
         #endregion
@@ -137,47 +157,12 @@ namespace NeeLaboratory.IO.Search
         #region Methods
 
         /// <summary>
-        /// 名前更新
-        /// </summary>
-        private void UpdateName()
-        {
-            Name = System.IO.Path.GetFileName(Path);
-        }
-
-        /// <summary>
-        /// 属性判定
-        /// </summary>
-        /// <param name="flag"></param>
-        /// <returns></returns>
-        private bool IsFlag(NodeFlag flag)
-        {
-            return (Flags & flag) == flag;
-        }
-
-        /// <summary>
-        /// 属性設定
-        /// </summary>
-        /// <param name="flag"></param>
-        /// <param name="state"></param>
-        private void SetFlag(NodeFlag flag, bool state)
-        {
-            if (state)
-                Flags = Flags | flag;
-            else
-                Flags = Flags & ~flag;
-        }
-
-        /// <summary>
         /// ファイル情報更新
         /// </summary>
         public void Reflesh()
         {
-            FileInfo = new FileInfo(Path, FileInfo != null ? FileInfo.IsDirectory : System.IO.Directory.Exists(Path));
-            RaisePropertyChanged(nameof(Path));
-            UpdateName();
-            RaisePropertyChanged(nameof(FileInfo));
-            RaisePropertyChanged(nameof(DirectoryName));
-            RaisePropertyChanged(nameof(Detail));
+            _fileInfo.Reflesh();
+            RaisePropertyChanged(null);
         }
 
         /// <summary>

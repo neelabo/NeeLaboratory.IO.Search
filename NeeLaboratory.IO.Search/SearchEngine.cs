@@ -282,6 +282,26 @@ namespace NeeLaboratory.IO.Search
             _searchCancellationTokenSource?.Cancel();
         }
 
+
+        /// <summary>
+        /// ノード情報更新
+        /// 反映は非同期に行われる
+        /// </summary>
+        /// <param name="root"></param>
+        /// <param name="path"></param>
+        public void Reflesh(string path)
+        {
+            if (_commandEngine == null) return;
+
+            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
+            {
+                ChangeType = NodeChangeType.Reflesh,
+                Root = null,
+                Path = path
+            });
+            _commandEngine.Enqueue(command);
+        }
+
         /// <summary>
         /// 内部コマンド用：ノード追加
         /// </summary>

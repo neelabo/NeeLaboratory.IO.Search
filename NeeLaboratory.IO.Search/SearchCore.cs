@@ -203,16 +203,29 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// インデックスの情報更新
         /// </summary>
-        /// <param name="root"></param>
-        /// <param name="path"></param>
+        /// <param name="root">所属するツリー。nullの場合、全てのツリーを走査</param>
+        /// <param name="path">変更するインデックスのパス</param>
         public void RefleshIndex(string root, string path)
         {
-            if (!_fileIndexDirectory.ContainsKey(root))
+            if (root != null)
             {
-                return;
+                if (!_fileIndexDirectory.ContainsKey(root))
+                {
+                    return;
+                }
+                _fileIndexDirectory[root].RefleshNode(path);
             }
-
-            _fileIndexDirectory[root].RefleshNode(path);
+            else
+            {
+                foreach(var tree in _fileIndexDirectory.Values)
+                {
+                    var result = tree.RefleshNode(path);
+                    if (result)
+                    {
+                        return;
+                    }
+                }
+            }
         }
 
         #endregion
@@ -396,8 +409,11 @@ namespace NeeLaboratory.IO.Search
             {
                 foreach (var part in _fileIndexDirectory)
                 {
-                    foreach (var node in part.Value.Root.AllChildren)
-                        yield return node;
+                    if (part.Value.Root != null)
+                    {
+                        foreach (var node in part.Value.Root.AllChildren)
+                            yield return node;
+                    }
                 }
             }
         }
@@ -428,7 +444,7 @@ namespace NeeLaboratory.IO.Search
         public IEnumerable<Node> Search(string keyword, SearchOption option, IEnumerable<Node> entries, CancellationToken token)
         {
             // pushpin保存
-            var pushpins = entries.Where(f => f.Content.IsPushPin);
+            var pushpins = entries.Where(f => f.IsPushPin);
 
             // キーワード無し
             if (string.IsNullOrWhiteSpace(keyword)) return pushpins;
@@ -467,7 +483,7 @@ namespace NeeLaboratory.IO.Search
             }
 
             // pushpin除外
-            entries = entries.Where(f => !f.Content.IsPushPin);
+            entries = entries.Where(f => !f.IsPushPin);
 
             // pushpinを先頭に連結して返す
             return pushpins.Concat(entries);

@@ -21,18 +21,10 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class Node
     {
+        #region Fields
+
         // Logger
         private static Utility.Logger Logger => Development.Logger;
-
-        /// <summary>
-        /// 通知用のノード総数.
-        /// 非同期で加算されるため、正確な値にならない
-        /// TODO: staticはよろしくない
-        /// </summary>
-        public static int TotalCount { get; set; }
-
-
-        #region Fields
 
         /// <summary>
         /// Splitter
@@ -45,12 +37,32 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private static List<string> _IgnorePathCollection = new List<string>();
 
-
         /// <summary>
         /// 除外するファイル属性
         /// TODO: staticはよろしくない
         /// </summary>
         private static FileAttributes _IgnoreFileAttributes;
+
+
+        /// <summary>
+        /// 親ノード
+        /// </summary>
+        private Node _parent;
+
+        /// <summary>
+        /// 子ノード
+        /// </summary>
+        private List<Node> _children;
+
+        /// <summary>
+        /// リンク式ノードパス
+        /// </summary>
+        private NodePath _nodePath;
+
+        /// <summary>
+        /// コンテンツ
+        /// </summary>
+        private NodeContent _content;
 
         #endregion
 
@@ -61,11 +73,11 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parent"></param>
-        public Node(string name, bool isDirectory, Node parent)
+        public Node(FileSystemInfo fileSystemInfo, Node parent)
         {
-            Name = name;
-            Parent = parent;
-            Content = new NodeContent(Path, isDirectory);
+            _parent = parent;
+            _nodePath = _parent != null ? new NodePath(fileSystemInfo.Name, _parent._nodePath) : new NodePath(fileSystemInfo.FullName, null);
+            _content = new NodeContent(_nodePath, fileSystemInfo);
 
             TotalCount++;
         }
@@ -75,55 +87,75 @@ namespace NeeLaboratory.IO.Search
         #region Properties
 
         /// <summary>
+        /// 通知用のノード総数.
+        /// 非同期で加算されるため、正確な値にならない
+        /// TODO: staticはよろしくない
+        /// </summary>
+        public static int TotalCount { get; set; }
+
+        /// <summary>
+        /// IgnorePathCollection property.
+        /// </summary>
+        public static List<string> IgnorePathCollection
+        {
+            get { return _IgnorePathCollection; }
+            set { if (_IgnorePathCollection != value) { _IgnorePathCollection = value; } }
+        }
+
+        /// <summary>
+        /// IgnoreFileAttributes property.
+        /// </summary>
+        public static FileAttributes IgnoreFileAttributes
+        {
+            get { return _IgnoreFileAttributes; }
+            set { if (_IgnoreFileAttributes != value) { _IgnoreFileAttributes = value; } }
+        }
+
+        /// <summary>
         /// ノード名
         /// </summary>
-        private string _name;
-        public string Name
-        {
-            get { return _name; }
-            private set
-            {
-                _name = value;
-                NormalizedFazyWord = ToNormalisedWord(_name, true);
-                NormalizedUnitWord = ToNormalisedWord(_name, false);
-            }
-        }
+        public string Name => _nodePath?.Name;
 
         /// <summary>
         /// 親ノード
         /// </summary>
-        public Node Parent { get; private set; }
+        public Node Parent => _parent;
 
         /// <summary>
         /// 子ノード
         /// </summary>
-        public List<Node> Children { get; set; }
+        public List<Node> Children => _children;
 
         /// <summary>
         /// フルパス
         /// </summary>
-        public string Path => Parent == null ? Name : System.IO.Path.Combine(Parent.Path, Name);
+        public string Path => _nodePath?.Path;
 
         /// <summary>
         /// ディレクトリ？
         /// </summary>
-        public bool IsDirectory => Children != null;
+        public bool IsDirectory => _children != null;
 
         /// <summary>
         /// 検索用正規化ファイル名
         /// </summary>
-        public string NormalizedFazyWord { get; private set; }
+        public string NormalizedFazyWord => ToNormalisedWord(this.Name, true);
 
         /// <summary>
         /// 検索用正規化ファイル名。ひらかな、カタカナを区別する
         /// </summary>
-        public string NormalizedUnitWord { get; private set; }
+        public string NormalizedUnitWord => ToNormalisedWord(this.Name, false);
 
         /// <summary>
         /// コンテンツ
         /// </summary>
-        public NodeContent Content { get; set; }
+        public NodeContent Content => _content;
 
+        /// <summary>
+        /// PushPinフラグ
+        /// </summary>
+        public bool IsPushPin => _content == null ? false : _content.IsPushPin;
+        
         /// <summary>
         /// すべてのNodeを走査。自身は含まない
         /// </summary>
@@ -132,9 +164,9 @@ namespace NeeLaboratory.IO.Search
         {
             get
             {
-                if (Children != null)
+                if (_children != null)
                 {
-                    foreach (var child in Children)
+                    foreach (var child in _children)
                     {
                         yield return child;
                         foreach (var node in child.AllChildren)
@@ -162,25 +194,6 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        /// <summary>
-        /// IgnorePathCollection property.
-        /// </summary>
-        public static List<string> IgnorePathCollection
-        {
-            get { return _IgnorePathCollection; }
-            set { if (_IgnorePathCollection != value) { _IgnorePathCollection = value; } }
-        }
-
-        /// <summary>
-        /// IgnoreFileAttributes property.
-        /// </summary>
-        public static FileAttributes IgnoreFileAttributes
-        {
-            get { return _IgnoreFileAttributes; }
-            set { if (_IgnoreFileAttributes != value) { _IgnoreFileAttributes = value; } }
-        }
-
-
         #endregion
 
         #region Methods
@@ -191,24 +204,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="name"></param>
         public void Rename(string name)
         {
-            Name = name;
-
-            foreach (var node in AllNodes)
-            {
-                node.RefleshPath();
-            }
-        }
-
-        /// <summary>
-        /// ノード情報更新
-        /// </summary>
-        private void RefleshPath()
-        {
-            if (Content != null)
-            {
-                Content.Path = Path;
-                Content.Reflesh();
-            }
+            _nodePath.Name = name;
+            Reflesh();
         }
 
         /// <summary>
@@ -216,14 +213,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public void Reflesh()
         {
-            Content.Reflesh();
-
-            if (IsDirectory)
+            foreach (var node in AllNodes)
             {
-                foreach (var child in Children)
-                {
-                    child.Reflesh();
-                }
+                node._content?.Reflesh();
             }
         }
 
@@ -277,7 +269,15 @@ namespace NeeLaboratory.IO.Search
             }
             else
             {
-                return new Node(name, false, parent);
+                var fileInfo = new System.IO.FileInfo(fullpath);
+                if (fileInfo.Exists)
+                {
+                    return new Node(fileInfo, parent);
+                }
+                else
+                {
+                    return null;
+                }
             }
         }
 
@@ -374,7 +374,7 @@ namespace NeeLaboratory.IO.Search
 
             if (dirInfo == null || !dirInfo.Exists) return null;
 
-            Node node = parent == null ? new Node(dirInfo.FullName, true, null) : new Node(dirInfo.Name, true, parent);
+            Node node = new Node(dirInfo, parent);
 
             try
             {
@@ -383,7 +383,7 @@ namespace NeeLaboratory.IO.Search
                     var match = CompareIgnorePath(dirInfo.FullName);
                     if (match == MatchPath.Success)
                     {
-                        node.Children = new List<Node>();
+                        node._children = new List<Node>();
                         return node;
                     }
                     checkIgnore = match != MatchPath.Failed;
@@ -401,9 +401,9 @@ namespace NeeLaboratory.IO.Search
                     directoryNodes[(int)index] = Collect(s, node, checkIgnore, options.CancellationToken);
                 });
 
-                var fileNodes = files.Select(s => new Node(s.Name, false, node));
+                var fileNodes = files.Select(s => new Node(s, node));
 
-                node.Children = directoryNodes.Concat(fileNodes).ToList();
+                node._children = directoryNodes.Concat(fileNodes).ToList();
             }
             catch (OperationCanceledException)
             {
@@ -412,7 +412,7 @@ namespace NeeLaboratory.IO.Search
             catch (Exception e)
             {
                 Logger.Warning(e.Message);
-                node.Children = new List<Node>();
+                node._children = new List<Node>();
             }
 
             return node;
@@ -431,10 +431,12 @@ namespace NeeLaboratory.IO.Search
             if (path == Name) return this;
 
             if (!IsDirectory) return null;
-            if (!path.StartsWith(Name + '\\')) return null;
-            var childPath = path.Substring(Name.Length + 1);
 
-            foreach (var child in Children)
+            var name = Name.TrimEnd('\\');
+            if (!path.StartsWith(name + '\\')) return null;
+            var childPath = path.Substring(name.Length + 1);
+
+            foreach (var child in _children)
             {
                 var node = child.Scanning(childPath, isCreate, token);
                 if (node != null) return node;
@@ -445,7 +447,9 @@ namespace NeeLaboratory.IO.Search
             // 作成
             var tokens = childPath.Split(s_splitter, 2);
             var childNode = Collect(tokens[0], this, token);
-            this.Children.Add(childNode);
+            if (childNode == null) return null;
+
+            _children.Add(childNode);
             childNode.Content.IsAdded = true;
             return childNode;
         }
@@ -489,8 +493,8 @@ namespace NeeLaboratory.IO.Search
             var node = Scanning(path, false, CancellationToken.None);
             if (node == null) return null;
 
-            node.Parent?.Children.Remove(node);
-            node.Parent = null;
+            node._parent?._children.Remove(node);
+            node._parent = null;
 
             foreach (var n in node.AllNodes)
             {
@@ -511,7 +515,7 @@ namespace NeeLaboratory.IO.Search
             Logger.Trace(text);
             if (IsDirectory)
             {
-                foreach (var child in Children)
+                foreach (var child in _children)
                 {
                     child.Dump(level + 1);
                 }

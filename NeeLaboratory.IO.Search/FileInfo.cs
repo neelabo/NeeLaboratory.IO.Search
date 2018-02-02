@@ -5,6 +5,7 @@
 
 using System;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,40 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class FileInfo
     {
+        #region Fields
+
+        /// <summary>
+        /// パス
+        /// </summary>
+        private NodePath _nodePath;
+
+        /// <summary>
+        /// 属性
+        /// </summary>
+        private FileAttributes _attributes;
+
+        /// <summary>
+        /// ファイルの種類
+        /// </summary>
+        private string _typeName;
+
+        /// <summary>
+        /// ファイルアイコン
+        /// </summary>
+        private BitmapSource _iconSource;
+
+        /// <summary>
+        /// ファイルサイズ
+        /// </summary>
+        private long _size;
+
+        /// <summary>
+        /// 最終更新日
+        /// </summary>
+        private long _lastWriteTime;
+
+        #endregion
+
         #region Constructors
 
         /// <summary>
@@ -24,10 +59,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <param name="isDirectory"></param>
-        public FileInfo(string path, bool isDirectory)
+        public FileInfo(NodePath nodePath, FileSystemInfo fileSystemInfo)
         {
-            _path = path;
-            _isDirectory = isDirectory;
+            _nodePath = nodePath;
+            SetFileSystemInfo(fileSystemInfo);
         }
 
         #endregion
@@ -37,30 +72,27 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// パス
         /// </summary>
-        private string _path;
         public string Path
         {
-            get { return _path; }
+            get { return _nodePath.Path; }
         }
 
         /// <summary>
         /// ディレクトリ？
         /// </summary>
-        private bool _isDirectory;
         public bool IsDirectory
         {
-            get { return _isDirectory; }
+            get { return _attributes.HasFlag(FileAttributes.Directory); }
         }
 
         /// <summary>
         /// ファイルの種類
         /// </summary>
-        private string _typeName;
         public string TypeName
         {
             get
             {
-                if (_typeName == null) _typeName = FileSystem.CreateTypeName(_path, _isDirectory);
+                if (_typeName == null) _typeName = FileSystem.CreateTypeName(_nodePath.Path, this.IsDirectory);
                 return _typeName;
             }
         }
@@ -68,12 +100,11 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// アイコン
         /// </summary>
-        private BitmapSource _iconSource;
         public BitmapSource IconSource
         {
             get
             {
-                if (_iconSource == null) _iconSource = FileSystem.CreateIcon(_path, _isDirectory);
+                if (_iconSource == null) _iconSource = FileSystem.CreateIcon(_nodePath.Path, this.IsDirectory);
                 return _iconSource;
             }
         }
@@ -81,27 +112,52 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ファイルサイズ
         /// </summary>
-        private long? _size;
         public long Size
         {
-            get
-            {
-                if (_size == null) _size = FileSystem.GetSize(_path);
-                return (long)_size;
-            }
+            get { return _size; }
         }
 
         /// <summary>
         /// 最終更新日
         /// </summary>
-        private DateTime? _lastWriteTime;
         public DateTime LastWriteTime
         {
-            get
+            get { return DateTime.FromBinary(_lastWriteTime); }
+        }
+
+        #endregion
+
+        #region Methods
+
+        /// <summary>
+        /// 情報の初期化
+        /// </summary>
+        public void Reflesh()
+        {
+            _typeName = null;
+            _iconSource = null;
+
+            if (IsDirectory)
             {
-                if (_lastWriteTime == null) _lastWriteTime = FileSystem.GetLastWriteTime(_path);
-                return (DateTime)_lastWriteTime;
+                SetFileSystemInfo(new DirectoryInfo(_nodePath.Path));
             }
+            else
+            {
+                SetFileSystemInfo(new System.IO.FileInfo(_nodePath.Path));
+            }
+        }
+
+        /// <summary>
+        /// FileSystemInfo情報適用
+        /// </summary>
+        /// <param name="fileSystemInfo"></param>
+        private void SetFileSystemInfo(FileSystemInfo fileSystemInfo)
+        {
+            if (fileSystemInfo == null) return;
+
+            _attributes = fileSystemInfo.Attributes;
+            _size = fileSystemInfo is System.IO.FileInfo fileInfo ? fileInfo.Length : -1;
+            _lastWriteTime = fileSystemInfo.LastWriteTime.ToBinary();
         }
 
         #endregion

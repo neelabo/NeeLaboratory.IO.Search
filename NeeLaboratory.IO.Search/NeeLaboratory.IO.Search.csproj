@@ -51,7 +51,8 @@
     <Compile Include="Kanaxs\Kanaxs.cs" />
     <Compile Include="NodeChangedAction.cs" />
     <Compile Include="NodeChangedEventArgs.cs" />
-    <Compile Include="NodeFlag.cs" />
+    <Compile Include="NodeContentFlag.cs" />
+    <Compile Include="NodePath.cs" />
     <Compile Include="NodeTreeFileSystemEventArgs.cs" />
     <Compile Include="SearchCommandEngineState.cs" />
     <Compile Include="SearchKey.cs" />
