@@ -97,7 +97,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public SearchContext Context
         {
-            get { return _core.Context; }
+            get { return _core?.Context; }
         }
 
         /// <summary>
@@ -181,10 +181,15 @@ namespace NeeLaboratory.IO.Search
             _resetAreaCancellationTokenSource?.Cancel();
             _searchCancellationTokenSource?.Cancel();
 
-            _commandEngine.Dispose();
+            _commandEngine?.Dispose();
             _commandEngine = null;
-            _core.Dispose();
-            _core = null;
+
+            if (_core != null)
+            {
+                _core.FileSystemChanged -= Core_FileSystemChanged;
+                _core.Dispose();
+                _core = null;
+            }
         }
 
         /// <summary>
@@ -240,7 +245,7 @@ namespace NeeLaboratory.IO.Search
         internal void Collect_Execute(CollectCommandArgs args, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
-            _core.Collect(args.Area, token);
+            _core?.Collect(args.Area, token);
         }
 
         /// <summary>
@@ -279,7 +284,7 @@ namespace NeeLaboratory.IO.Search
         //
         internal SearchResult Search_Execute(SearchExCommandArgs args, CancellationToken token)
         {
-            return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, token));
+            return new SearchResult(args.Keyword, args.Option, _core?.Search(args.Keyword, args.Option, token));
         }
 
         /// <summary>

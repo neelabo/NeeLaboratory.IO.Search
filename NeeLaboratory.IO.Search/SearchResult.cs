@@ -29,7 +29,7 @@ namespace NeeLaboratory.IO.Search
         {
             Keyword = keyword;
             SearchOption = option;
-            Items = items;
+            Items = items ?? new ObservableCollection<NodeContent>();
         }
 
         #endregion

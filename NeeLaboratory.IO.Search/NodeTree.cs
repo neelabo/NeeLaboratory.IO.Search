@@ -24,7 +24,7 @@ namespace NeeLaboratory.IO.Search
         private Utility.Logger Logger => Development.Logger;
 
         #region Fields
-        
+
         /// <summary>
         /// ノード環境
         /// </summary>
@@ -82,7 +82,7 @@ namespace NeeLaboratory.IO.Search
         public bool IsDarty { get; private set; }
 
         #endregion
-        
+
         #region Methods
 
         /// <summary>
@@ -216,7 +216,7 @@ namespace NeeLaboratory.IO.Search
                 _fileSystemWatcher.Renamed += Watcher_Changed;
                 _fileSystemWatcher.Changed += Watcher_Changed;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Debug.WriteLine(e.Message);
                 TerminateWatcher();
@@ -230,8 +230,12 @@ namespace NeeLaboratory.IO.Search
         {
             FileSystemChanged = null;
 
-            _fileSystemWatcher?.Dispose();
-            _fileSystemWatcher = null;
+            if (_fileSystemWatcher != null)
+            {
+                _fileSystemWatcher.EnableRaisingEvents = false;
+                _fileSystemWatcher.Dispose();
+                _fileSystemWatcher = null;
+            }
         }
 
         /// <summary>

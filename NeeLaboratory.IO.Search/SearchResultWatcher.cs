@@ -93,17 +93,24 @@ namespace NeeLaboratory.IO.Search
         /// <param name="e"></param>
         private void Core_NodeChanged(object sender, NodeChangedEventArgs e)
         {
+            if (_disposedValue) return;
+
             var node = e.Node;
             if (node == null) return;
 
+            if (_engine?.Core == null) return;
+
             if (e.Action == NodeChangedAction.Add)
             {
-                var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
-                foreach (var item in items)
+                var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
+                if (items != null)
                 {
-                    Logger.Trace($"Add: {item.Name}");
-                    _result.Items.Add(item.Content);
-                    SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                    foreach (var item in items)
+                    {
+                        Logger.Trace($"Add: {item.Name}");
+                        _result.Items.Add(item.Content);
+                        SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                    }
                 }
             }
             else if (e.Action == NodeChangedAction.Remove)
@@ -124,12 +131,15 @@ namespace NeeLaboratory.IO.Search
                 }
                 else
                 {
-                    var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
-                    foreach (var item in items)
+                    var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
+                    if (items != null)
                     {
-                        Logger.Trace($"Add: {item.Name}");
-                        _result.Items.Add(item.Content);
-                        SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                        foreach (var item in items)
+                        {
+                            Logger.Trace($"Add: {item.Name}");
+                            _result.Items.Add(item.Content);
+                            SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                        }
                     }
                 }
             }
