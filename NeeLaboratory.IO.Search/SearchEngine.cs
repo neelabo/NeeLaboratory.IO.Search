@@ -93,6 +93,14 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
+        /// ノード環境
+        /// </summary>
+        public SearchContext Context
+        {
+            get { return _core.Context; }
+        }
+
+        /// <summary>
         /// 検索エンジン状態
         /// </summary>
         public SearchCommandEngineState State => _commandEngine.State;
@@ -101,7 +109,7 @@ namespace NeeLaboratory.IO.Search
         /// ノード数(おおよそ)
         /// 通知用
         /// </summary>
-        public int NodeCountMaybe => Node.TotalCount;
+        public int NodeCountMaybe => this.Context.TotalCount;
 
         /// <summary>
         /// コマンドエンジン

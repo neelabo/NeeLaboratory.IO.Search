@@ -32,19 +32,6 @@ namespace NeeLaboratory.IO.Search
         private static readonly char[] s_splitter = new char[] { '\\' };
 
         /// <summary>
-        /// IgnorePathCollection
-        /// TODO: staticはよろしくない
-        /// </summary>
-        private static List<string> _IgnorePathCollection = new List<string>();
-
-        /// <summary>
-        /// 除外するファイル属性
-        /// TODO: staticはよろしくない
-        /// </summary>
-        private static FileAttributes _IgnoreFileAttributes;
-
-
-        /// <summary>
         /// 親ノード
         /// </summary>
         private Node _parent;
@@ -73,43 +60,18 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parent"></param>
-        public Node(FileSystemInfo fileSystemInfo, Node parent)
+        public Node(FileSystemInfo fileSystemInfo, Node parent, SearchContext ctx)
         {
             _parent = parent;
             _nodePath = _parent != null ? new NodePath(fileSystemInfo.Name, _parent._nodePath) : new NodePath(fileSystemInfo.FullName, null);
             _content = new NodeContent(_nodePath, fileSystemInfo);
 
-            TotalCount++;
+            ctx.TotalCount++;
         }
 
         #endregion
 
         #region Properties
-
-        /// <summary>
-        /// 通知用のノード総数.
-        /// 非同期で加算されるため、正確な値にならない
-        /// TODO: staticはよろしくない
-        /// </summary>
-        public static int TotalCount { get; set; }
-
-        /// <summary>
-        /// IgnorePathCollection property.
-        /// </summary>
-        public static List<string> IgnorePathCollection
-        {
-            get { return _IgnorePathCollection; }
-            set { if (_IgnorePathCollection != value) { _IgnorePathCollection = value; } }
-        }
-
-        /// <summary>
-        /// IgnoreFileAttributes property.
-        /// </summary>
-        public static FileAttributes IgnoreFileAttributes
-        {
-            get { return _IgnoreFileAttributes; }
-            set { if (_IgnoreFileAttributes != value) { _IgnoreFileAttributes = value; } }
-        }
 
         /// <summary>
         /// ノード名
@@ -155,7 +117,7 @@ namespace NeeLaboratory.IO.Search
         /// PushPinフラグ
         /// </summary>
         public bool IsPushPin => _content == null ? false : _content.IsPushPin;
-        
+
         /// <summary>
         /// すべてのNodeを走査。自身は含まない
         /// </summary>
@@ -257,7 +219,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent">親ノード</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(string name, Node parent, CancellationToken token)
+        public static Node Collect(string name, Node parent, SearchContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -265,14 +227,14 @@ namespace NeeLaboratory.IO.Search
             var dirInfo = new DirectoryInfo(fullpath);
             if (dirInfo.Exists)
             {
-                return Collect(dirInfo, parent, true, token);
+                return Collect(dirInfo, parent, ctx, token);
             }
             else
             {
                 var fileInfo = new System.IO.FileInfo(fullpath);
                 if (fileInfo.Exists)
                 {
-                    return new Node(fileInfo, parent);
+                    return new Node(fileInfo, parent, ctx);
                 }
                 else
                 {
@@ -281,85 +243,6 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        /// <summary>
-        /// パス一致結果
-        /// </summary>
-        private enum MatchPath
-        {
-            Failed,
-            FailedMaybe,
-            Success,
-        }
-
-        /// <summary>
-        /// 無効パス一致チェック
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private static MatchPath CompareIgnorePath(string path)
-        {
-            if (_IgnorePathCollection == null || _IgnorePathCollection.Count == 0)
-            {
-                return MatchPath.Failed;
-            }
-
-            MatchPath result = MatchPath.Failed;
-
-            foreach (var s in _IgnorePathCollection)
-            {
-                var match = ComparePath(s, path);
-                if (match == MatchPath.Success)
-                {
-                    return MatchPath.Success;
-                }
-                else if (match == MatchPath.FailedMaybe)
-                {
-                    result = MatchPath.FailedMaybe;
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// パス一致チェック
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        private static MatchPath ComparePath(string source, string path)
-        {
-            var sourceLength = source.Length;
-            var pathLength = path.Length;
-
-            var size = Math.Min(sourceLength, pathLength);
-            for (int i = 0; i < size; ++i)
-            {
-                if (Char.ToLower(source[i]) != Char.ToLower(path[i]))
-                {
-                    return MatchPath.Failed; // Ignore forever
-                }
-            }
-
-            if (sourceLength == pathLength)
-            {
-                return MatchPath.Success; // same!
-            }
-
-            else if (pathLength < sourceLength)
-            {
-                return MatchPath.FailedMaybe; // Ignore Maybe
-            }
-
-            else if (path[size] == '\\' || path[size] == '/')
-            {
-                return MatchPath.Success; // weak same!
-            }
-            else
-            {
-                return MatchPath.Failed; // Ignore forever
-            }
-        }
 
         /// <summary>
         /// ノード収拾 (ディレクトリ)
@@ -368,29 +251,18 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(DirectoryInfo dirInfo, Node parent, bool checkIgnore, CancellationToken token)
+        public static Node Collect(DirectoryInfo dirInfo, Node parent, SearchContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             if (dirInfo == null || !dirInfo.Exists) return null;
 
-            Node node = new Node(dirInfo, parent);
+            Node node = new Node(dirInfo, parent, ctx);
 
             try
             {
-                if (checkIgnore)
-                {
-                    var match = CompareIgnorePath(dirInfo.FullName);
-                    if (match == MatchPath.Success)
-                    {
-                        node._children = new List<Node>();
-                        return node;
-                    }
-                    checkIgnore = match != MatchPath.Failed;
-                }
-
-                var directories = dirInfo.GetDirectories().Where(e => (e.Attributes & _IgnoreFileAttributes) == 0).ToList();
-                var files = dirInfo.GetFiles().Where(e => (e.Attributes & _IgnoreFileAttributes) == 0).ToList();
+                var directories = dirInfo.GetDirectories().Where(e => ctx.NodeFilter?.Invoke(e) == true).ToList();
+                var files = dirInfo.GetFiles().Where(e => ctx.NodeFilter?.Invoke(e) == true).ToList();
 
                 var directoryNodes = new Node[directories.Count];
                 ParallelOptions options = new ParallelOptions() { CancellationToken = token };
@@ -398,10 +270,10 @@ namespace NeeLaboratory.IO.Search
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
                     Debug.Assert(directoryNodes[(int)index] == null);
-                    directoryNodes[(int)index] = Collect(s, node, checkIgnore, options.CancellationToken);
+                    directoryNodes[(int)index] = Collect(s, node, ctx, options.CancellationToken);
                 });
 
-                var fileNodes = files.Select(s => new Node(s, node));
+                var fileNodes = files.Select(s => new Node(s, node, ctx));
 
                 node._children = directoryNodes.Concat(fileNodes).ToList();
             }
@@ -424,7 +296,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         /// <param name="isCreate">なければ追加する</param>
         /// <returns></returns>
-        private Node Scanning(string path, bool isCreate, CancellationToken token)
+        private Node Scanning(string path, bool isCreate, SearchContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -438,7 +310,7 @@ namespace NeeLaboratory.IO.Search
 
             foreach (var child in _children)
             {
-                var node = child.Scanning(childPath, isCreate, token);
+                var node = child.Scanning(childPath, isCreate, ctx, token);
                 if (node != null) return node;
             }
 
@@ -446,7 +318,7 @@ namespace NeeLaboratory.IO.Search
 
             // 作成
             var tokens = childPath.Split(s_splitter, 2);
-            var childNode = Collect(tokens[0], this, token);
+            var childNode = Collect(tokens[0], this, ctx, token);
             if (childNode == null) return null;
 
             _children.Add(childNode);
@@ -459,9 +331,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Search(string path, CancellationToken token)
+        public Node Search(string path, SearchContext ctx, CancellationToken token)
         {
-            return Scanning(path, false, token);
+            return Scanning(path, false, ctx, token);
         }
 
         /// <summary>
@@ -469,9 +341,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Add(string path, CancellationToken token)
+        public Node Add(string path, SearchContext ctx, CancellationToken token)
         {
-            var node = Scanning(path, true, token);
+            var node = Scanning(path, true, ctx, token);
             if (node != null && node.Content.IsAdded)
             {
                 node.Content.IsAdded = false; // 追加フラグをOFFにしておく
@@ -488,9 +360,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Remove(string path)
+        public Node Remove(string path, SearchContext ctx)
         {
-            var node = Scanning(path, false, CancellationToken.None);
+            var node = Scanning(path, false, ctx, CancellationToken.None);
             if (node == null) return null;
 
             node._parent?._children.Remove(node);

@@ -26,6 +26,11 @@ namespace NeeLaboratory.IO.Search
         #region Fields
 
         /// <summary>
+        /// ノード環境
+        /// </summary>
+        private SearchContext _context = new SearchContext();
+
+        /// <summary>
         /// ノード群
         /// </summary>
         private Dictionary<string, NodeTree> _fileIndexDirectory;
@@ -58,6 +63,15 @@ namespace NeeLaboratory.IO.Search
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// ノード環境
+        /// </summary>
+        public SearchContext Context => _context;
+
+        #endregion
+
         #region Methods
 
         #region Index
@@ -69,6 +83,8 @@ namespace NeeLaboratory.IO.Search
         public void Collect(string[] areas, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
+
+            Debug.WriteLine($"Search: Index Collect: ...");
 
             // フルパスに変換
             areas = areas.Where(e => e != null).Select(e => Path.GetFullPath(e)).ToArray();
@@ -86,13 +102,15 @@ namespace NeeLaboratory.IO.Search
             }
 
             Collect(roots, token);
+
+            Debug.WriteLine($"Search: Index Collect: {_context.TotalCount}");
         }
 
         /// <summary>
         /// 検索フォルダのインデックス化
         /// 更新分のみ
         /// </summary>
-        public void Collect(List<string> _roots, CancellationToken token)
+        private void Collect(List<string> _roots, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -104,7 +122,7 @@ namespace NeeLaboratory.IO.Search
 
                 if (!_fileIndexDirectory.ContainsKey(root))
                 {
-                    sub = new NodeTree(root);
+                    sub = new NodeTree(root, _context);
                     sub.FileSystemChanged += (s, e) => FileSystemChanged?.Invoke(s, e);
                 }
                 else
@@ -116,7 +134,7 @@ namespace NeeLaboratory.IO.Search
             }
 
 
-            Node.TotalCount = 0;
+            _context.TotalCount = 0;
 
             ParallelOptions options = new ParallelOptions() { CancellationToken = token };
             Parallel.ForEach(newDinctionary.Values, options, sub =>
@@ -168,7 +186,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="root">検索フォルダ</param>
         /// <param name="path">削除パス</param>
-        public Node RemovePath(string root, string path )
+        public Node RemovePath(string root, string path)
         {
             if (!_fileIndexDirectory.ContainsKey(root))
             {
@@ -217,7 +235,7 @@ namespace NeeLaboratory.IO.Search
             }
             else
             {
-                foreach(var tree in _fileIndexDirectory.Values)
+                foreach (var tree in _fileIndexDirectory.Values)
                 {
                     var result = tree.RefleshNode(path);
                     if (result)

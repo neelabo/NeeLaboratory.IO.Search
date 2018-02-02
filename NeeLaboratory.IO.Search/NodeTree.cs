@@ -24,8 +24,15 @@ namespace NeeLaboratory.IO.Search
         private Utility.Logger Logger => Development.Logger;
 
         #region Fields
+        
+        /// <summary>
+        /// ノード環境
+        /// </summary>
+        private SearchContext _context;
 
-        // ファイル変更監視
+        /// <summary>
+        /// ファイル変更監視
+        /// </summary>
         private FileSystemWatcher _fileSystemWatcher;
 
         #endregion
@@ -36,8 +43,10 @@ namespace NeeLaboratory.IO.Search
         /// コンストラクター
         /// </summary>
         /// <param name="path"></param>
-        public NodeTree(string path)
+        public NodeTree(string path, SearchContext ctx)
         {
+            _context = ctx;
+
             Path = path;
             IsDarty = true;
 
@@ -86,7 +95,7 @@ namespace NeeLaboratory.IO.Search
 
             if (!IsDarty)
             {
-                Node.TotalCount += NodeCount();
+                _context.TotalCount += NodeCount();
                 return;
             }
             IsDarty = false;
@@ -98,7 +107,7 @@ namespace NeeLaboratory.IO.Search
             }
 
             // node
-            Root = Node.Collect(Path, null, token);
+            Root = Node.Collect(Path, null, _context, token);
             DumpTree();
         }
 
@@ -128,7 +137,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public Node AddNode(string path, CancellationToken token)
         {
-            var node = Root?.Add(path, token);
+            var node = Root?.Add(path, _context, token);
             Logger.Trace($"Add: {node?.Path}");
             ////DumpTree();
             return node;
@@ -141,7 +150,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public Node RemoveNode(string path)
         {
-            var node = Root?.Remove(path);
+            var node = Root?.Remove(path, _context);
             Logger.Trace($"Del: {node?.Path}");
             ////DumpTree();
             return node;
@@ -156,7 +165,7 @@ namespace NeeLaboratory.IO.Search
         public Node Rename(string oldPath, string newPath)
         {
             Logger.Trace($"Rename: {oldPath} -> {newPath}");
-            var node = Root?.Search(oldPath, CancellationToken.None);
+            var node = Root?.Search(oldPath, _context, CancellationToken.None);
             if (node != null)
             {
                 // 場所の変更は認めない
@@ -179,7 +188,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns>更新処理がされたらtrue</returns>
         public bool RefleshNode(string path)
         {
-            var node = Root?.Search(path, CancellationToken.None);
+            var node = Root?.Search(path, _context, CancellationToken.None);
             if (node != null)
             {
                 node.Reflesh();

@@ -153,7 +153,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="fileSystemInfo"></param>
         private void SetFileSystemInfo(FileSystemInfo fileSystemInfo)
         {
-            if (fileSystemInfo == null) return;
+            if (fileSystemInfo == null || !fileSystemInfo.Exists) return;
 
             _attributes = fileSystemInfo.Attributes;
             _size = fileSystemInfo is System.IO.FileInfo fileInfo ? fileInfo.Length : -1;
