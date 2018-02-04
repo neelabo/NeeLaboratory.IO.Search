@@ -315,6 +315,27 @@ namespace NeeLaboratory.IO.Search
             _commandEngine.Enqueue(command);
         }
 
+
+        /// <summary>
+        /// 名前変更
+        /// </summary>
+        /// <param name="src"></param>
+        /// <param name="dst"></param>
+        public void Rename(string src, string dst)
+        {
+            if (_commandEngine == null) return;
+
+            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
+            {
+                ChangeType = NodeChangeType.Rename,
+                Root = null,
+                OldPath = src,
+                Path = dst
+            });
+            _commandEngine.Enqueue(command);
+        }
+
+
         /// <summary>
         /// 内部コマンド用：ノード追加
         /// </summary>

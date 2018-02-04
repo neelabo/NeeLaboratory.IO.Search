@@ -202,18 +202,22 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// リネーム
         /// </summary>
-        /// <param name="root"></param>
+        /// <param name="root">所属するツリー。nullの場合はoldFileNameから推定する</param>
         /// <param name="oldFileName"></param>
         /// <param name="newFilename"></param>
         public Node RenamePath(string root, string oldFileName, string newFileName)
         {
-            if (!_fileIndexDirectory.ContainsKey(root))
+            root = root ?? GetRoot(oldFileName);
+            if (root == null || !_fileIndexDirectory.ContainsKey(root))
             {
                 return null;
             }
 
             var node = _fileIndexDirectory[root].Rename(oldFileName, newFileName);
-            NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Rename, node) { OldPath = oldFileName });
+            if (node != null)
+            {
+                NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Rename, node) { OldPath = oldFileName });
+            }
 
             return node;
         }
@@ -221,29 +225,28 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// インデックスの情報更新
         /// </summary>
-        /// <param name="root">所属するツリー。nullの場合、全てのツリーを走査</param>
+        /// <param name="root">所属するツリー。nullの場合はパスから推定する</param>
         /// <param name="path">変更するインデックスのパス</param>
         public void RefleshIndex(string root, string path)
         {
-            if (root != null)
+            root = root ?? GetRoot(path);
+            if (root == null || !_fileIndexDirectory.ContainsKey(root))
             {
-                if (!_fileIndexDirectory.ContainsKey(root))
-                {
-                    return;
-                }
-                _fileIndexDirectory[root].RefleshNode(path);
+                return;
             }
-            else
-            {
-                foreach (var tree in _fileIndexDirectory.Values)
-                {
-                    var result = tree.RefleshNode(path);
-                    if (result)
-                    {
-                        return;
-                    }
-                }
-            }
+
+            _fileIndexDirectory[root].RefleshNode(path);
+        }
+
+        /// <summary>
+        /// パスが所属するRoot名を返す
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        private string GetRoot(string path)
+        {
+            if (path == null) return null;
+            return _fileIndexDirectory.Keys.FirstOrDefault(e => path.StartsWith(e.TrimEnd('\\') + "\\"));
         }
 
         #endregion

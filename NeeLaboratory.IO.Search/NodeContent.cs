@@ -79,7 +79,6 @@ namespace NeeLaboratory.IO.Search
         public string Name
         {
             get { return _nodePath.Name; }
-            set { _nodePath.Name = value; RaisePropertyChanged(); }
         }
 
         /// <summary>

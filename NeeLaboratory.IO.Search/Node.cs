@@ -51,6 +51,11 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private NodeContent _content;
 
+        /// <summary>
+        /// 一般検索用正規化文字列
+        /// </summary>
+        private string _normalizedFazyWord;
+
         #endregion
 
         #region Constructors
@@ -101,7 +106,10 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索用正規化ファイル名
         /// </summary>
-        public string NormalizedFazyWord => ToNormalisedWord(this.Name, true);
+        public string NormalizedFazyWord
+        {
+            get { return _normalizedFazyWord ?? (_normalizedFazyWord = ToNormalisedWord(this.Name, true)); }
+        }
 
         /// <summary>
         /// 検索用正規化ファイル名。ひらかな、カタカナを区別する
@@ -177,6 +185,7 @@ namespace NeeLaboratory.IO.Search
         {
             foreach (var node in AllNodes)
             {
+                node._normalizedFazyWord = null;
                 node._content?.Reflesh();
             }
         }
