@@ -270,8 +270,9 @@ namespace NeeLaboratory.IO.Search
 
             try
             {
-                var directories = dirInfo.GetDirectories().Where(e => ctx.NodeFilter?.Invoke(e) == true).ToList();
-                var files = dirInfo.GetFiles().Where(e => ctx.NodeFilter?.Invoke(e) == true).ToList();
+                var infos = dirInfo.GetFileSystemInfos();
+                var directories = infos.OfType<DirectoryInfo>().Where(e => ctx.NodeFilter?.Invoke(e) == true).ToList();
+                var files = infos.OfType<System.IO.FileInfo>().Where(e => ctx.NodeFilter?.Invoke(e) == true).ToList();
 
                 var directoryNodes = new Node[directories.Count];
                 ParallelOptions options = new ParallelOptions() { CancellationToken = token };
