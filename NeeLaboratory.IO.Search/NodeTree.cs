@@ -248,14 +248,28 @@ namespace NeeLaboratory.IO.Search
             FileSystemChanged?.Invoke(sender, new NodeTreeFileSystemEventArgs(Path, e));
         }
 
-        /// <summary>
-        /// Dispose
-        /// </summary>
-        public void Dispose()
+        #endregion
+
+        #region IDisposable Support
+        private bool _disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
         {
-            TerminateWatcher();
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    TerminateWatcher();
+                }
+
+                _disposedValue = true;
+            }
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+        }
         #endregion
     }
 }

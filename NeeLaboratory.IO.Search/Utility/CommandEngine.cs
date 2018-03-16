@@ -128,18 +128,6 @@ namespace NeeLaboratory.IO.Search.Utility
         }
 
         /// <summary>
-        /// ワーカータスク終了
-        /// </summary>
-        public virtual void Dispose()
-        {
-            lock (_lock)
-            {
-                // 停止命令発行
-                _cancellationTokenSource?.Cancel();
-            }
-        }
-
-        /// <summary>
         /// ワーカータスク
         /// </summary>
         /// <param name="token"></param>
@@ -186,6 +174,40 @@ namespace NeeLaboratory.IO.Search.Utility
                 _command = null;
             }
         }
+
+        #region IDisposable Support
+        private bool _disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    lock (_lock)
+                    {
+                        if (_cancellationTokenSource != null)
+                        {
+                            _cancellationTokenSource.Cancel();
+                            _cancellationTokenSource.Dispose();
+                        }
+
+                        if (_ready != null)
+                        {
+                            _ready.Dispose();
+                        }
+                    }
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        #endregion
     }
 
 }

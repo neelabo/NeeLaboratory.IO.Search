@@ -19,9 +19,12 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class NodeContent : INotifyPropertyChanged, IComparable
     {
-        // 参考：自然順ソート
-        [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
-        private static extern int StrCmpLogicalW(string psz1, string psz2);
+        internal static class NativeMethods
+        {
+            // 参考：自然順ソート
+            [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)]
+            public static extern int StrCmpLogicalW(string psz1, string psz2);
+        }
 
         #region NotifyPropertyChanged
         public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
@@ -183,7 +186,7 @@ namespace NeeLaboratory.IO.Search
             if (obj == null) return 1;
 
             NodeContent other = (NodeContent)obj;
-            return StrCmpLogicalW(this.Name, other.Name);
+            return NativeMethods.StrCmpLogicalW(this.Name, other.Name);
         }
 
         #endregion

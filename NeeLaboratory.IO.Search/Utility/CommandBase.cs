@@ -41,7 +41,7 @@ namespace NeeLaboratory.IO.Search.Utility
     /// コマンド基底
     /// キャンセル、終了待機対応
     /// </summary>
-    public abstract class CommandBase : ICommand
+    public abstract class CommandBase : ICommand, IDisposable
     {
         // キャンセルトークン
         private CancellationToken _cancellationToken;
@@ -162,6 +162,32 @@ namespace NeeLaboratory.IO.Search.Utility
         protected virtual void OnException(Exception e)
         {
         }
+
+        #region IDisposable Support
+        private bool _disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    if (_complete != null)
+                    {
+                        _complete.Dispose();
+                    }
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        #endregion
     }
 
 }

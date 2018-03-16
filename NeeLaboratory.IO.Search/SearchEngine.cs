@@ -451,6 +451,16 @@ namespace NeeLaboratory.IO.Search
                 if (disposing)
                 {
                     Stop();
+
+                    if (_commandEngine != null)
+                    {
+                        _commandEngine.Dispose();
+                    }
+
+                    if (_resetAreaCancellationTokenSource != null)
+                    {
+                        _resetAreaCancellationTokenSource.Dispose();
+                    }
                 }
 
                 _disposedValue = true;
