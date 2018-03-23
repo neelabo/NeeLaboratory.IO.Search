@@ -171,7 +171,7 @@ namespace NeeLaboratory.IO.Search
                 // 場所の変更は認めない
                 if (node.Parent?.Path != System.IO.Path.GetDirectoryName(newPath))
                 {
-                    throw new ApplicationException("リネームなのに場所が変更されている");
+                    throw new ArgumentException("Directory can not be changed");
                 }
 
                 node.Rename(System.IO.Path.GetFileName(newPath));

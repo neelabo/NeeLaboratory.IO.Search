@@ -104,8 +104,8 @@ namespace NeeLaboratory.IO.Search
         {
             get
             {
-                string sizeText = (this.FileInfo.Size >= 0) ? $"サイズ: {(this.FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "サイズ: --\n";
-                return $"{Name}\n種類: {this.FileInfo.TypeName}\n{sizeText}更新日時: {this.FileInfo.LastWriteTime.ToString("yyyy/MM/dd HH:mm")}\nフォルダー: {DirectoryName}";
+                string sizeText = (this.FileInfo.Size >= 0) ? $"Size: {(this.FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "Size: --\n";
+                return $"{Name}\nType: {this.FileInfo.TypeName}\n{sizeText}Date: {this.FileInfo.LastWriteTime.ToString("yyyy/MM/dd HH:mm")}\nFolder: {DirectoryName}";
             }
         }
 

@@ -305,7 +305,7 @@ namespace NeeLaboratory.IO.Search
 
             if (!NativeMethods.SHObjectProperties(handle, NativeMethods.SHOP_FILEPATH, path, string.Empty))
             {
-                throw new ApplicationException("プロパティウィンドウを開けませんでした");
+                throw new ApplicationException("Cannot open property window");
             }
         }
 
