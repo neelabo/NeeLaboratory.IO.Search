@@ -105,26 +105,28 @@ namespace NeeLaboratory.IO.Search.Utility
 
         /// <summary>
         /// 初期化
-        /// ワーカータスク起動
+        /// ワーカースレッド起動
         /// </summary>
         public void Initialize()
         {
             _cancellationTokenSource = new CancellationTokenSource();
-            Task.Run(async () =>
+
+            var thread = new Thread(() =>
             {
-                // TODO: ここでの例外が補足できていない。致命的！
-                // システム停止レベル！
                 try
                 {
-                    await WorkerAsync(_cancellationTokenSource.Token);
+                    WorkerAsync(_cancellationTokenSource.Token);
                 }
                 catch (Exception e)
                 {
                     Logger.TraceEvent(TraceEventType.Critical, 0, $"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
-                    //Debugger.Break();
                     throw;
                 }
             });
+
+            thread.Name = "SearchCommandEngine";
+            thread.IsBackground = true;
+            thread.Start();
         }
 
         /// <summary>
@@ -132,7 +134,7 @@ namespace NeeLaboratory.IO.Search.Utility
         /// </summary>
         /// <param name="token"></param>
         /// <returns></returns>
-        private async Task WorkerAsync(CancellationToken token)
+        private void WorkerAsync(CancellationToken token)
         {
             try
             {
@@ -155,7 +157,7 @@ namespace NeeLaboratory.IO.Search.Utility
                         }
 
                         Logger.Trace($"{_command}: start... :rest={_queue.Count}");
-                        await _command?.ExecuteAsync();
+                        _command?.ExecuteAsync().Wait();
                         Logger.Trace($"{_command}: done.");
                         if (_command is CommandBase cmd)
                         {
