@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,6 +31,11 @@ namespace NeeLaboratory.IO.Search
         /// Splitter
         /// </summary>
         private static readonly char[] s_splitter = new char[] { '\\' };
+
+        /// <summary>
+        /// Space regex
+        /// </summary>
+        private static Regex _regexSpace = new Regex(@"\s+", RegexOptions.Compiled);
 
         /// <summary>
         /// 親ノード
@@ -207,7 +213,7 @@ namespace NeeLaboratory.IO.Search
             if (isFazy)
             {
                 s = KanaEx.ToKatakanaWithNormalize(s); // ひらがなをカタカナにする ＋ 特定文字の正規化
-                s = s.Replace(" ", ""); // 空白の削除
+                s = _regexSpace.Replace(s, ""); // 空白の削除
             }
 
             return s;

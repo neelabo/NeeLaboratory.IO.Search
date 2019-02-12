@@ -3,6 +3,7 @@
 // This software is released under the MIT License.
 // http://opensource.org/licenses/mit-license.php
 
+using System;
 using System.Collections.ObjectModel;
 
 namespace NeeLaboratory.IO.Search
@@ -26,6 +27,11 @@ namespace NeeLaboratory.IO.Search
         /// 検索結果
         /// </summary>
         ObservableCollection<NodeContent> Items { get; }
+
+        /// <summary>
+        /// 検索失敗時の例外
+        /// </summary>
+        Exception Exception { get; }
     }
 
 }

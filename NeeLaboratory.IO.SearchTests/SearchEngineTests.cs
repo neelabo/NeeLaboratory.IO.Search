@@ -27,6 +27,9 @@ namespace NeeLaboratory.IO.Search.Tests
 
 
 
+        /// <summary>
+        /// 非同期標準テスト
+        /// </summary>
         [TestMethod()]
         public async Task SearchEngineTest()
         {
@@ -56,6 +59,9 @@ namespace NeeLaboratory.IO.Search.Tests
         private static string _fileAppend2Ex = @"TestFolders\SubFolder1\append2.txt";
 
 
+        /// <summary>
+        /// テスト環境初期化
+        /// </summary>
         public SearchEngine CreateTestEnvironment()
         {
             // 不要ファイル削除
@@ -76,6 +82,9 @@ namespace NeeLaboratory.IO.Search.Tests
         }
 
 
+        /// <summary>
+        /// 検索範囲テスト
+        /// </summary>
         [TestMethod()]
         public async Task SearchEngineAreaTest()
         {
@@ -91,22 +100,27 @@ namespace NeeLaboratory.IO.Search.Tests
             // 反映された情報の確認
             int nodeCount = engine.NodeCountMaybe;
             _testContext.WriteLine($"NodeCount: {nodeCount}");
-            Debug.Assert(nodeCount > 0);
+            Assert.IsTrue(nodeCount > 0);
 
             engine.Stop();
         }
 
 
+        /// <summary>
+        /// 基本検索テスト
+        /// </summary>
         [TestMethod()]
         public async Task SearchEngineSearchTest()
         {
             var engine = CreateTestEnvironment();
 
             var result = await engine.SearchAsync("file", new SearchOption());
-            Debug.Assert(result.Items.Count == 9);
+            Assert.AreEqual(9, result.Items.Count);
         }
 
-
+        /// <summary>
+        /// ファイルシステム監視テスト
+        /// </summary>
         [TestMethod()]
         public async Task SearchEngineWatchResultTest()
         {
@@ -123,13 +137,14 @@ namespace NeeLaboratory.IO.Search.Tests
             using (FileStream stream = File.Create(_fileAppend2)) { }
 
             await Task.Delay(100);
-            Debug.Assert(result.Items.Count == resultCount + 1);
+            Assert.IsTrue(result.Items.Count == resultCount + 1);
+
 
             // 名前変更
             var fileAppend2Ex = Path.ChangeExtension(_fileAppend2, ".txt");
             File.Move(_fileAppend2, fileAppend2Ex);
             await Task.Delay(100);
-            Debug.Assert(result.Items.Count == resultCount + 2);
+            Assert.IsTrue(result.Items.Count == resultCount + 2);
 
             // 内容変更
             using (FileStream stream = File.Open(fileAppend2Ex, FileMode.Append))
@@ -138,7 +153,7 @@ namespace NeeLaboratory.IO.Search.Tests
             }
             await Task.Delay(100);
             var item = result.Items.First(e => e.Path == Path.GetFullPath(fileAppend2Ex));
-            Debug.Assert(item.FileInfo.Size == 1);
+            Assert.AreEqual(1, item.FileInfo.Size);
 
             // ファイル削除...
             File.Delete(_fileAppend1);
@@ -147,30 +162,105 @@ namespace NeeLaboratory.IO.Search.Tests
             await engine.WaitAsync();
 
             // 戻ったカウント確認
-            Debug.Assert(result.Items.Count == resultCount);
+            Assert.IsTrue(result.Items.Count == resultCount);
 
             watcher.Stop();
         }
 
+        /// <summary>
+        /// あいまい変換テスト
+        /// </summary>
         [TestMethod()]
         public void SearchEngineNormalizeTest()
         {
             string normalized;
 
             normalized = Node.ToNormalisedWord("ひらがなゔう゛か゛", true);
-            Debug.Assert(normalized == "ヒラガナヴヴガ");
+            Assert.AreEqual("ヒラガナヴヴガ", normalized);
 
             normalized = Node.ToNormalisedWord("ﾊﾝｶｸｶﾞﾅｳﾞ", true);
-            Debug.Assert(normalized == "ハンカクガナヴ");
+            Assert.AreEqual("ハンカクガナヴ", normalized);
 
             normalized = Node.ToNormalisedWord("混合された日本語ﾃﾞス。", true);
-            Debug.Assert(normalized == "混合サレタ日本語デス。");
+            Assert.AreEqual("混合サレタ日本語デス。", normalized);
 
             normalized = Node.ToNormalisedWord("㌫", true);
-            Debug.Assert(normalized == "パ-セント");
+            Assert.AreEqual("パ-セント", normalized);
 
             normalized = Node.ToNormalisedWord("♡♥❤?", true);
-            Debug.Assert(normalized == "♡♡♡?");
+            Assert.AreEqual("♡♡♡?", normalized);
+        }
+
+
+        /// <summary>
+        /// 検索キーワード解析テスト
+        /// </summary>
+        [TestMethod()]
+        public void SearchEngineKeywordAnalyzeTest()
+        {
+            var analyzer = new SearchKeyAnalyzer();
+            List<SearchKey> keys;
+
+            keys = analyzer.Analyze("");
+            Assert.AreEqual(0, keys.Count);
+
+            keys = analyzer.Analyze("    ");
+            Assert.AreEqual(0, keys.Count);
+
+            keys = analyzer.Analyze("word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", false, false, false), keys[0]);
+
+            keys = analyzer.Analyze("    word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", false, false, false), keys[0]);
+
+            keys = analyzer.Analyze("\"word1\"");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", true, false, false), keys[0]);
+
+            keys = analyzer.Analyze("-word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", false, true, false), keys[0]);
+
+            keys = analyzer.Analyze("@word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", false, false, true), keys[0]);
+
+            // multi
+            keys = analyzer.Analyze("word1 word2 word3");
+            Assert.AreEqual(3, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", false, false, false), keys[0]);
+            Assert.AreEqual(new SearchKey("word2", false, false, false), keys[1]);
+            Assert.AreEqual(new SearchKey("word3", false, false, false), keys[2]);
+
+            keys = analyzer.Analyze("@@word1 --word2");
+            Assert.AreEqual(2, keys.Count);
+            Assert.AreEqual(new SearchKey("@word1", false, false, false), keys[0]);
+            Assert.AreEqual(new SearchKey("-word2", false, false, false), keys[1]);
+
+            keys = analyzer.Analyze("@-@-word1 -@-@word2");
+            Assert.AreEqual(2, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", false, true, true), keys[0]);
+            Assert.AreEqual(new SearchKey("word2", false, true, true), keys[1]);
+
+            keys = analyzer.Analyze("@\"word1\" -\"word2\"");
+            Assert.AreEqual(2, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", true, false, true), keys[0]);
+            Assert.AreEqual(new SearchKey("word2", true, true, false), keys[1]);
+
+            keys = analyzer.Analyze("\"\"\"word1\"\"\" \"word\"\"2\"");
+            Assert.AreEqual(2, keys.Count);
+            Assert.AreEqual(new SearchKey("\"word1\"", true, false, false), keys[0]);
+            Assert.AreEqual(new SearchKey("word\"2", true, false, false), keys[1]);
+
+            keys = analyzer.Analyze("w@@o--rd\"\"1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("w@@o--rd\"\"1", false, false, false), keys[0]);
+
+            keys = analyzer.Analyze("\"world1 world2");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("world1 world2", true, false, false), keys[0]);
         }
     }
 

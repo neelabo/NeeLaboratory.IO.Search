@@ -58,7 +58,11 @@
     <Compile Include="SearchCommandEngineState.cs" />
     <Compile Include="SearchContext.cs" />
     <Compile Include="SearchKey.cs" />
+    <Compile Include="SearchKeyAnalyzer.cs" />
+    <Compile Include="SearchKeywordException.cs" />
+    <Compile Include="SearchMode.cs" />
     <Compile Include="SearchOption.cs" />
+    <Compile Include="SearchOptionLegacyV1.cs" />
     <Compile Include="SearchResultChangedEventArgs.cs" />
     <Compile Include="SearchCommandEngine.cs" />
     <Compile Include="Utility\CommandBase.cs" />

@@ -35,6 +35,11 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private Dictionary<string, NodeTree> _fileIndexDirectory;
 
+        /// <summary>
+        /// 検索キーワード解析
+        /// </summary>
+        private SearchKeyAnalyzer _searchKeyAnalyzer = new SearchKeyAnalyzer();
+
         #endregion
 
         #region Constructors
@@ -276,87 +281,19 @@ namespace NeeLaboratory.IO.Search
                 return null;
         }
 
-        //
-        private List<SearchKey> CreateOptionedKeys(string source)
+        /// <summary>
+        /// オプション有効で検索キーワード生成
+        /// </summary>
+        private List<SearchKey> CreateAdvancedKeys(string source)
         {
-            string s = source;
-
-            // スプリッター
-            var regexStartSplitter = new Regex(@"^[\s]+");
-            var regexQuatSentence = new Regex(@"^""(.*?)""");
-            var regexSentence = new Regex(@"^[^\s]+");
-
-            var keys = new List<SearchKey>();
-
-            SearchKey key = null;
-
-            while (s.Length > 0)
-            {
-                key = key ?? new SearchKey();
-
-                // 先頭の空白を削除
-                s = regexStartSplitter.Replace(s, "");
-
-                // 除外オプション
-                if (s[0] == '-')
-                {
-                    key.IsExclude = true;
-                    s = s.Substring(1);
-                    continue;
-                }
-
-                // 単語オプション
-                if (s[0] == '@')
-                {
-                    key.IsWord = true;
-                    s = s.Substring(1);
-                    continue;
-                }
-
-                // 完全一致オプション
-                if (s[0] == '"')
-                {
-                    var match = regexQuatSentence.Match(s);
-                    if (match.Success)
-                    {
-                        key.IsPerfect = true;
-                        key.Word = match.Groups[1].Value;
-                        keys.Add(key);
-                        key = null;
-                        s = s.Substring(match.Length);
-                        continue;
-                    }
-                }
-
-                //
-                {
-                    var match = regexSentence.Match(s);
-                    if (match.Success)
-                    {
-                        key.Word = match.Value;
-                        keys.Add(key);
-                        key = null;
-                        s = s.Substring(match.Length);
-                        continue;
-                    }
-                    else
-                    {
-                        Debugger.Break();
-                        break;
-                    }
-                }
-            }
-
+            var keys = _searchKeyAnalyzer.Analyze(source);
             keys = keys.Where(e => !string.IsNullOrEmpty(e.Word)).Select(e => ValidateKey(e)).ToList();
-
             return keys;
         }
 
         /// <summary>
-        /// 拡張キーワードとして検索キーリスト生成
+        /// オプション無効で検索キーワード生成
         /// </summary>
-        /// <param name="source"></param>
-        /// <returns></returns>
         private List<SearchKey> CreateSimpleKeys(string source)
         {
             const string splitter = @"[\s]+";
@@ -408,15 +345,27 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索キーリスト生成
         /// </summary>
-        /// <param name="source"></param>
-        /// <param name="option"></param>
-        /// <returns></returns>
         private List<SearchKey> CreateKeys(string source, SearchOption option)
         {
-            var keys = option.IsOptionEnabled ? CreateOptionedKeys(source) : CreateSimpleKeys(source);
+            List<SearchKey> keys;
+
+            switch (option.SearchMode)
+            {
+                default:
+                case SearchMode.Simple:
+                    keys = CreateSimpleKeys(source);
+                    break;
+
+                case SearchMode.Advanced:
+                    keys = CreateAdvancedKeys(source);
+                    break;
+
+                case SearchMode.RegularExpression:
+                    keys = new List<SearchKey>() { new SearchKey(source) { IsPerfect = true } };
+                    break;
+            }
 
             Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString()))); // ##
-
             return keys;
         }
 
@@ -482,7 +431,16 @@ namespace NeeLaboratory.IO.Search
             {
                 token.ThrowIfCancellationRequested();
 
-                var regex = new Regex(key.Word, RegexOptions.Compiled);
+                Regex regex;
+                try
+                {
+                    regex = new Regex(key.Word, RegexOptions.Compiled);
+                }
+                catch (Exception ex)
+                {
+                    throw new SearchKeywordException(ex.Message, ex);
+                }
+
                 if (key.IsPerfect)
                 {
                     entries = entries.Where(f => Inverse(regex.Match(f.Name).Success, key.IsExclude));

@@ -284,7 +284,14 @@ namespace NeeLaboratory.IO.Search
         //
         internal SearchResult Search_Execute(SearchExCommandArgs args, CancellationToken token)
         {
-            return new SearchResult(args.Keyword, args.Option, _core?.Search(args.Keyword, args.Option, token));
+            try
+            {
+                return new SearchResult(args.Keyword, args.Option, _core?.Search(args.Keyword, args.Option, token));
+            }
+            catch (Exception ex)
+            {
+                return new SearchResult(args.Keyword, args.Option, null, ex);
+            }
         }
 
         /// <summary>

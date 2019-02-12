@@ -102,15 +102,23 @@ namespace NeeLaboratory.IO.Search
 
             if (e.Action == NodeChangedAction.Add)
             {
-                var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
-                if (items != null)
+                try
                 {
-                    foreach (var item in items)
+                    var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
+                    if (items != null)
                     {
-                        Logger.Trace($"Add: {item.Name}");
-                        _result.Items.Add(item.Content);
-                        SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                        foreach (var item in items)
+                        {
+                            Logger.Trace($"Add: {item.Name}");
+                            _result.Items.Add(item.Content);
+                            SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                        }
                     }
+                }
+                catch (SearchKeywordException ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                    return;
                 }
             }
             else if (e.Action == NodeChangedAction.Remove)
@@ -131,15 +139,23 @@ namespace NeeLaboratory.IO.Search
                 }
                 else
                 {
-                    var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
-                    if (items != null)
+                    try
                     {
-                        foreach (var item in items)
+                        var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
+                        if (items != null)
                         {
-                            Logger.Trace($"Add: {item.Name}");
-                            _result.Items.Add(item.Content);
-                            SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                            foreach (var item in items)
+                            {
+                                Logger.Trace($"Add: {item.Name}");
+                                _result.Items.Add(item.Content);
+                                SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
+                            }
                         }
+                    }
+                    catch (SearchKeywordException ex)
+                    {
+                        Debug.WriteLine(ex.Message);
+                        return;
                     }
                 }
             }
@@ -188,6 +204,11 @@ namespace NeeLaboratory.IO.Search
         /// 検索オプション
         /// </summary>
         public SearchOption SearchOption => _result.SearchOption;
+
+        /// <summary>
+        /// 検索失敗時の例外
+        /// </summary>
+        public Exception Exception => _result.Exception;
 
         #endregion
     }

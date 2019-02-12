@@ -19,17 +19,16 @@ namespace NeeLaboratory.IO.Search
     {
         #region Constructors
 
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="option"></param>
-        /// <param name="items"></param>
         public SearchResult(string keyword, SearchOption option, ObservableCollection<NodeContent> items)
         {
             Keyword = keyword;
             SearchOption = option;
             Items = items ?? new ObservableCollection<NodeContent>();
+        }
+
+        public SearchResult(string keyword, SearchOption searchOption, ObservableCollection<NodeContent> items, Exception exception) : this(keyword, searchOption, items)
+        {
+            Exception = exception;
         }
 
         #endregion
@@ -50,6 +49,11 @@ namespace NeeLaboratory.IO.Search
         /// 検索結果
         /// </summary>
         public ObservableCollection<NodeContent> Items { get; private set; }
+
+        /// <summary>
+        /// 検索失敗時の例外
+        /// </summary>
+        public Exception Exception { get; private set; }
 
         #endregion
     }
