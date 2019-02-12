@@ -164,10 +164,10 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public Node Rename(string oldPath, string newPath)
         {
-            Logger.Trace($"Rename: {oldPath} -> {newPath}");
             var node = Root?.Search(oldPath, _context, CancellationToken.None);
             if (node != null)
             {
+                Logger.Trace($"Rename: {oldPath} -> {newPath}");
                 // 場所の変更は認めない
                 if (node.Parent?.Path != System.IO.Path.GetDirectoryName(newPath))
                 {
@@ -176,6 +176,16 @@ namespace NeeLaboratory.IO.Search
 
                 node.Rename(System.IO.Path.GetFileName(newPath));
                 ////DumpTree();
+            }
+            else
+            {
+                // もしノードになければ追加
+                // NOTE: 大文字小文字変換でFileSystemWatcherからDeleteが呼ばれるため、この状態になることがありうる
+                node = Root?.Add(newPath, _context, CancellationToken.None);
+                if (node != null)
+                {
+                    Logger.Trace($"Rename: Add {newPath}");
+                }
             }
 
             return node;
@@ -213,7 +223,7 @@ namespace NeeLaboratory.IO.Search
                 _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
                 _fileSystemWatcher.Created += Watcher_Changed;
                 _fileSystemWatcher.Deleted += Watcher_Changed;
-                _fileSystemWatcher.Renamed += Watcher_Changed;
+                _fileSystemWatcher.Renamed += Watcher_Renamed;
                 _fileSystemWatcher.Changed += Watcher_Changed;
             }
             catch (Exception e)
@@ -245,6 +255,13 @@ namespace NeeLaboratory.IO.Search
         /// <param name="e"></param>
         private void Watcher_Changed(object sender, FileSystemEventArgs e)
         {
+            ////Logger.Trace($"Watcher: {e.ChangeType}: {e.Name}");
+            FileSystemChanged?.Invoke(sender, new NodeTreeFileSystemEventArgs(Path, e));
+        }
+
+        private void Watcher_Renamed(object sender, RenamedEventArgs e)
+        {
+            ////Logger.Trace($"Watcher: {e.ChangeType}: {e.OldName} -> {e.Name}");
             FileSystemChanged?.Invoke(sender, new NodeTreeFileSystemEventArgs(Path, e));
         }
 

@@ -19,6 +19,6 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// NeeLaboratory.IO.Search 共通 Logger
         /// </summary>
-        public static Utility.Logger Logger => new Utility.Logger("NeeLaboratory.IO.Search");
+        public static Utility.Logger Logger { get; } = new Utility.Logger("NeeLaboratory.IO.Search");
     }
 }
