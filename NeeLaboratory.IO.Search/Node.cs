@@ -207,6 +207,7 @@ namespace NeeLaboratory.IO.Search
             if (isFazy)
             {
                 s = KanaEx.ToKatakanaWithNormalize(s); // ひらがなをカタカナにする ＋ 特定文字の正規化
+                s = s.Replace(" ", ""); // 空白の削除
             }
 
             return s;

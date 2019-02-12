@@ -283,7 +283,7 @@ namespace NeeLaboratory.IO.Search
 
             // スプリッター
             var regexStartSplitter = new Regex(@"^[\s]+");
-            var regexQuatSentence = new Regex("^\"(.*?)\"");
+            var regexQuatSentence = new Regex(@"^""(.*?)""");
             var regexSentence = new Regex(@"^[^\s]+");
 
             var keys = new List<SearchKey>();
