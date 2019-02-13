@@ -85,28 +85,37 @@ namespace NeeLaboratory.IO.Search
         /// 検索フォルダのインデックス化
         /// </summary>
         /// <param name="areas">検索フォルダ群</param>
-        public void Collect(string[] areas, CancellationToken token)
+        public void Collect(List<SearchArea> areas, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             Debug.WriteLine($"Search: Index Collect: ...");
 
-            // フルパスに変換
-            areas = areas.Where(e => e != null).Select(e => Path.GetFullPath(e)).ToArray();
             if (areas.Count() == 0) return;
 
-            var roots = new List<string>();
+            var roots = new List<SearchArea>();
 
-            // 他のパスに含まれるなら除外
-            foreach (var path in areas)
+            foreach (var area in areas)
             {
-                if (!areas.Any(p => path != p && path.StartsWith(p.TrimEnd('\\') + "\\")))
+                // 重複の除外。再帰フラグはONを優先。
+                var member = roots.FirstOrDefault(e =>e.Path == area.Path);
+                if (member != null)
                 {
-                    roots.Add(path);
+                    member.IncludeSubdirectories = member.IncludeSubdirectories | area.IncludeSubdirectories;
+                    continue;
                 }
+
+                // 他のパスに含まれるなら除外
+                if (areas.Any(e => area != e && e.IncludeSubdirectories && area.Path.StartsWith(e.Path.TrimEnd('\\') + "\\")))
+                {
+                    continue;
+                }
+
+                roots.Add(area);
+
             }
 
-            Collect(roots, token);
+            CollectCore(roots, token);
 
             Debug.WriteLine($"Search: Index Collect: {_context.TotalCount}");
         }
@@ -115,49 +124,81 @@ namespace NeeLaboratory.IO.Search
         /// 検索フォルダのインデックス化
         /// 更新分のみ
         /// </summary>
-        private void Collect(List<string> _roots, CancellationToken token)
+        private void CollectCore(List<SearchArea> areas, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
-            var newDinctionary = new Dictionary<string, NodeTree>();
+            var newDictionary = new Dictionary<string, NodeTree>();
 
-            foreach (var root in _roots)
+            foreach (var area in areas)
             {
-                NodeTree sub;
-
-                if (!_fileIndexDirectory.ContainsKey(root))
+                _fileIndexDirectory.TryGetValue(area.Path, out NodeTree nodeTree);
+                if (nodeTree is null || nodeTree.IncludeSubdirectories != area.IncludeSubdirectories)
                 {
-                    sub = new NodeTree(root, _context);
-                    sub.FileSystemChanged += (s, e) => FileSystemChanged?.Invoke(s, e);
+                    nodeTree = new NodeTree(area, _context);
+                    nodeTree.FileSystemChanged += (s, e) => FileSystemChanged?.Invoke(s, e);
                 }
-                else
-                {
-                    sub = _fileIndexDirectory[root];
-                }
-
-                newDinctionary.Add(root, sub);
+                newDictionary.Add(area.Path, nodeTree);
             }
-
 
             _context.TotalCount = 0;
 
             ParallelOptions options = new ParallelOptions() { CancellationToken = token };
-            Parallel.ForEach(newDinctionary.Values, options, sub =>
+            Parallel.ForEach(newDictionary.Values, options, nodeTree =>
             {
-                sub.Collect(options.CancellationToken);
+                nodeTree.Collect(options.CancellationToken);
             });
 
             // 再登録されなかったパスの後処理を行う
-            foreach (var a in _fileIndexDirectory)
+            foreach (var nodeTree in _fileIndexDirectory.Values)
             {
-                if (!newDinctionary.ContainsValue(a.Value))
+                if (!newDictionary.ContainsValue(nodeTree))
                 {
-                    a.Value.Dispose();
+                    nodeTree.Dispose();
                 }
             }
 
-            _fileIndexDirectory = newDinctionary;
+            // ノードの統合
+            foreach (var nodeTree in newDictionary.Values)
+            {
+                if (!nodeTree.IncludeSubdirectories)
+                {
+                    foreach(var node in nodeTree.Root.Children.Where(e => e.IsDirectory).ToList())
+                    {
+                        if (newDictionary.TryGetValue(node.Path, out NodeTree sub))
+                        {
+                            if (sub.Root.Parent != null) throw new InvalidOperationException("検索エリア構成が不正");
+                            nodeTree.Root.Children.Remove(node);
+                            sub.Root.Parent = nodeTree.Root;
+                            nodeTree.Root.Children.Add(sub.Root);
+                        }
+                    }
+                }
+            }
+
+
+            _fileIndexDirectory = newDictionary;
             System.GC.Collect();
+        }
+
+
+        /// <summary>
+        /// 開発用：ツリー表示
+        /// </summary>
+        [Conditional("DEBUG")]
+        public void DumpTree(bool verbose)
+        {
+            foreach (var nodeTree in _fileIndexDirectory.Values)
+            {
+                if (nodeTree.IsChild)
+                {
+                    nodeTree.DumpTree(false);
+                }
+                else
+                {
+                    nodeTree.DumpTree(verbose);
+                }
+            }
         }
 
         /// <summary>
@@ -166,7 +207,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public int NodeCount()
         {
-            return _fileIndexDirectory.Sum(e => e.Value.NodeCount());
+            return _fileIndexDirectory.Sum(e => e.Value.IsChild ? 0 : e.Value.NodeCount());
         }
 
         /// <summary>
@@ -377,11 +418,11 @@ namespace NeeLaboratory.IO.Search
         {
             get
             {
-                foreach (var part in _fileIndexDirectory)
+                foreach (var nodeTree in _fileIndexDirectory.Values)
                 {
-                    if (part.Value.Root != null)
+                    if (nodeTree.Root != null && !nodeTree.IsChild)
                     {
-                        foreach (var node in part.Value.Root.AllChildren)
+                        foreach (var node in nodeTree.Root.AllChildren)
                             yield return node;
                     }
                 }

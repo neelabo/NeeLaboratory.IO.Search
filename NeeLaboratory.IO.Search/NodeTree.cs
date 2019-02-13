@@ -43,14 +43,15 @@ namespace NeeLaboratory.IO.Search
         /// コンストラクター
         /// </summary>
         /// <param name="path"></param>
-        public NodeTree(string path, SearchContext ctx)
+        public NodeTree(SearchArea area, SearchContext ctx)
         {
             _context = ctx;
 
-            Path = path;
+            Path = area.Path;
+            IncludeSubdirectories = area.IncludeSubdirectories;
             IsDarty = true;
 
-            InitializeWatcher();
+            InitializeWatcher(area.IncludeSubdirectories);
         }
 
         #endregion
@@ -72,6 +73,11 @@ namespace NeeLaboratory.IO.Search
         public string Path { get; private set; }
 
         /// <summary>
+        /// サブフォルダーも含める
+        /// </summary>
+        public bool IncludeSubdirectories { get; private set; }
+
+        /// <summary>
         /// 基準ノード
         /// </summary>
         public Node Root { get; private set; }
@@ -80,6 +86,11 @@ namespace NeeLaboratory.IO.Search
         /// 更新必要フラグ
         /// </summary>
         public bool IsDarty { get; private set; }
+
+        /// <summary>
+        /// 他のNodeTreeの子
+        /// </summary>
+        public bool IsChild => Root.Parent != null;
 
         #endregion
 
@@ -107,18 +118,22 @@ namespace NeeLaboratory.IO.Search
             }
 
             // node
-            Root = Node.Collect(Path, null, _context, token);
-            DumpTree();
+            Root = Node.Collect(Path, null, IncludeSubdirectories ? -1 : 1, _context, token);
+            DumpTree(false);
         }
 
         /// <summary>
         /// 開発用：ツリー表示
         /// </summary>
         [Conditional("DEBUG")]
-        public void DumpTree()
+        public void DumpTree(bool verbose)
         {
-            Logger.Trace($"---- {Path}");
-            ////Root.Dump();
+            Logger.Trace($"---- {Path}: IncludeSubdirectories={IncludeSubdirectories}, IsChild={IsChild}");
+
+            if (verbose)
+            {
+                Root.Dump();
+            }
         }
 
         /// <summary>
@@ -213,13 +228,13 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ファイル監視初期化
         /// </summary>
-        private void InitializeWatcher()
+        private void InitializeWatcher(bool includeSubdirectories)
         {
             try
             {
                 _fileSystemWatcher = new FileSystemWatcher();
                 _fileSystemWatcher.Path = Path;
-                _fileSystemWatcher.IncludeSubdirectories = true;
+                _fileSystemWatcher.IncludeSubdirectories = includeSubdirectories;
                 _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
                 _fileSystemWatcher.Created += Watcher_Changed;
                 _fileSystemWatcher.Deleted += Watcher_Changed;

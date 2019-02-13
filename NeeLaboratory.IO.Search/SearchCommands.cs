@@ -72,7 +72,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索エリアのパス
         /// </summary>
-        public string[] Area { get; set; }
+        public List<SearchArea> Area { get; set; }
     }
 
     /// <summary>

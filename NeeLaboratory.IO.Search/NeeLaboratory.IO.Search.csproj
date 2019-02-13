@@ -55,6 +55,7 @@
     <Compile Include="NodeContentFlag.cs" />
     <Compile Include="NodePath.cs" />
     <Compile Include="NodeTreeFileSystemEventArgs.cs" />
+    <Compile Include="SearchArea.cs" />
     <Compile Include="SearchCommandEngineState.cs" />
     <Compile Include="SearchContext.cs" />
     <Compile Include="SearchKey.cs" />

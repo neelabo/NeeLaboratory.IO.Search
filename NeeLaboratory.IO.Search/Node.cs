@@ -62,6 +62,11 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private string _normalizedFazyWord;
 
+        /// <summary>
+        /// サブフォルダー再帰許可数。負で無限
+        /// </summary>
+        private int _depth;
+
         #endregion
 
         #region Constructors
@@ -71,9 +76,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parent"></param>
-        public Node(FileSystemInfo fileSystemInfo, Node parent, SearchContext ctx)
+        public Node(FileSystemInfo fileSystemInfo, Node parent, int depth, SearchContext ctx)
         {
             _parent = parent;
+            _depth = depth;
             _nodePath = _parent != null ? new NodePath(fileSystemInfo.Name, _parent._nodePath) : new NodePath(fileSystemInfo.FullName, null);
             _content = new NodeContent(_nodePath, fileSystemInfo);
 
@@ -92,7 +98,11 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 親ノード
         /// </summary>
-        public Node Parent => _parent;
+        public Node Parent
+        {
+            get => _parent;
+            set => _parent = value;
+        }
 
         /// <summary>
         /// 子ノード
@@ -235,7 +245,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent">親ノード</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(string name, Node parent, SearchContext ctx, CancellationToken token)
+        public static Node Collect(string name, Node parent, int depth, SearchContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -243,14 +253,14 @@ namespace NeeLaboratory.IO.Search
             var dirInfo = new DirectoryInfo(fullpath);
             if (dirInfo.Exists)
             {
-                return Collect(dirInfo, parent, ctx, token);
+                return Collect(dirInfo, parent, depth, ctx, token);
             }
             else
             {
                 var fileInfo = new System.IO.FileInfo(fullpath);
                 if (fileInfo.Exists)
                 {
-                    return new Node(fileInfo, parent, ctx);
+                    return new Node(fileInfo, parent, depth, ctx);
                 }
                 else
                 {
@@ -267,13 +277,19 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(DirectoryInfo dirInfo, Node parent, SearchContext ctx, CancellationToken token)
+        public static Node Collect(DirectoryInfo dirInfo, Node parent, int depth, SearchContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             if (dirInfo == null || !dirInfo.Exists) return null;
 
-            Node node = new Node(dirInfo, parent, ctx);
+            Node node = new Node(dirInfo, parent, depth, ctx);
+
+            if (depth == 0)
+            {
+                node._children = new List<Node>();
+                return node;
+            }
 
             try
             {
@@ -287,12 +303,13 @@ namespace NeeLaboratory.IO.Search
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
                     Debug.Assert(directoryNodes[(int)index] == null);
-                    directoryNodes[(int)index] = Collect(s, node, ctx, options.CancellationToken);
+                    directoryNodes[(int)index] = Collect(s, node, depth - 1, ctx, options.CancellationToken);
                 });
 
-                var fileNodes = files.Select(s => new Node(s, node, ctx));
+                var fileNodes = files.Select(s => new Node(s, node, depth - 1, ctx));
 
                 node._children = directoryNodes.Concat(fileNodes).ToList();
+                return node;
             }
             catch (OperationCanceledException)
             {
@@ -302,9 +319,8 @@ namespace NeeLaboratory.IO.Search
             {
                 Logger.Warning(e.Message);
                 node._children = new List<Node>();
+                return node;
             }
-
-            return node;
         }
 
         /// <summary>
@@ -332,10 +348,11 @@ namespace NeeLaboratory.IO.Search
             }
 
             if (!isCreate) return null;
+            if (_depth == 0) return null;
 
             // 作成
             var tokens = childPath.Split(s_splitter, 2);
-            var childNode = Collect(tokens[0], this, ctx, token);
+            var childNode = Collect(tokens[0], this, _depth - 1, ctx, token);
             if (childNode == null) return null;
 
             _children.Add(childNode);
@@ -400,7 +417,7 @@ namespace NeeLaboratory.IO.Search
         [Conditional("DEBUG")]
         public void Dump(int level = 0)
         {
-            var text = new string(' ', level * 4) + Name + (IsDirectory ? "\\" : "");
+            var text = new string(' ', level * 4) + string.Format("{0}: ({1})", Name + (IsDirectory ? "\\" : ""), _depth);
             Logger.Trace(text);
             if (IsDirectory)
             {

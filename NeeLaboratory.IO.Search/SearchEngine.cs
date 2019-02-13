@@ -47,7 +47,7 @@ namespace NeeLaboratory.IO.Search
         {
             FileSystem.InitializeDefaultResource();
 
-            this.SearchAreas = new ObservableCollection<string>();
+            this.SearchAreas = new ObservableCollection<SearchArea>();
 
             _core = new SearchCore();
             _core.FileSystemChanged += Core_FileSystemChanged;
@@ -60,8 +60,8 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索エリア
         /// </summary>
-        private ObservableCollection<string> _searchAreas;
-        public ObservableCollection<string> SearchAreas
+        private ObservableCollection<SearchArea> _searchAreas;
+        public ObservableCollection<SearchArea> SearchAreas
         {
             get => _searchAreas;
             set
@@ -112,6 +112,11 @@ namespace NeeLaboratory.IO.Search
         public int NodeCountMaybe => this.Context.TotalCount;
 
         /// <summary>
+        /// ノード数(計測するので重い)
+        /// </summary>
+        public int NodeCount => _core.NodeCount();
+
+        /// <summary>
         /// コマンドエンジン
         /// </summary>
         private SearchCommandEngine _commandEngine;
@@ -121,18 +126,23 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public Utility.Logger CommandEngineLogger => _commandEngine.Logger;
 
-
         #endregion
 
         #region Methods
+
+        [Conditional("DEBUG")]
+        public void DumpTree(bool verbose)
+        {
+            _core?.DumpTree(verbose);
+        }
 
         /// <summary>
         /// 検索エリア設定
         /// </summary>
         /// <param name="areas"></param>
-        public void SetSearchAreas(IEnumerable<string> areas)
+        public void SetSearchAreas(IEnumerable<SearchArea> areas)
         {
-            this.SearchAreas = new ObservableCollection<string>(areas);
+            this.SearchAreas = new ObservableCollection<SearchArea>(areas);
         }
 
         /// <summary>
@@ -237,7 +247,7 @@ namespace NeeLaboratory.IO.Search
             _resetAreaCancellationTokenSource?.Cancel();
             _resetAreaCancellationTokenSource = new CancellationTokenSource();
 
-            var command = new CollectCommand(this, new CollectCommandArgs() { Area = _searchAreas?.ToArray() });
+            var command = new CollectCommand(this, new CollectCommandArgs() { Area = _searchAreas?.ToList() });
             _commandEngine.Enqueue(command, _resetAreaCancellationTokenSource.Token);
         }
 
