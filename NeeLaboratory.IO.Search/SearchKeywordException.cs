@@ -7,6 +7,7 @@ using System;
 
 namespace NeeLaboratory.IO.Search
 {
+    [Serializable]
     public class SearchKeywordException : Exception
     {
         public SearchKeywordException() : base() { }
