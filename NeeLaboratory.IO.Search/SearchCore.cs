@@ -343,7 +343,7 @@ namespace NeeLaboratory.IO.Search
 
             switch (key.Pattern)
             {
-                case SearchPattern.Perfect:
+                case SearchPattern.Exact:
                     s = Regex.Escape(s);
                     break;
 
@@ -357,7 +357,7 @@ namespace NeeLaboratory.IO.Search
                     if (last != null) s = $"{s}({last}|$)";
                     break;
 
-                case SearchPattern.Normal:
+                case SearchPattern.Standard:
                     s = Node.ToNormalisedWord(s, true);
                     s = Regex.Escape(s);
                     s = ToFuzzyNumberRegex(s);
@@ -494,12 +494,12 @@ namespace NeeLaboratory.IO.Search
             switch (pattern)
             {
                 default:
-                case SearchPattern.Perfect:
+                case SearchPattern.Exact:
                 case SearchPattern.RegularExpression:
                     return MatchNodeName;
                 case SearchPattern.Word:
                     return MatchNodeNormalizedUnitWord;
-                case SearchPattern.Normal:
+                case SearchPattern.Standard:
                     return MatchNodeNormalizedFazyWord;
             }
         }

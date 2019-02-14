@@ -239,37 +239,37 @@ namespace NeeLaboratory.IO.Search.Tests
 
             keys = analyzer.Analyze("word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
 
             keys = analyzer.Analyze("    word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("\"word1\"");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
 
             keys = analyzer.Analyze("\"word1 word2 ");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
+            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Exact), keys[0]);
 
             keys = analyzer.Analyze("/and word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("/or word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Or, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Or, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("/not word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Not, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Not, SearchPattern.Standard), keys[0]);
 
 
             keys = analyzer.Analyze("/m0 word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
 
             keys = analyzer.Analyze("/m1 word1");
             Assert.AreEqual(1, keys.Count);
@@ -277,7 +277,7 @@ namespace NeeLaboratory.IO.Search.Tests
 
             keys = analyzer.Analyze("/m2 word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("/re word1");
             Assert.AreEqual(1, keys.Count);
@@ -286,32 +286,32 @@ namespace NeeLaboratory.IO.Search.Tests
             // multi
             keys = analyzer.Analyze("\"word1 word2\" word3");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
-            Assert.AreEqual(new SearchKey("word3", SearchConjunction.And, SearchPattern.Normal), keys[1]);
+            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.AreEqual(new SearchKey("word3", SearchConjunction.And, SearchPattern.Standard), keys[1]);
 
             keys = analyzer.Analyze("word1 /or word2");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
-            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Normal), keys[1]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Standard), keys[1]);
 
             keys = analyzer.Analyze("word1 /or /m1 word2");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
             Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /re \"word2 word3\"");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
             Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Not, SearchPattern.RegularExpression), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /or /re /m1 word2  ");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
             Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /or /re /m1 \"word2 word3\" ");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
             Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Or, SearchPattern.Word), keys[1]);
         }
 

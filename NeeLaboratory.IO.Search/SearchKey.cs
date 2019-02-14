@@ -28,7 +28,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 完全一致 (m0)
         /// </summary>
-        Perfect,
+        Exact,
         
         /// <summary>
         /// 単語一致 (m1)
@@ -38,7 +38,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// あいまい一致 (m2)
         /// </summary>
-        Normal,
+        Standard,
 
         /// <summary>
         /// 正規表現
@@ -91,7 +91,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 適応パターン
         /// </summary>
-        public SearchPattern Pattern { get; set; } = SearchPattern.Normal;
+        public SearchPattern Pattern { get; set; } = SearchPattern.Standard;
 
         #endregion Properties
 

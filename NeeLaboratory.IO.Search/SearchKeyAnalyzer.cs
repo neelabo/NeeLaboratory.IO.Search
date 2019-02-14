@@ -104,7 +104,7 @@ namespace NeeLaboratory.IO.Search
 
         private void State03(Context context)
         {
-            context.Answer(SearchPattern.Normal);
+            context.Answer(SearchPattern.Standard);
         }
 
         private void State04(Context context)
@@ -120,7 +120,7 @@ namespace NeeLaboratory.IO.Search
 
         private void State06(Context context)
         {
-            context.Answer(SearchPattern.Perfect);
+            context.Answer(SearchPattern.Exact);
             context.Next();
         }
 
@@ -209,7 +209,7 @@ namespace NeeLaboratory.IO.Search
                     _work.Pattern = pattern;
                 }
 
-                if (_work.Pattern != SearchPattern.Perfect && _work.Word[0] == '/')
+                if (_work.Pattern != SearchPattern.Exact && _work.Word[0] == '/')
                 {
                     switch (_work.Word)
                     {
@@ -227,15 +227,15 @@ namespace NeeLaboratory.IO.Search
                             _work.Pattern = SearchPattern.RegularExpression;
                             break;
                         case "/m0":
-                        case "/perfect":
-                            _work.Pattern = SearchPattern.Perfect;
+                        case "/exact":
+                            _work.Pattern = SearchPattern.Exact;
                             break;
                         case "/m1":
                         case "/word":
                             _work.Pattern = SearchPattern.Word;
                             break;
                         case "/m2":
-                            _work.Pattern = SearchPattern.Normal;
+                            _work.Pattern = SearchPattern.Standard;
                             break;
 
                         default:
