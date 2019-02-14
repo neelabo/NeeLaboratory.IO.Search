@@ -25,6 +25,8 @@ namespace NeeLaboratory.IO.Search
     {
         #region Fields
 
+        private static Regex _regexNumber = new Regex(@"0*(\d+)", RegexOptions.Compiled);
+
         /// <summary>
         /// ノード環境
         /// </summary>
@@ -98,7 +100,7 @@ namespace NeeLaboratory.IO.Search
             foreach (var area in areas)
             {
                 // 重複の除外。再帰フラグはONを優先。
-                var member = roots.FirstOrDefault(e =>e.Path == area.Path);
+                var member = roots.FirstOrDefault(e => e.Path == area.Path);
                 if (member != null)
                 {
                     member.IncludeSubdirectories = member.IncludeSubdirectories | area.IncludeSubdirectories;
@@ -163,7 +165,7 @@ namespace NeeLaboratory.IO.Search
             {
                 if (!nodeTree.IncludeSubdirectories)
                 {
-                    foreach(var node in nodeTree.Root.Children.Where(e => e.IsDirectory).ToList())
+                    foreach (var node in nodeTree.Root.Children.Where(e => e.IsDirectory).ToList())
                     {
                         if (newDictionary.TryGetValue(node.Path, out NodeTree sub))
                         {
@@ -302,8 +304,6 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 単語区切り用の正規表現生成
         /// </summary>
-        /// <param name="c"></param>
-        /// <returns></returns>
         private string GetNotCodeBlockRegexString(char c)
         {
             if ('0' <= c && c <= '9')
@@ -323,29 +323,11 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
-        /// オプション有効で検索キーワード生成
+        /// (数値)部分を0*(数値)という正規表現に変換
         /// </summary>
-        private List<SearchKey> CreateAdvancedKeys(string source)
+        private string ToFuzzyNumberRegex(string source)
         {
-            var keys = _searchKeyAnalyzer.Analyze(source);
-            keys = keys.Where(e => !string.IsNullOrEmpty(e.Word)).Select(e => ValidateKey(e)).ToList();
-            return keys;
-        }
-
-        /// <summary>
-        /// オプション無効で検索キーワード生成
-        /// </summary>
-        private List<SearchKey> CreateSimpleKeys(string source)
-        {
-            const string splitter = @"[\s]+";
-
-            // 入力文字列を整列
-            // 空白、改行文字でパーツ分け
-            string s = new Regex("^" + splitter).Replace(source, "");
-            s = new Regex(splitter + "$").Replace(s, "");
-            var tokens = new Regex(splitter).Split(s);
-
-            return tokens.Select(e => ValidateKey(new SearchKey() { Word = e })).ToList();
+            return _regexNumber.Replace(source, match => "0*" + match.Groups[1]);
         }
 
         /// <summary>
@@ -357,29 +339,35 @@ namespace NeeLaboratory.IO.Search
         {
             var key = source.Clone();
 
-            var word = key.IsPerfect ? key.Word : Node.ToNormalisedWord(key.Word, !key.IsWord);
+            var s = key.Word;
 
-            // 正規表現記号をエスケープ
-            var t = Regex.Escape(word);
-
-            if (!key.IsPerfect)
+            switch (key.Pattern)
             {
-                // (数値)部分を0*(数値)という正規表現に変換
-                t = new Regex(@"0*(\d+)").Replace(t, match => "0*" + match.Groups[1]);
+                case SearchPattern.Perfect:
+                    s = Regex.Escape(s);
+                    break;
+
+                case SearchPattern.Word:
+                    var first = GetNotCodeBlockRegexString(s.First());
+                    var last = GetNotCodeBlockRegexString(s.Last());
+                    s = Node.ToNormalisedWord(s, false);
+                    s = Regex.Escape(s);
+                    s = ToFuzzyNumberRegex(s);
+                    if (first != null) s = $"(^|{first}){s}";
+                    if (last != null) s = $"{s}({last}|$)";
+                    break;
+
+                case SearchPattern.Normal:
+                    s = Node.ToNormalisedWord(s, true);
+                    s = Regex.Escape(s);
+                    s = ToFuzzyNumberRegex(s);
+                    break;
+
+                case SearchPattern.RegularExpression:
+                    break;
             }
 
-            if (key.IsWord)
-            {
-                // 先頭文字
-                var start = GetNotCodeBlockRegexString(word.First());
-                if (start != null) t = $"(^|{start})" + t;
-
-                // 終端文字
-                var end = GetNotCodeBlockRegexString(word.Last());
-                if (end != null) t = t + $"({end}|$)";
-            }
-
-            key.Word = t;
+            key.Word = s;
             return key;
         }
 
@@ -388,23 +376,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private List<SearchKey> CreateKeys(string source, SearchOption option)
         {
-            List<SearchKey> keys;
-
-            switch (option.SearchMode)
-            {
-                default:
-                case SearchMode.Simple:
-                    keys = CreateSimpleKeys(source);
-                    break;
-
-                case SearchMode.Advanced:
-                    keys = CreateAdvancedKeys(source);
-                    break;
-
-                case SearchMode.RegularExpression:
-                    keys = new List<SearchKey>() { new SearchKey(source) { IsPerfect = true } };
-                    break;
-            }
+            var keys = _searchKeyAnalyzer.Analyze(source)
+                .Where(e => !string.IsNullOrEmpty(e.Word))
+                .Select(e => ValidateKey(e))
+                .ToList();
 
             Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString()))); // ##
             return keys;
@@ -454,6 +429,8 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public IEnumerable<Node> Search(string keyword, SearchOption option, IEnumerable<Node> entries, CancellationToken token)
         {
+            var all = entries;
+
             // pushpin保存
             var pushpins = entries.Where(f => f.IsPushPin);
 
@@ -475,24 +452,25 @@ namespace NeeLaboratory.IO.Search
                 Regex regex;
                 try
                 {
-                    regex = new Regex(key.Word, RegexOptions.Compiled);
+                    regex = new Regex(key.Word);
                 }
                 catch (Exception ex)
                 {
-                    throw new SearchKeywordException(ex.Message, ex);
+                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {key.Word}", ex);
                 }
 
-                if (key.IsPerfect)
+                var func = GetMatchNodeFunc(key.Pattern);
+                switch (key.Conjunction)
                 {
-                    entries = entries.Where(f => Inverse(regex.Match(f.Name).Success, key.IsExclude));
-                }
-                else if (key.IsWord)
-                {
-                    entries = entries.Where(f => Inverse(regex.Match(f.NormalizedUnitWord).Success, key.IsExclude));
-                }
-                else
-                {
-                    entries = entries.Where(f => Inverse(regex.Match(f.NormalizedFazyWord).Success, key.IsExclude));
+                    case SearchConjunction.And:
+                        entries = entries.Where(f => func(f, regex));
+                        break;
+                    case SearchConjunction.Or:
+                        entries = entries.Union(all.Where(f => func(f, regex)));
+                        break;
+                    case SearchConjunction.Not:
+                        entries = entries.Where(f => !func(f, regex));
+                        break;
                 }
             }
 
@@ -507,6 +485,38 @@ namespace NeeLaboratory.IO.Search
 
             // pushpinを先頭に連結して返す
             return pushpins.Concat(entries);
+        }
+
+        delegate bool MatchNodeFunc(Node node, Regex regex);
+
+        private MatchNodeFunc GetMatchNodeFunc(SearchPattern pattern)
+        {
+            switch (pattern)
+            {
+                default:
+                case SearchPattern.Perfect:
+                case SearchPattern.RegularExpression:
+                    return MatchNodeName;
+                case SearchPattern.Word:
+                    return MatchNodeNormalizedUnitWord;
+                case SearchPattern.Normal:
+                    return MatchNodeNormalizedFazyWord;
+            }
+        }
+
+        private bool MatchNodeName(Node node, Regex regex)
+        {
+            return regex.Match(node.Name).Success;
+        }
+
+        private bool MatchNodeNormalizedUnitWord(Node node, Regex regex)
+        {
+            return regex.Match(node.NormalizedUnitWord).Success;
+        }
+
+        private bool MatchNodeNormalizedFazyWord(Node node, Regex regex)
+        {
+            return regex.Match(node.NormalizedFazyWord).Success;
         }
 
         /// <summary>

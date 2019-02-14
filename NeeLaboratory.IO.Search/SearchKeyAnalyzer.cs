@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -22,14 +23,6 @@ namespace NeeLaboratory.IO.Search
             S04,
             S05,
             S06,
-            S07,
-            S08,
-            S09,
-            S10,
-            S11,
-            S12,
-            S13,
-            S14,
             END,
             ERR = -1,
         }
@@ -38,30 +31,19 @@ namespace NeeLaboratory.IO.Search
         {
             End = 0,
             Space,
-            AtMark,
-            Minus,
             DoubleQuote,
             Any,
         }
 
         private State[,] _table = new State[,]
         {
-            {State.S03, State.S13, State.S01, State.S01, State.S01, State.S01, }, // S00
-            {State.ERR, State.ERR, State.S04, State.S07, State.S10, State.S02, }, // S01
-            {State.S03, State.S03, State.S02, State.S02, State.S02, State.S02, }, // S02
-            {State.END, State.END, State.END, State.END, State.END, State.END, }, // S03
-            {State.S03, State.S03, State.S05, State.S01, State.S01, State.S01, }, // S04
-            {State.S03, State.S03, State.S02, State.S02, State.S02, State.S02, }, // S05
-            {State.END, State.END, State.END, State.END, State.END, State.END, }, // S06 (no used)
-            {State.S03, State.S03, State.S01, State.S08, State.S01, State.S01, }, // S07
-            {State.S03, State.S03, State.S02, State.S02, State.S02, State.S02, }, // S08
-            {State.END, State.END, State.END, State.END, State.END, State.END, }, // S09 (no used)
-            {State.S03, State.S11, State.S11, State.S11, State.S12, State.S11, }, // S10
-            {State.S03, State.S11, State.S11, State.S11, State.S12, State.S11, }, // S11
-            {State.S03, State.S03, State.S03, State.S03, State.S11, State.S03, }, // S12
-            {State.S00, State.S00, State.S00, State.S00, State.S00, State.S00, }, // S13
-            {State.END, State.END, State.END, State.END, State.END, State.END, }, // S14 (no used)
-            {State.ERR, State.ERR, State.ERR, State.ERR, State.ERR, State.ERR, }, // SEND
+            {State.END, State.S01, State.S04, State.S02, }, // S00
+            {State.S00, State.S00, State.S00, State.S00, }, // S01
+            {State.S03, State.S03, State.S02, State.S02, }, // S02
+            {State.END, State.END, State.END, State.END, }, // S03
+            {State.S06, State.S05, State.S06, State.S05, }, // S04
+            {State.S06, State.S05, State.S06, State.S05, }, // S05
+            {State.END, State.END, State.END, State.END, }, // S06
         };
 
         private List<StateFunc> _stateMap;
@@ -78,25 +60,16 @@ namespace NeeLaboratory.IO.Search
                 State04,
                 State05,
                 State06,
-                State07,
-                State08,
-                State09,
-                State10,
-                State11,
-                State12,
-                State13,
-                State14,
             };
         }
 
 
         public List<SearchKey> Analyze(string source)
         {
-            var context = new Context(source);
+            var context = new Context(source.Trim());
             while (!context.IsEnd)
             {
                 var state = State.S00;
-                context.ResetWork();
                 while (state != State.END)
                 {
                     ////Debug.WriteLine($"{state}: {context.StateString()}");
@@ -120,6 +93,7 @@ namespace NeeLaboratory.IO.Search
 
         private void State01(Context context)
         {
+            context.Next();
         }
 
         private void State02(Context context)
@@ -130,71 +104,26 @@ namespace NeeLaboratory.IO.Search
 
         private void State03(Context context)
         {
-            context.Answer();
+            context.Answer(SearchPattern.Normal);
         }
 
         private void State04(Context context)
         {
-            context.SetIsWord(true);
             context.Next();
         }
 
         private void State05(Context context)
         {
-            context.SetIsWord(false);
             context.Push();
             context.Next();
         }
 
         private void State06(Context context)
         {
-            throw new NotImplementedException();
-        }
-
-        private void State07(Context context)
-        {
-            context.SetIsExclude(true);
+            context.Answer(SearchPattern.Perfect);
             context.Next();
         }
 
-        private void State08(Context context)
-        {
-            context.SetIsExclude(false);
-            context.Push();
-            context.Next();
-        }
-
-        private void State09(Context context)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void State10(Context context)
-        {
-            context.SetIsPerfect(true);
-            context.Next();
-        }
-
-        private void State11(Context context)
-        {
-            context.Push();
-            context.Next();
-        }
-
-        private void State12(Context context)
-        {
-            context.Next();
-        }
-
-        private void State13(Context context)
-        {
-            context.Next();
-        }
-
-        private void State14(Context context)
-        {
-            throw new NotImplementedException();
-        }
 
         private class Context
         {
@@ -206,30 +135,27 @@ namespace NeeLaboratory.IO.Search
             {
                 _source = source;
                 _header = 0;
+                ResetWork();
             }
 
             public bool IsEnd => _header >= _source.Length;
 
             public List<SearchKey> Result { get; private set; } = new List<SearchKey>();
 
-            public void ResetWork()
+
+            private void ResetWork()
             {
-                _work = new SearchKey();
+                _work = new SearchKey(null, SearchConjunction.And, SearchPattern.Undefined);
             }
 
-            public void SetIsExclude(bool flag)
+            public void SetPatternIfUndefined(SearchPattern pattern)
             {
-                _work.IsExclude = flag;
+                _work.Pattern = pattern;
             }
 
-            public void SetIsPerfect(bool flag)
+            public void SetConjunction(SearchConjunction conjunction)
             {
-                _work.IsPerfect = flag;
-            }
-
-            public void SetIsWord(bool flag)
-            {
-                _work.IsWord = flag;
+                _work.Conjunction = conjunction;
             }
 
             public void Next()
@@ -254,15 +180,10 @@ namespace NeeLaboratory.IO.Search
                 {
                     return Trigger.Space;
                 }
-
-                switch (Read())
+                switch (c)
                 {
                     case '\0':
                         return Trigger.End;
-                    case '@':
-                        return Trigger.AtMark;
-                    case '-':
-                        return Trigger.Minus;
                     case '"':
                         return Trigger.DoubleQuote;
                     default:
@@ -275,16 +196,73 @@ namespace NeeLaboratory.IO.Search
                 _work.Word += Read();
             }
 
-            public void Answer()
+            public void Answer(SearchPattern pattern)
             {
-                if (string.IsNullOrEmpty(_work.Word)) return;
-                Result.Add(_work.Clone());
-            }
+                if (string.IsNullOrEmpty(_work.Word))
+                {
+                    ResetWork();
+                    return;
+                }
 
-            public void Answer(string word)
-            {
-                _work.Word = word;
-                Answer();
+                if (_work.Pattern == SearchPattern.Undefined)
+                {
+                    _work.Pattern = pattern;
+                }
+
+                if (_work.Pattern != SearchPattern.Perfect && _work.Word[0] == '/')
+                {
+                    switch (_work.Word)
+                    {
+                        case "/and":
+                            _work.Conjunction = SearchConjunction.And;
+                            break;
+                        case "/or":
+                            _work.Conjunction = SearchConjunction.Or;
+                            break;
+                        case "/not":
+                            _work.Conjunction = SearchConjunction.Not;
+                            break;
+
+                        case "/re":
+                            _work.Pattern = SearchPattern.RegularExpression;
+                            break;
+                        case "/m0":
+                        case "/perfect":
+                            _work.Pattern = SearchPattern.Perfect;
+                            break;
+                        case "/m1":
+                        case "/word":
+                            _work.Pattern = SearchPattern.Word;
+                            break;
+                        case "/m2":
+                            _work.Pattern = SearchPattern.Normal;
+                            break;
+
+                        default:
+                            ////Debug.WriteLine($"not support option: {_work.Word}");
+                            throw new SearchKeywordOptionException($"Not support option: {_work.Word}") { Option = _work.Word };
+                    }
+
+                    _work.Word = null;
+                }
+                else
+                {
+                    if (_work.Pattern == SearchPattern.RegularExpression)
+                    {
+                        try
+                        {
+                            new Regex(_work.Word);
+                        }
+                        catch(Exception ex)
+                        {
+                            throw new SearchKeywordRegularExpressionException($"RegularExpression error: {_work.Word}", ex);
+                        }
+                    }
+
+                    Debug.WriteLine($"SearchKey: {_work}");
+                    Result.Add(_work);
+                    ResetWork();
+                }
             }
 
             public string StateString()
@@ -292,6 +270,6 @@ namespace NeeLaboratory.IO.Search
                 return $"Header={_header}, Char={Read()}";
             }
         }
-
     }
+
 }

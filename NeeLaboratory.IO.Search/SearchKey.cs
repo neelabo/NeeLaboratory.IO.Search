@@ -5,6 +5,52 @@
 
 namespace NeeLaboratory.IO.Search
 {
+    public enum SearchConjunction
+    {
+        /// <summary>
+        /// AND接続
+        /// </summary>
+        And,
+
+        /// <summary>
+        /// OR接続
+        /// </summary>
+        Or,
+
+        /// <summary>
+        /// NOT接続
+        /// </summary>
+        Not,
+    }
+
+    public enum SearchPattern
+    {
+        /// <summary>
+        /// 完全一致 (m0)
+        /// </summary>
+        Perfect,
+        
+        /// <summary>
+        /// 単語一致 (m1)
+        /// </summary>
+        Word,
+
+        /// <summary>
+        /// あいまい一致 (m2)
+        /// </summary>
+        Normal,
+
+        /// <summary>
+        /// 正規表現
+        /// </summary>
+        RegularExpression,
+
+        /// <summary>
+        /// 未定義 (解析用)
+        /// </summary>
+        Undefined = -1,
+    }
+
     /// <summary>
     /// 検索キー
     /// </summary>
@@ -21,40 +67,31 @@ namespace NeeLaboratory.IO.Search
             Word = word;
         }
 
-        public SearchKey(string word, bool isPerfect, bool isExclude, bool isWord)
+        public SearchKey(string word, SearchConjunction conjunction, SearchPattern pattern) : this(word)
         {
-            Word = word;
-            IsPerfect = isPerfect;
-            IsExclude = isExclude;
-            IsWord = isWord;
+            Conjunction = conjunction;
+            Pattern = pattern;
         }
+
 
         #endregion Constructors
 
         #region Properties
 
         /// <summary>
-        /// 完全一致
-        /// "word"
-        /// </summary>
-        public bool IsPerfect { get; set; }
-
-        /// <summary>
-        /// 単語一致
-        /// @word
-        /// </summary>
-        public bool IsWord { get; set; }
-
-        /// <summary>
-        /// 除外
-        /// -word
-        /// </summary>
-        public bool IsExclude { get; set; }
-
-        /// <summary>
-        /// 検索キーワード
+        /// 検索単語
         /// </summary>
         public string Word { get; set; }
+
+        /// <summary>
+        /// 接続詞
+        /// </summary>
+        public SearchConjunction Conjunction { get; set; }
+
+        /// <summary>
+        /// 適応パターン
+        /// </summary>
+        public SearchPattern Pattern { get; set; } = SearchPattern.Normal;
 
         #endregion Properties
 
@@ -70,9 +107,8 @@ namespace NeeLaboratory.IO.Search
             if (other is SearchKey target)
             {
                 return this.Word == target.Word
-                    && this.IsPerfect == target.IsPerfect
-                    && this.IsExclude == target.IsExclude
-                    && this.IsWord == target.IsWord;
+                    && this.Conjunction == target.Conjunction
+                    && this.Pattern == target.Pattern;
             }
 
             return false;
@@ -85,12 +121,7 @@ namespace NeeLaboratory.IO.Search
 
         public override string ToString()
         {
-            string s = "";
-            if (IsExclude) s += "Not,";
-            if (IsWord) s += "Word,";
-            if (IsPerfect) s += "Perfect,";
-            s += $"\"{Word}\"";
-            return s;
+            return $"{Conjunction},{Pattern},\"{Word}\"";
         }
 
         #endregion Methods

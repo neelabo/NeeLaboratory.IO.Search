@@ -98,21 +98,22 @@ namespace NeeLaboratory.IO.Search.Tests
             engine.SearchAreas.Add(new SearchArea(_folderRoot, false));
             await engine.WaitAsync();
             //engine.DumpTree(true);
-            Assert.AreEqual(6, engine.NodeCount);
+            Assert.AreEqual(7, engine.NodeCount);
 
             engine.SearchAreas = new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true) };
             await engine.WaitAsync();
-            Assert.AreEqual(12, engine.NodeCount);
+            //engine.DumpTree(true);
+            Assert.AreEqual(13, engine.NodeCount);
 
             engine.SearchAreas = new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true), new SearchArea(_folderSub1, true) };
             await engine.WaitAsync();
-            Assert.AreEqual(12, engine.NodeCount);
+            Assert.AreEqual(13, engine.NodeCount);
 
             // 変則エリア。NodeTreeの結合が発生
             engine.SearchAreas = new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, false), new SearchArea(_folderSub1, true) };
             await engine.WaitAsync();
             engine.DumpTree(true);
-            Assert.AreEqual(9, engine.NodeCount);
+            Assert.AreEqual(10, engine.NodeCount);
 
             var result = await engine.SearchAsync("SubFolder1", new SearchOption() { AllowFolder = true });
             Assert.AreEqual(1, result.Items.Count);
@@ -129,8 +130,22 @@ namespace NeeLaboratory.IO.Search.Tests
         {
             var engine = CreateTestEnvironment();
 
-            var result = await engine.SearchAsync("file", new SearchOption());
+            SearchResult result;
+
+            result = await engine.SearchAsync("file", new SearchOption());
             Assert.AreEqual(9, result.Items.Count);
+
+            result = await engine.SearchAsync("/word あいう", new SearchOption());
+            Assert.AreEqual(0, result.Items.Count);
+
+            result = await engine.SearchAsync("/word あいうえお", new SearchOption());
+            Assert.AreEqual(1, result.Items.Count);
+
+            result = await engine.SearchAsync("/word ウエオ", new SearchOption());
+            Assert.AreEqual(0, result.Items.Count);
+
+            result = await engine.SearchAsync("/word アイウエオ", new SearchOption());
+            Assert.AreEqual(1, result.Items.Count);
         }
 
         /// <summary>
@@ -224,58 +239,103 @@ namespace NeeLaboratory.IO.Search.Tests
 
             keys = analyzer.Analyze("word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", false, false, false), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+
 
             keys = analyzer.Analyze("    word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", false, false, false), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
 
             keys = analyzer.Analyze("\"word1\"");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", true, false, false), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
 
-            keys = analyzer.Analyze("-word1");
+            keys = analyzer.Analyze("\"word1 word2 ");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", false, true, false), keys[0]);
+            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
 
-            keys = analyzer.Analyze("@word1");
+            keys = analyzer.Analyze("/and word1");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", false, false, true), keys[0]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+
+            keys = analyzer.Analyze("/or word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Or, SearchPattern.Normal), keys[0]);
+
+            keys = analyzer.Analyze("/not word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Not, SearchPattern.Normal), keys[0]);
+
+
+            keys = analyzer.Analyze("/m0 word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
+
+            keys = analyzer.Analyze("/m1 word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Word), keys[0]);
+
+            keys = analyzer.Analyze("/m2 word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+
+            keys = analyzer.Analyze("/re word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpression), keys[0]);
 
             // multi
-            keys = analyzer.Analyze("word1 word2 word3");
-            Assert.AreEqual(3, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", false, false, false), keys[0]);
-            Assert.AreEqual(new SearchKey("word2", false, false, false), keys[1]);
-            Assert.AreEqual(new SearchKey("word3", false, false, false), keys[2]);
-
-            keys = analyzer.Analyze("@@word1 --word2");
+            keys = analyzer.Analyze("\"word1 word2\" word3");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("@word1", false, false, false), keys[0]);
-            Assert.AreEqual(new SearchKey("-word2", false, false, false), keys[1]);
+            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Perfect), keys[0]);
+            Assert.AreEqual(new SearchKey("word3", SearchConjunction.And, SearchPattern.Normal), keys[1]);
 
-            keys = analyzer.Analyze("@-@-word1 -@-@word2");
+            keys = analyzer.Analyze("word1 /or word2");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", false, true, true), keys[0]);
-            Assert.AreEqual(new SearchKey("word2", false, true, true), keys[1]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Normal), keys[1]);
 
-            keys = analyzer.Analyze("@\"word1\" -\"word2\"");
+            keys = analyzer.Analyze("word1 /or /m1 word2");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", true, false, true), keys[0]);
-            Assert.AreEqual(new SearchKey("word2", true, true, false), keys[1]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
-            keys = analyzer.Analyze("\"\"\"word1\"\"\" \"word\"\"2\"");
+            keys = analyzer.Analyze("word1 /not /re \"word2 word3\"");
             Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("\"word1\"", true, false, false), keys[0]);
-            Assert.AreEqual(new SearchKey("word\"2", true, false, false), keys[1]);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Not, SearchPattern.RegularExpression), keys[1]);
 
-            keys = analyzer.Analyze("w@@o--rd\"\"1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("w@@o--rd\"\"1", false, false, false), keys[0]);
+            keys = analyzer.Analyze("word1 /not /or /re /m1 word2  ");
+            Assert.AreEqual(2, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
-            keys = analyzer.Analyze("\"world1 world2");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("world1 world2", true, false, false), keys[0]);
+            keys = analyzer.Analyze("word1 /not /or /re /m1 \"word2 word3\" ");
+            Assert.AreEqual(2, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Normal), keys[0]);
+            Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+        }
+
+
+        [TestMethod()]
+        [ExpectedException(typeof(SearchKeywordOptionException))]
+        public void SearchEngineKeywordAnalyzeOptionExceptionTest()
+        {
+            var analyzer = new SearchKeyAnalyzer();
+            List<SearchKey> keys;
+
+            keys = analyzer.Analyze("word1 /unknown word2");
+            Assert.AreEqual(2, keys.Count);
+        }
+
+        [TestMethod()]
+        [ExpectedException(typeof(SearchKeywordRegularExpressionException))]
+        public void SearchEngineKeywordAnalyzeRegularExpressionExceptionTest()
+        {
+            var analyzer = new SearchKeyAnalyzer();
+            List<SearchKey> keys;
+
+            keys = analyzer.Analyze("word1 /re ^(hoge");
+            Assert.AreEqual(2, keys.Count);
         }
     }
 

@@ -18,12 +18,6 @@ namespace NeeLaboratory.IO.Search
     public class SearchOption
     {
         /// <summary>
-        /// 検索キーワードの種類
-        /// </summary>
-        [DataMember]
-        public SearchMode SearchMode { get; set; } = SearchMode.Advanced;
-
-        /// <summary>
         /// フォルダーを含める
         /// </summary>
         [DataMember]
@@ -33,7 +27,6 @@ namespace NeeLaboratory.IO.Search
         [OnDeserializing]
         private void OnDeserializing(StreamingContext context)
         {
-            this.SearchMode = SearchMode.Advanced;
         }
 
         /// <summary>
