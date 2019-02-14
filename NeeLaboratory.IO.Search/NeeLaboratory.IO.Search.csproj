@@ -61,7 +61,6 @@
     <Compile Include="SearchKey.cs" />
     <Compile Include="SearchKeyAnalyzer.cs" />
     <Compile Include="SearchKeywordException.cs" />
-    <Compile Include="SearchMode.cs" />
     <Compile Include="SearchOption.cs" />
     <Compile Include="SearchOptionLegacyV1.cs" />
     <Compile Include="SearchResultChangedEventArgs.cs" />
