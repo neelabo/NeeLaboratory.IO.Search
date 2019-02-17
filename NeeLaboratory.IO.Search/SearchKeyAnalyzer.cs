@@ -66,7 +66,12 @@ namespace NeeLaboratory.IO.Search
 
         public List<SearchKey> Analyze(string source)
         {
-            var context = new Context(source.Trim());
+            if (string.IsNullOrEmpty(source))
+            {
+                return new List<SearchKey>();
+            }
+
+            var context = new Context(source);
             while (!context.IsEnd)
             {
                 var state = State.S00;
