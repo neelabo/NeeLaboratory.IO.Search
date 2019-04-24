@@ -346,13 +346,13 @@ namespace NeeLaboratory.IO.Search.Test
             Assert.AreEqual(1, keys.Count);
             Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Since), keys[0]);
 
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since 5"));
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since yesterday"));
 
             keys = analyzer.Analyze("/until 2018-01-01");
             Assert.AreEqual(1, keys.Count);
             Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Until), keys[0]);
 
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/until 5"));
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/until yesterday"));
         }
 
 

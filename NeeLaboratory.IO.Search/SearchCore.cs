@@ -330,50 +330,6 @@ namespace NeeLaboratory.IO.Search
             return _regexNumber.Replace(source, match => "0*" + match.Groups[1]);
         }
 
-#if false
-        /// <summary>
-        /// 拡張キーワードなしで検索キーリスト生成
-        /// </summary>
-        /// <param name="source"></param>
-        /// <returns></returns>
-        private SearchKey ValidateKey(SearchKey source)
-        {
-            var key = source.Clone();
-
-            var s = key.Word;
-
-            switch (key.Pattern)
-            {
-                case SearchPattern.Exact:
-                    s = Regex.Escape(s);
-                    break;
-
-                case SearchPattern.Word:
-                    var first = GetNotCodeBlockRegexString(s.First());
-                    var last = GetNotCodeBlockRegexString(s.Last());
-                    s = Node.ToNormalisedWord(s, false);
-                    s = Regex.Escape(s);
-                    s = ToFuzzyNumberRegex(s);
-                    if (first != null) s = $"(^|{first}){s}";
-                    if (last != null) s = $"{s}({last}|$)";
-                    break;
-
-                case SearchPattern.Standard:
-                    s = Node.ToNormalisedWord(s, true);
-                    s = Regex.Escape(s);
-                    s = ToFuzzyNumberRegex(s);
-                    break;
-
-                case SearchPattern.RegularExpression:
-                case SearchPattern.RegularExpressionIgnoreCase:
-                    break;
-            }
-
-            key.Word = s;
-            return key;
-        }
-#endif
-
         /// <summary>
         /// 検索キーリスト生成
         /// </summary>
@@ -452,30 +408,7 @@ namespace NeeLaboratory.IO.Search
             {
                 token.ThrowIfCancellationRequested();
 
-#if false
-                Regex regex;
-                try
-                {
-                    var regexOptions = GetRegexOptions(key.Pattern);
-                    regex = new Regex(key.Word, regexOptions);
-                }
-                catch (Exception ex)
-                {
-                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {key.Word}", ex);
-                }
-
-                var func = GetMatchNodeFunc(key.Pattern);
-#endif
-
-                IMatchable<Node> match;
-                try
-                {
-                    match = CreateMatchable(key);
-                }
-                catch (SearchKeywordException)
-                {
-                    throw;
-                }
+                var match = CreateMatchable(key);
 
                 switch (key.Conjunction)
                 {
@@ -503,31 +436,6 @@ namespace NeeLaboratory.IO.Search
             // pushpinを先頭に連結して返す
             return pushpins.Concat(entries);
         }
-
-#if false
-        delegate bool MatchNodeFunc(Node node, Regex regex);
-
-        private RegexOptions GetRegexOptions(SearchPattern pattern)
-        {
-            return pattern == SearchPattern.RegularExpressionIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
-        }
-
-        private MatchNodeFunc GetMatchNodeFunc(SearchPattern pattern)
-        {
-            switch (pattern)
-            {
-                default:
-                case SearchPattern.Exact:
-                case SearchPattern.RegularExpression:
-                case SearchPattern.RegularExpressionIgnoreCase:
-                    return MatchNodeName;
-                case SearchPattern.Word:
-                    return MatchNodeNormalizedUnitWord;
-                case SearchPattern.Standard:
-                    return MatchNodeNormalizedFazyWord;
-            }
-        }
-#endif
 
         private IMatchable<Node> CreateMatchable(SearchKey key)
         {
@@ -601,7 +509,6 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-
         class RegularExpressionMatch : IMatchable<Node>
         {
             private Regex _regex;
@@ -645,7 +552,6 @@ namespace NeeLaboratory.IO.Search
                 return _regex.Match(e.Name).Success;
             }
         }
-
 
         class ExactMatch : IMatchable<Node>
         {
@@ -706,40 +612,12 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-#if false
-        private bool MatchNodeName(Node node, Regex regex)
-        {
-            return regex.Match(node.Name).Success;
-        }
-
-        private bool MatchNodeNormalizedUnitWord(Node node, Regex regex)
-        {
-            return regex.Match(node.NormalizedUnitWord).Success;
-        }
-
-        private bool MatchNodeNormalizedFazyWord(Node node, Regex regex)
-        {
-            return regex.Match(node.NormalizedFazyWord).Success;
-        }
-
-        /// <summary>
-        /// boolean反転
-        /// </summary>
-        /// <param name="value">入力値</param>
-        /// <param name="inverse">反転フラグ</param>
-        /// <returns></returns>
-        private bool Inverse(bool value, bool inverse)
-        {
-            return inverse ? !value : value;
-        }
-#endif
-
         #endregion
 
         #endregion
 
         #region IDisposable Support
-        private bool _disposedValue = false; // 重複する呼び出しを検出するには
+        private bool _disposedValue = false;
 
         protected virtual void Dispose(bool disposing)
         {
@@ -761,10 +639,8 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
         public void Dispose()
         {
-            // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
             Dispose(true);
         }
         #endregion

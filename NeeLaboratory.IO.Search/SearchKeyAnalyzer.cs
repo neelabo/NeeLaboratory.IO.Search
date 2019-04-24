@@ -259,24 +259,34 @@ namespace NeeLaboratory.IO.Search
                 }
                 else
                 {
-                    if (_work.Pattern == SearchPattern.RegularExpression || _work.Pattern == SearchPattern.RegularExpressionIgnoreCase)
+                    switch (_work.Pattern)
                     {
-                        try
-                        {
-                            new Regex(_work.Word);
-                        }
-                        catch(Exception ex)
-                        {
-                            throw new SearchKeywordRegularExpressionException($"RegularExpression error: {_work.Word}", ex);
-                        }
-                    }
+                        case SearchPattern.RegularExpression:
+                        case SearchPattern.RegularExpressionIgnoreCase:
+                            try
+                            {
+                                new Regex(_work.Word);
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new SearchKeywordRegularExpressionException($"RegularExpression error: {_work.Word}", ex);
+                            }
+                            break;
 
-                    if (_work.Pattern == SearchPattern.Since || _work.Pattern == SearchPattern.Until)
-                    {
-                        if (!DateTime.TryParse(_work.Word, out _))
-                        {
-                            throw new SearchKeywordDateTimeException($"Since error: Cannot parth DateTime: {_work.Word}");
-                        }
+                        case SearchPattern.Since:
+                        case SearchPattern.Until:
+                            if (DateTime.TryParse(_work.Word, out _))
+                            {
+                            }
+                            else if (int.TryParse(_work.Word, out int days))
+                            {
+                                _work.Word = (DateTime.Now - TimeSpan.FromDays(days)).ToString();
+                            }
+                            else
+                            {
+                                throw new SearchKeywordDateTimeException($"DateTime parse error: Cannot parse {_work.Word}");
+                            }
+                            break;
                     }
 
                     Debug.WriteLine($"SearchKey: {_work}");
