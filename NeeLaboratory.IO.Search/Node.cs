@@ -138,6 +138,11 @@ namespace NeeLaboratory.IO.Search
         public NodeContent Content => _content;
 
         /// <summary>
+        /// ファイル最終更新日
+        /// </summary>
+        public DateTime LastWriteTime => _content.FileInfo.LastWriteTime;
+
+        /// <summary>
         /// PushPinフラグ
         /// </summary>
         public bool IsPushPin => _content == null ? false : _content.IsPushPin;

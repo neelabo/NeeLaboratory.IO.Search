@@ -227,9 +227,11 @@ namespace NeeLaboratory.IO.Search
                         case "/not":
                             _work.Conjunction = SearchConjunction.Not;
                             break;
-
                         case "/re":
                             _work.Pattern = SearchPattern.RegularExpression;
+                            break;
+                        case "/ire":
+                            _work.Pattern = SearchPattern.RegularExpressionIgnoreCase;
                             break;
                         case "/m0":
                         case "/exact":
@@ -242,7 +244,12 @@ namespace NeeLaboratory.IO.Search
                         case "/m2":
                             _work.Pattern = SearchPattern.Standard;
                             break;
-
+                        case "/since":
+                            _work.Pattern = SearchPattern.Since;
+                            break;
+                        case "/until":
+                            _work.Pattern = SearchPattern.Until;
+                            break;
                         default:
                             ////Debug.WriteLine($"not support option: {_work.Word}");
                             throw new SearchKeywordOptionException($"Not support option: {_work.Word}") { Option = _work.Word };
@@ -252,7 +259,7 @@ namespace NeeLaboratory.IO.Search
                 }
                 else
                 {
-                    if (_work.Pattern == SearchPattern.RegularExpression)
+                    if (_work.Pattern == SearchPattern.RegularExpression || _work.Pattern == SearchPattern.RegularExpressionIgnoreCase)
                     {
                         try
                         {
@@ -261,6 +268,14 @@ namespace NeeLaboratory.IO.Search
                         catch(Exception ex)
                         {
                             throw new SearchKeywordRegularExpressionException($"RegularExpression error: {_work.Word}", ex);
+                        }
+                    }
+
+                    if (_work.Pattern == SearchPattern.Since || _work.Pattern == SearchPattern.Until)
+                    {
+                        if (!DateTime.TryParse(_work.Word, out _))
+                        {
+                            throw new SearchKeywordDateTimeException($"Since error: Cannot parth DateTime: {_work.Word}");
                         }
                     }
 

@@ -9,10 +9,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeeLaboratory.IO.Search.Tests
+namespace NeeLaboratory.IO.Search.Test
 {
     [TestClass()]
-    public class SearchEngineTests
+    public class SearchEngineTest
     {
         private TestContext _testContext;
         public TestContext TestContext
@@ -32,7 +32,7 @@ namespace NeeLaboratory.IO.Search.Tests
         /// 非同期標準テスト
         /// </summary>
         [TestMethod()]
-        public async Task SearchEngineTest()
+        public async Task SearchEngineTestAsync()
         {
             // 初期化
             var engine = new SearchEngine();
@@ -146,6 +146,30 @@ namespace NeeLaboratory.IO.Search.Tests
 
             result = await engine.SearchAsync("/word アイウエオ", new SearchOption());
             Assert.AreEqual(1, result.Items.Count);
+
+            result = await engine.SearchAsync("/re file", new SearchOption());
+            Assert.AreEqual(0, result.Items.Count);
+
+            result = await engine.SearchAsync("/ire file", new SearchOption());
+            Assert.AreEqual(9, result.Items.Count);
+
+            result = await engine.SearchAsync("File3", new SearchOption());
+            Assert.AreEqual(3, result.Items.Count);
+
+            result = await engine.SearchAsync("File3 /or File2", new SearchOption());
+            Assert.AreEqual(6, result.Items.Count);
+
+            result = await engine.SearchAsync("file3", new SearchOption());
+            Assert.AreEqual(3, result.Items.Count);
+
+            result = await engine.SearchAsync("file3 /not sub", new SearchOption());
+            Assert.AreEqual(1, result.Items.Count);
+
+            result = await engine.SearchAsync("/since 2018-01-01", new SearchOption());
+            Assert.AreEqual(10, result.Items.Count);
+
+            result = await engine.SearchAsync("/until 2018-01-01", new SearchOption());
+            Assert.AreEqual(0, result.Items.Count);
         }
 
         /// <summary>
@@ -252,7 +276,7 @@ namespace NeeLaboratory.IO.Search.Tests
 
             keys = analyzer.Analyze("\"word1 word2 ");
             Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.AreEqual(new SearchKey("word1 word2 ", SearchConjunction.And, SearchPattern.Exact), keys[0]);
 
             keys = analyzer.Analyze("/and word1");
             Assert.AreEqual(1, keys.Count);
@@ -282,6 +306,10 @@ namespace NeeLaboratory.IO.Search.Tests
             keys = analyzer.Analyze("/re word1");
             Assert.AreEqual(1, keys.Count);
             Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpression), keys[0]);
+
+            keys = analyzer.Analyze("/ire word1");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpressionIgnoreCase), keys[0]);
 
             // multi
             keys = analyzer.Analyze("\"word1 word2\" word3");
@@ -313,6 +341,18 @@ namespace NeeLaboratory.IO.Search.Tests
             Assert.AreEqual(2, keys.Count);
             Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
             Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+
+            keys = analyzer.Analyze("/since 2018-01-01");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Since), keys[0]);
+
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since 5"));
+
+            keys = analyzer.Analyze("/until 2018-01-01");
+            Assert.AreEqual(1, keys.Count);
+            Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Until), keys[0]);
+
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/until 5"));
         }
 
 
@@ -335,6 +375,9 @@ namespace NeeLaboratory.IO.Search.Tests
             List<SearchKey> keys;
 
             keys = analyzer.Analyze("word1 /re ^(hoge");
+            Assert.AreEqual(2, keys.Count);
+
+            keys = analyzer.Analyze("word1 /ire ^(hoge");
             Assert.AreEqual(2, keys.Count);
         }
     }

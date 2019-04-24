@@ -46,6 +46,21 @@ namespace NeeLaboratory.IO.Search
         RegularExpression,
 
         /// <summary>
+        /// 正規表現 (IgnoreCase)
+        /// </summary>
+        RegularExpressionIgnoreCase,
+
+        /// <summary>
+        /// 日時検索、開始日時
+        /// </summary>
+        Since,
+
+        /// <summary>
+        /// 日時検索、終了日時
+        /// </summary>
+        Until,
+
+        /// <summary>
         /// 未定義 (解析用)
         /// </summary>
         Undefined = -1,

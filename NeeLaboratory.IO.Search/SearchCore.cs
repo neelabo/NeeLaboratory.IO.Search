@@ -304,7 +304,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 単語区切り用の正規表現生成
         /// </summary>
-        private string GetNotCodeBlockRegexString(char c)
+        private static string GetNotCodeBlockRegexString(char c)
         {
             if ('0' <= c && c <= '9')
                 return @"\D";
@@ -325,11 +325,12 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// (数値)部分を0*(数値)という正規表現に変換
         /// </summary>
-        private string ToFuzzyNumberRegex(string source)
+        private static string ToFuzzyNumberRegex(string source)
         {
             return _regexNumber.Replace(source, match => "0*" + match.Groups[1]);
         }
 
+#if false
         /// <summary>
         /// 拡張キーワードなしで検索キーリスト生成
         /// </summary>
@@ -364,12 +365,14 @@ namespace NeeLaboratory.IO.Search
                     break;
 
                 case SearchPattern.RegularExpression:
+                case SearchPattern.RegularExpressionIgnoreCase:
                     break;
             }
 
             key.Word = s;
             return key;
         }
+#endif
 
         /// <summary>
         /// 検索キーリスト生成
@@ -378,7 +381,7 @@ namespace NeeLaboratory.IO.Search
         {
             var keys = _searchKeyAnalyzer.Analyze(source)
                 .Where(e => !string.IsNullOrEmpty(e.Word))
-                .Select(e => ValidateKey(e))
+                ////.Select(e => ValidateKey(e))
                 .ToList();
 
             Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString()))); // ##
@@ -449,10 +452,12 @@ namespace NeeLaboratory.IO.Search
             {
                 token.ThrowIfCancellationRequested();
 
+#if false
                 Regex regex;
                 try
                 {
-                    regex = new Regex(key.Word);
+                    var regexOptions = GetRegexOptions(key.Pattern);
+                    regex = new Regex(key.Word, regexOptions);
                 }
                 catch (Exception ex)
                 {
@@ -460,16 +465,28 @@ namespace NeeLaboratory.IO.Search
                 }
 
                 var func = GetMatchNodeFunc(key.Pattern);
+#endif
+
+                IMatchable<Node> match;
+                try
+                {
+                    match = CreateMatchable(key);
+                }
+                catch (SearchKeywordException)
+                {
+                    throw;
+                }
+
                 switch (key.Conjunction)
                 {
                     case SearchConjunction.And:
-                        entries = entries.Where(f => func(f, regex));
+                        entries = entries.Where(e => match.IsMatch(e));
                         break;
                     case SearchConjunction.Or:
-                        entries = entries.Union(all.Where(f => func(f, regex)));
+                        entries = entries.Union(all.Where(e => match.IsMatch(e)));
                         break;
                     case SearchConjunction.Not:
-                        entries = entries.Where(f => !func(f, regex));
+                        entries = entries.Where(e => !match.IsMatch(e));
                         break;
                 }
             }
@@ -487,7 +504,13 @@ namespace NeeLaboratory.IO.Search
             return pushpins.Concat(entries);
         }
 
+#if false
         delegate bool MatchNodeFunc(Node node, Regex regex);
+
+        private RegexOptions GetRegexOptions(SearchPattern pattern)
+        {
+            return pattern == SearchPattern.RegularExpressionIgnoreCase ? RegexOptions.IgnoreCase : RegexOptions.None;
+        }
 
         private MatchNodeFunc GetMatchNodeFunc(SearchPattern pattern)
         {
@@ -496,6 +519,7 @@ namespace NeeLaboratory.IO.Search
                 default:
                 case SearchPattern.Exact:
                 case SearchPattern.RegularExpression:
+                case SearchPattern.RegularExpressionIgnoreCase:
                     return MatchNodeName;
                 case SearchPattern.Word:
                     return MatchNodeNormalizedUnitWord;
@@ -503,7 +527,186 @@ namespace NeeLaboratory.IO.Search
                     return MatchNodeNormalizedFazyWord;
             }
         }
+#endif
 
+        private IMatchable<Node> CreateMatchable(SearchKey key)
+        {
+            switch (key.Pattern)
+            {
+                default:
+                    throw new NotSupportedException();
+                case SearchPattern.Exact:
+                    return new ExactMatch(key);
+                case SearchPattern.Word:
+                    return new WordMatch(key);
+                case SearchPattern.Standard:
+                    return new StandardMatch(key);
+                case SearchPattern.RegularExpression:
+                    return new RegularExpressionMatch(key);
+                case SearchPattern.RegularExpressionIgnoreCase:
+                    return new RegularExpressionIgnoreCaseMatch(key);
+                case SearchPattern.Since:
+                    return new SinceMatch(key);
+                case SearchPattern.Until:
+                    return new UntilMatch(key);
+            }
+        }
+
+        interface IMatchable<T>
+        {
+            bool IsMatch(T e);
+        }
+
+        class SinceMatch : IMatchable<Node>
+        {
+            private DateTime _since;
+
+            public SinceMatch(SearchKey key)
+            {
+                try
+                {
+                    _since = DateTime.Parse(key.Word);
+                }
+                catch (Exception ex)
+                {
+                    throw new SearchKeywordDateTimeException($"DateTime parse error: {key.Word}", ex);
+                }
+            }
+
+            public bool IsMatch(Node e)
+            {
+                return _since <= e.LastWriteTime;
+            }
+        }
+
+        class UntilMatch : IMatchable<Node>
+        {
+            private DateTime _until;
+
+            public UntilMatch(SearchKey key)
+            {
+                try
+                {
+                    _until = DateTime.Parse(key.Word);
+                }
+                catch (Exception ex)
+                {
+                    throw new SearchKeywordDateTimeException($"DateTime parse error: {key.Word}", ex);
+                }
+            }
+
+            public bool IsMatch(Node e)
+            {
+                return e.LastWriteTime <= _until;
+            }
+        }
+
+
+        class RegularExpressionMatch : IMatchable<Node>
+        {
+            private Regex _regex;
+
+            public RegularExpressionMatch(SearchKey key)
+            {
+                try
+                {
+                    _regex = new Regex(key.Word);
+                }
+                catch (Exception ex)
+                {
+                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {key.Word}", ex);
+                }
+            }
+
+            public bool IsMatch(Node e)
+            {
+                return _regex.Match(e.Name).Success;
+            }
+        }
+
+        class RegularExpressionIgnoreCaseMatch : IMatchable<Node>
+        {
+            private Regex _regex;
+
+            public RegularExpressionIgnoreCaseMatch(SearchKey key)
+            {
+                try
+                {
+                    _regex = new Regex(key.Word, RegexOptions.IgnoreCase);
+                }
+                catch (Exception ex)
+                {
+                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {key.Word}", ex);
+                }
+            }
+
+            public bool IsMatch(Node e)
+            {
+                return _regex.Match(e.Name).Success;
+            }
+        }
+
+
+        class ExactMatch : IMatchable<Node>
+        {
+            private Regex _regex;
+
+            public ExactMatch(SearchKey key)
+            {
+                var s = Regex.Escape(key.Word);
+                _regex = new Regex(s);
+            }
+
+            public bool IsMatch(Node e)
+            {
+                return _regex.Match(e.Name).Success;
+            }
+        }
+
+        class WordMatch : IMatchable<Node>
+        {
+            private Regex _regex;
+
+            public WordMatch(SearchKey key)
+            {
+                var s = key.Word;
+                var first = GetNotCodeBlockRegexString(s.First());
+                var last = GetNotCodeBlockRegexString(s.Last());
+                s = Node.ToNormalisedWord(s, false);
+                s = Regex.Escape(s);
+                s = ToFuzzyNumberRegex(s);
+                if (first != null) s = $"(^|{first}){s}";
+                if (last != null) s = $"{s}({last}|$)";
+
+                _regex = new Regex(s);
+            }
+
+            public bool IsMatch(Node e)
+            {
+                return _regex.Match(e.NormalizedUnitWord).Success;
+            }
+        }
+
+        class StandardMatch : IMatchable<Node>
+        {
+            private Regex _regex;
+
+            public StandardMatch(SearchKey key)
+            {
+                var s = key.Word;
+                s = Node.ToNormalisedWord(s, true);
+                s = Regex.Escape(s);
+                s = ToFuzzyNumberRegex(s);
+                _regex = new Regex(s);
+            }
+
+            public bool IsMatch(Node e)
+            {
+                return _regex.Match(e.NormalizedFazyWord).Success;
+            }
+        }
+
+#if false
         private bool MatchNodeName(Node node, Regex regex)
         {
             return regex.Match(node.Name).Success;
@@ -529,6 +732,7 @@ namespace NeeLaboratory.IO.Search
         {
             return inverse ? !value : value;
         }
+#endif
 
         #endregion
 

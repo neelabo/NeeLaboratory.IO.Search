@@ -39,4 +39,12 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordRegularExpressionException(string message) : base(message) { }
         public SearchKeywordRegularExpressionException(string message, Exception inner) : base(message, inner) { }
     }
+
+    [Serializable]
+    public class SearchKeywordDateTimeException : SearchKeywordException
+    {
+        public SearchKeywordDateTimeException() : base() { }
+        public SearchKeywordDateTimeException(string message) : base(message) { }
+        public SearchKeywordDateTimeException(string message, Exception inner) : base(message, inner) { }
+    }
 }
