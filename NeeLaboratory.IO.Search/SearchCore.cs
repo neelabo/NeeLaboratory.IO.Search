@@ -517,7 +517,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    _regex = new Regex(key.Word);
+                    _regex = new Regex(key.Word, RegexOptions.Compiled);
                 }
                 catch (Exception ex)
                 {
@@ -539,7 +539,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    _regex = new Regex(key.Word, RegexOptions.IgnoreCase);
+                    _regex = new Regex(key.Word, RegexOptions.IgnoreCase | RegexOptions.Compiled);
                 }
                 catch (Exception ex)
                 {
@@ -560,7 +560,7 @@ namespace NeeLaboratory.IO.Search
             public ExactMatch(SearchKey key)
             {
                 var s = Regex.Escape(key.Word);
-                _regex = new Regex(s);
+                _regex = new Regex(s, RegexOptions.Compiled);
             }
 
             public bool IsMatch(Node e)
@@ -584,7 +584,7 @@ namespace NeeLaboratory.IO.Search
                 if (first != null) s = $"(^|{first}){s}";
                 if (last != null) s = $"{s}({last}|$)";
 
-                _regex = new Regex(s);
+                _regex = new Regex(s, RegexOptions.Compiled);
             }
 
             public bool IsMatch(Node e)
@@ -603,7 +603,7 @@ namespace NeeLaboratory.IO.Search
                 s = Node.ToNormalisedWord(s, true);
                 s = Regex.Escape(s);
                 s = ToFuzzyNumberRegex(s);
-                _regex = new Regex(s);
+                _regex = new Regex(s, RegexOptions.Compiled);
             }
 
             public bool IsMatch(Node e)

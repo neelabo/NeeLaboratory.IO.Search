@@ -12,6 +12,9 @@ namespace NeeLaboratory.IO.Search
 {
     public class SearchKeyAnalyzer
     {
+        private static Regex _regexDateTimeCustom = new Regex(@"^([+-]?\d+)(day|month|year)$");
+
+
         delegate void StateFunc(Context context);
 
         private enum State
@@ -263,35 +266,63 @@ namespace NeeLaboratory.IO.Search
                     {
                         case SearchPattern.RegularExpression:
                         case SearchPattern.RegularExpressionIgnoreCase:
-                            try
-                            {
-                                new Regex(_work.Word);
-                            }
-                            catch (Exception ex)
-                            {
-                                throw new SearchKeywordRegularExpressionException($"RegularExpression error: {_work.Word}", ex);
-                            }
+                            ValidateRegex(_work.Word);
                             break;
 
                         case SearchPattern.Since:
                         case SearchPattern.Until:
-                            if (DateTime.TryParse(_work.Word, out _))
-                            {
-                            }
-                            else if (int.TryParse(_work.Word, out int days))
-                            {
-                                _work.Word = (DateTime.Now - TimeSpan.FromDays(days)).ToString();
-                            }
-                            else
-                            {
-                                throw new SearchKeywordDateTimeException($"DateTime parse error: Cannot parse {_work.Word}");
-                            }
+                            _work.Word = ValidateDateTimeWord(_work.Word);
                             break;
                     }
 
                     Debug.WriteLine($"SearchKey: {_work}");
                     Result.Add(_work);
                     ResetWork();
+                }
+            }
+
+
+            private void ValidateRegex(string word)
+            {
+                try
+                {
+                    new Regex(word);
+                }
+                catch (Exception ex)
+                {
+                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {word}", ex);
+                }
+            }
+
+            private string ValidateDateTimeWord(string word)
+            {
+                try
+                {
+                    var match = _regexDateTimeCustom.Match(word);
+                    if (match.Success)
+                    {
+                        var value = int.Parse(match.Groups[1].Value);
+                        switch (match.Groups[2].Value)
+                        {
+                            case "day":
+                                return DateTime.Now.AddDays(value).ToString();
+                            case "month":
+                                return DateTime.Now.AddMonths(value).ToString();
+                            case "year":
+                                return DateTime.Now.AddYears(value).ToString();
+                            default:
+                                throw new NotSupportedException();
+                        }
+                    }
+                    else
+                    {
+                        var dateTime =  DateTime.Parse(word);
+                        return word;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new SearchKeywordDateTimeException($"DateTime parse error: Cannot parse {word}", ex);
                 }
             }
 

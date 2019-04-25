@@ -342,17 +342,30 @@ namespace NeeLaboratory.IO.Search.Test
             Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
             Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
+
+            keys = analyzer.Analyze("/until -5day");
+            Assert.AreEqual(1, keys.Count);
+
+            keys = analyzer.Analyze("/until +10month");
+            Assert.AreEqual(1, keys.Count);
+
+            keys = analyzer.Analyze("/until 123year");
+            Assert.AreEqual(1, keys.Count);
+
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since -day"));
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since 1"));
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since day"));
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since +-1day"));
+            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since -1days"));
+
             keys = analyzer.Analyze("/since 2018-01-01");
             Assert.AreEqual(1, keys.Count);
             Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Since), keys[0]);
-
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since yesterday"));
 
             keys = analyzer.Analyze("/until 2018-01-01");
             Assert.AreEqual(1, keys.Count);
             Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Until), keys[0]);
 
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/until yesterday"));
         }
 
 
