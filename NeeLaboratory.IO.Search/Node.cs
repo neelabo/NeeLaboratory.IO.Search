@@ -222,7 +222,16 @@ namespace NeeLaboratory.IO.Search
             string s = src;
 
             s = KanaEx.ToPadding(s); // 濁点を１文字にまとめる
-            s = s.Normalize(NormalizationForm.FormKC); // 正規化
+
+            try
+            {
+                s = s.Normalize(NormalizationForm.FormKC); // 正規化
+            }
+            catch (ArgumentException)
+            {
+                // 無効なコードポイントがある場合は正規化はスキップする
+            }
+
             s = s.ToUpper(); // アルファベットを大文字にする
 
             if (isFazy)
