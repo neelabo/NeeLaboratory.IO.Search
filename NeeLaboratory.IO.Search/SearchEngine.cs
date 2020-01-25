@@ -45,8 +45,6 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public SearchEngine()
         {
-            FileSystem.InitializeDefaultResource();
-
             this.SearchAreas = new ObservableCollection<SearchArea>();
 
             _core = new SearchCore();

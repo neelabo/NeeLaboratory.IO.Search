@@ -9,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Media.Imaging;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -29,16 +28,6 @@ namespace NeeLaboratory.IO.Search
         /// 属性
         /// </summary>
         private FileAttributes _attributes;
-
-        /// <summary>
-        /// ファイルの種類
-        /// </summary>
-        private string _typeName;
-
-        /// <summary>
-        /// ファイルアイコン
-        /// </summary>
-        private BitmapSource _iconSource;
 
         /// <summary>
         /// ファイルサイズ
@@ -86,30 +75,6 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
-        /// ファイルの種類
-        /// </summary>
-        public string TypeName
-        {
-            get
-            {
-                if (_typeName == null) _typeName = FileSystem.CreateTypeName(_nodePath.Path, this.IsDirectory);
-                return _typeName;
-            }
-        }
-
-        /// <summary>
-        /// アイコン
-        /// </summary>
-        public BitmapSource IconSource
-        {
-            get
-            {
-                if (_iconSource == null) _iconSource = FileSystem.CreateIcon(_nodePath.Path, this.IsDirectory);
-                return _iconSource;
-            }
-        }
-
-        /// <summary>
         /// ファイルサイズ
         /// </summary>
         public long Size
@@ -134,8 +99,8 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public void Reflesh()
         {
-            _typeName = null;
-            _iconSource = null;
+            ////_typeName = null;
+            ////_iconSource = null;
 
             if (IsDirectory)
             {

@@ -47,7 +47,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Development.cs" />
-    <Compile Include="FileSystem.cs" />
     <Compile Include="ISearchResult.cs" />
     <Compile Include="Kanaxs\Kanaxs.cs" />
     <Compile Include="NodeChangedAction.cs" />
