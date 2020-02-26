@@ -1,9 +1,4 @@
-﻿// Copyright (c) 2015-2018 Mitsuhiro Ito (nee)
-//
-// This software is released under the MIT License.
-// http://opensource.org/licenses/mit-license.php
-
-using CSharp.Japanese.Kanaxs;
+﻿using CSharp.Japanese.Kanaxs;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
