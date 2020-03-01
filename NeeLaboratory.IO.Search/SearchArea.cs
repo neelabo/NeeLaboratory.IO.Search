@@ -5,6 +5,10 @@ namespace NeeLaboratory.IO.Search
     [DataContract]
     public class SearchArea
     {
+        public SearchArea()
+        {
+        }
+
         public SearchArea(string path)
         {
             Path = System.IO.Path.GetFullPath(path);
@@ -16,7 +20,7 @@ namespace NeeLaboratory.IO.Search
         }
 
         [DataMember]
-        public string Path { get; private set; }
+        public string Path { get; set; }
 
         [DataMember]
         public bool IncludeSubdirectories { get; set; }
