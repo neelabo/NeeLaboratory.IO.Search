@@ -85,6 +85,14 @@ namespace NeeLaboratory.IO.Search
             get { return DateTime.FromBinary(_lastWriteTime); }
         }
 
+        /// <summary>
+        /// 拡張子
+        /// </summary>
+        public string Extension
+        {
+            get { return IsDirectory ? null : System.IO.Path.GetExtension(Path); }
+        }
+
         #endregion
 
         #region Methods
