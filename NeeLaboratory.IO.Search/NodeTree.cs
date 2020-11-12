@@ -123,11 +123,18 @@ namespace NeeLaboratory.IO.Search
         [Conditional("DEBUG")]
         public void DumpTree(bool verbose)
         {
-            Logger.Trace($"---- {Path}: IncludeSubdirectories={IncludeSubdirectories}, IsChild={IsChild}");
-
-            if (verbose)
+            if (Root is null)
             {
-                Root.Dump();
+                Logger.Trace($"---- {Path}: Invalid.");
+            }
+            else
+            {
+                Logger.Trace($"---- {Path}: IncludeSubdirectories={IncludeSubdirectories}, IsChild={IsChild}");
+
+                if (verbose)
+                {
+                    Root.Dump();
+                }
             }
         }
 
