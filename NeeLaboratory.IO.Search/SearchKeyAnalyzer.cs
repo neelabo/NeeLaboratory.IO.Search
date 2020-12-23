@@ -270,7 +270,7 @@ namespace NeeLaboratory.IO.Search
                             break;
                     }
 
-                    Debug.WriteLine($"SearchKey: {_work}");
+                    ////Debug.WriteLine($"SearchKey: {_work}");
                     Result.Add(_work);
                     ResetWork();
                 }

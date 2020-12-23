@@ -334,7 +334,7 @@ namespace NeeLaboratory.IO.Search
                 ////.Select(e => ValidateKey(e))
                 .ToList();
 
-            Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString()))); // ##
+            ////Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString())));
             return keys;
         }
 
@@ -365,7 +365,7 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public ObservableCollection<NodeContent> Search(string keyword, SearchOption option, CancellationToken token)
         {
-            var items = new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes, token).Select(e => e.Content));
+            var items = new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes.ToList(), token).Select(e => e.Content));
 
             // 複数スレッドからコレクション操作できるようにする
             //BindingOperations.EnableCollectionSynchronization(items, new object());
