@@ -173,9 +173,29 @@ namespace NeeLaboratory.IO.Search.Test
         }
 
         /// <summary>
-        /// ファイルシステム監視テスト
+        /// マルチ検索テスト
         /// </summary>
         [TestMethod()]
+        public async Task SearchEngineMultiSearchTest()
+        {
+            var engine = CreateTestEnvironment();
+
+            List<SearchResult> result;
+
+            var keywords = new string[] { "file", "/word あいう", "/word あいうえお", "/word ウエオ" };
+
+            result = await engine.MultiSearchAsync(keywords, new SearchOption());
+            Assert.AreEqual(9, result[0].Items.Count);
+            Assert.AreEqual(0, result[1].Items.Count);
+            Assert.AreEqual(1, result[2].Items.Count);
+            Assert.AreEqual(0, result[3].Items.Count);
+        }
+
+
+            /// <summary>
+            /// ファイルシステム監視テスト
+            /// </summary>
+            [TestMethod()]
         public async Task SearchEngineWatchResultTest()
         {
             var engine = CreateTestEnvironment();

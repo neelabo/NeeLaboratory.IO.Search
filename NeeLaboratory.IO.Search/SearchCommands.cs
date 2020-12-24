@@ -139,6 +139,50 @@ namespace NeeLaboratory.IO.Search
 
     #endregion
 
+    #region MultiSearchCommand
+
+    /// <summary>
+    /// 検索コマンドデータ
+    /// </summary>
+    internal class MultiSearchExCommandArgs : CommandArgs
+    {
+        /// <summary>
+        /// 検索キーワード
+        /// </summary>
+        public List<string> Keywords { get; set; }
+
+        /// <summary>
+        /// 検索オプション
+        /// </summary>
+        public SearchOption Option { get; set; }
+    }
+
+    /// <summary>
+    /// 検索コマンド
+    /// </summary>
+    internal class MultiSearchCommand : CommandBase
+    {
+        private MultiSearchExCommandArgs _args;
+
+        /// <summary>
+        /// 検索結果
+        /// </summary>
+        public List<SearchResult> SearchResults { get; private set; }
+
+        public MultiSearchCommand(SearchEngine target, MultiSearchExCommandArgs args) : base(target)
+        {
+            _args = args;
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken token)
+        {
+            await Task.Yield();
+            SearchResults = _target.MultiSearch_Execute(_args, token);
+        }
+    }
+
+    #endregion
+
     #region WaitCommand
 
     /// <summary>

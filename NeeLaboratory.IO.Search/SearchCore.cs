@@ -365,6 +365,8 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public ObservableCollection<NodeContent> Search(string keyword, SearchOption option, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             var items = new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes.ToList(), token).Select(e => e.Content));
 
             // 複数スレッドからコレクション操作できるようにする

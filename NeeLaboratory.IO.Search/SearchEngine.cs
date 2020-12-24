@@ -307,6 +307,60 @@ namespace NeeLaboratory.IO.Search
 
 
         /// <summary>
+        /// マルチ検索
+        /// </summary>
+
+        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchOption option)
+        {
+            // one command only.
+            _searchCancellationTokenSource?.Cancel();
+            _searchCancellationTokenSource = new CancellationTokenSource();
+
+            return await MultiSearchAsync(keywords, option, _searchCancellationTokenSource.Token);
+        }
+
+        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchOption option, CancellationToken token)
+        {
+            if (_commandEngine == null)
+            {
+                return keywords.Select(e => new SearchResult(e, option, new ObservableCollection<NodeContent>())).ToList();
+            }
+
+            var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs() { Keywords = keywords.ToList(), Option = option.Clone() });
+            _commandEngine.Enqueue(command, token);
+
+            await command.WaitAsync(token);
+            return command.SearchResults;
+        }
+
+        internal List<SearchResult> MultiSearch_Execute(MultiSearchExCommandArgs args, CancellationToken token)
+        {
+            var units = args.Keywords.Select(e => new MultiSearchUnit() { Keyword = e, Option = args.Option }).ToList();
+
+            Parallel.ForEach(units, unit =>
+            {
+                try
+                {
+                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core?.Search(unit.Keyword, unit.Option, token));
+                }
+                catch (Exception ex)
+                {
+                    unit.Result = new SearchResult(unit.Keyword, unit.Option, null, ex);
+                }
+            });
+
+            return units.Select(e => e.Result).ToList();
+        }
+
+        private class MultiSearchUnit
+        {
+            public string Keyword { get; set; }
+            public SearchOption Option { get; set; }
+            public SearchResult Result { get; set; }
+        }
+
+
+        /// <summary>
         /// ノード情報更新
         /// 反映は非同期に行われる
         /// </summary>
