@@ -22,15 +22,14 @@ namespace NeeLaboratory.IO.Search
         }
 
         #region NotifyPropertyChanged
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
-        protected void RaisePropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string name = "")
+        protected void RaisePropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
         {
             PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
         }
         #endregion
 
-        #region Fields
 
         /// <summary>
         /// パス
@@ -47,9 +46,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private NodeContentFlag _flags;
 
-        #endregion
-
-        #region Constructors
+  
 
         /// <summary>
         /// コンストラクター
@@ -62,9 +59,7 @@ namespace NeeLaboratory.IO.Search
             _fileInfo = new FileInfo(_nodePath, fileSystemInfo);
         }
 
-        #endregion
 
-        #region Properties
 
         /// <summary>
         /// Path property.
@@ -82,12 +77,12 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// フォルダ名表示
         /// </summary>
-        public string DirectoryName
+        public string? DirectoryName
         {
             get
             {
-                string dir = System.IO.Path.GetDirectoryName(Path);
-                string parentDir = System.IO.Path.GetDirectoryName(dir);
+                string? dir = System.IO.Path.GetDirectoryName(Path);
+                string? parentDir = System.IO.Path.GetDirectoryName(dir);
                 return (parentDir == null) ? dir : System.IO.Path.GetFileName(dir) + " (" + parentDir + ")";
             }
         }
@@ -149,9 +144,7 @@ namespace NeeLaboratory.IO.Search
             set { _flags = _flags.SetFlag(NodeContentFlag.Directory, value); RaisePropertyChanged(); }
         }
 
-        #endregion
 
-        #region Methods
 
         /// <summary>
         /// ファイル情報更新
@@ -176,14 +169,12 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public int CompareTo(object obj)
+        public int CompareTo(object? obj)
         {
             if (obj == null) return 1;
 
             NodeContent other = (NodeContent)obj;
             return NativeMethods.StrCmpLogicalW(this.Name, other.Name);
         }
-
-        #endregion
     }
 }

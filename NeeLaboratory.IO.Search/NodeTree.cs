@@ -18,7 +18,6 @@ namespace NeeLaboratory.IO.Search
     {
         private Utility.Logger Logger => Development.Logger;
 
-        #region Fields
 
         /// <summary>
         /// ノード環境
@@ -28,11 +27,9 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ファイル変更監視
         /// </summary>
-        private FileSystemWatcher _fileSystemWatcher;
+        private FileSystemWatcher? _fileSystemWatcher;
 
-        #endregion
 
-        #region Constructors
 
         /// <summary>
         /// コンストラクター
@@ -49,18 +46,13 @@ namespace NeeLaboratory.IO.Search
             InitializeWatcher(area.IncludeSubdirectories);
         }
 
-        #endregion
 
-        #region Events
 
         /// <summary>
         /// ファイル変更イベント
         /// </summary>
-        internal event EventHandler<NodeTreeFileSystemEventArgs> FileSystemChanged;
+        internal event EventHandler<NodeTreeFileSystemEventArgs>? FileSystemChanged;
 
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// パス
@@ -75,7 +67,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 基準ノード
         /// </summary>
-        public Node Root { get; private set; }
+        public Node? Root { get; private set; }
 
         /// <summary>
         /// 更新必要フラグ
@@ -85,11 +77,9 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 他のNodeTreeの子
         /// </summary>
-        public bool IsChild => Root.Parent != null;
+        public bool IsChild => Root is null ? false : Root.Parent != null;
 
-        #endregion
 
-        #region Methods
 
         /// <summary>
         /// ノード収拾
@@ -97,6 +87,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="token"></param>
         public void Collect(CancellationToken token)
         {
+            ThrowIfDisposed();
+
             token.ThrowIfCancellationRequested();
 
             if (!IsDarty)
@@ -152,8 +144,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node AddNode(string path, CancellationToken token)
+        public Node? AddNode(string path, CancellationToken token)
         {
+            ThrowIfDisposed();
+
             var node = Root?.Add(path, _context, token);
             Logger.Trace($"Add: {node?.Path}");
             ////DumpTree();
@@ -165,8 +159,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node RemoveNode(string path)
+        public Node? RemoveNode(string path)
         {
+            ThrowIfDisposed();
+
             var node = Root?.Remove(path, _context);
             Logger.Trace($"Del: {node?.Path}");
             ////DumpTree();
@@ -179,8 +175,10 @@ namespace NeeLaboratory.IO.Search
         /// <param name="oldPath"></param>
         /// <param name="newPath"></param>
         /// <returns></returns>
-        public Node Rename(string oldPath, string newPath)
+        public Node? Rename(string oldPath, string newPath)
         {
+            ThrowIfDisposed();
+
             var node = Root?.Search(oldPath, _context, CancellationToken.None);
             if (node != null)
             {
@@ -215,6 +213,8 @@ namespace NeeLaboratory.IO.Search
         /// <returns>更新処理がされたらtrue</returns>
         public bool RefleshNode(string path)
         {
+            ThrowIfDisposed();
+
             var node = Root?.Search(path, _context, CancellationToken.None);
             if (node != null)
             {
@@ -255,8 +255,6 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private void TerminateWatcher()
         {
-            FileSystemChanged = null;
-
             if (_fileSystemWatcher != null)
             {
                 _fileSystemWatcher.EnableRaisingEvents = false;
@@ -270,22 +268,31 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Watcher_Changed(object sender, FileSystemEventArgs e)
+        private void Watcher_Changed(object? sender, FileSystemEventArgs e)
         {
+            if (_disposedValue) return;
+
             ////Logger.Trace($"Watcher: {e.ChangeType}: {e.Name}");
             FileSystemChanged?.Invoke(sender, new NodeTreeFileSystemEventArgs(Path, e));
         }
 
-        private void Watcher_Renamed(object sender, RenamedEventArgs e)
+        private void Watcher_Renamed(object? sender, RenamedEventArgs e)
         {
+            if (_disposedValue) return;
+
             ////Logger.Trace($"Watcher: {e.ChangeType}: {e.OldName} -> {e.Name}");
             FileSystemChanged?.Invoke(sender, new NodeTreeFileSystemEventArgs(Path, e));
         }
 
-        #endregion
+
 
         #region IDisposable Support
         private bool _disposedValue = false;
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
+        }
 
         protected virtual void Dispose(bool disposing)
         {

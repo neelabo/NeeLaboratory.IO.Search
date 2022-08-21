@@ -88,7 +88,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 拡張子
         /// </summary>
-        public string Extension
+        public string? Extension
         {
             get { return IsDirectory ? null : System.IO.Path.GetExtension(Path); }
         }

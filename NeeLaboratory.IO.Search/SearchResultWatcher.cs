@@ -18,7 +18,6 @@ namespace NeeLaboratory.IO.Search
         // Logger
         private static Utility.Logger Logger => Development.Logger;
 
-        #region Fields
 
         /// <summary>
         /// 所属する検索エンジン
@@ -30,9 +29,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private SearchResult _result;
 
-        #endregion
 
-        #region Constructors
 
         /// <summary>
         /// コンストラクタ
@@ -43,50 +40,26 @@ namespace NeeLaboratory.IO.Search
         {
             _engine = engine;
             _result = result;
+
+            _engine.Core.NodeChanged += Core_NodeChanged;
         }
 
-        #endregion
 
-        #region Events
 
         /// <summary>
         /// 検索結果変更
         /// </summary>
-        public event EventHandler<SearchResultChangedEventArgs> SearchResultChanged;
+        public event EventHandler<SearchResultChangedEventArgs>? SearchResultChanged;
 
-        #endregion
 
-        #region Properties
 
-        #endregion
-
-        #region Methods
-
-        /// <summary>
-        /// 開始
-        /// </summary>
-        public void Start()
-        {
-            _engine.Core.NodeChanged += Core_NodeChanged;
-        }
-
-        /// <summary>
-        /// 停止
-        /// </summary>
-        public void Stop()
-        {
-            if (_engine.Core != null)
-            {
-                _engine.Core.NodeChanged -= Core_NodeChanged;
-            }
-        }
 
         /// <summary>
         /// ファイル変化イベント処理
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Core_NodeChanged(object sender, NodeChangedEventArgs e)
+        private void Core_NodeChanged(object? sender, NodeChangedEventArgs e)
         {
             if (_disposedValue) return;
 
@@ -130,7 +103,8 @@ namespace NeeLaboratory.IO.Search
             {
                 if (_result.Items.Contains(node.Content))
                 {
-                    SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Rename, node.Content) { OldPath = e.OldPath });
+                    var rename = (NodeRenamedEventArgs)e;
+                    SearchResultChanged?.Invoke(this, new SearchResultRenamedEventArgs(NodeChangedAction.Rename, node.Content, rename.OldPath));
                 }
                 else
                 {
@@ -156,10 +130,14 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        #endregion
 
         #region IDisposable Support
-        private bool _disposedValue = false; // 重複する呼び出しを検出するには
+        private bool _disposedValue = false;
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -167,18 +145,15 @@ namespace NeeLaboratory.IO.Search
             {
                 if (disposing)
                 {
-                    // マネージ状態を破棄します (マネージ オブジェクト)。
-                    Stop();
+                    _engine.Core.NodeChanged -= Core_NodeChanged;
                 }
 
                 _disposedValue = true;
             }
         }
 
-        // このコードは、破棄可能なパターンを正しく実装できるように追加されました。
         public void Dispose()
         {
-            // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
             Dispose(true);
         }
         #endregion
@@ -203,7 +178,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索失敗時の例外
         /// </summary>
-        public Exception Exception => _result.Exception;
+        public Exception? Exception => _result.Exception;
 
         #endregion
     }

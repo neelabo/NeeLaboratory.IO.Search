@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NeeLaboratory.IO.Search;
+﻿using NeeLaboratory.IO.Search;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,56 +7,29 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
+using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace NeeLaboratory.IO.Search.Test
 {
-    [TestClass()]
     public class SearchEngineTest
     {
-        private TestContext _testContext;
-        public TestContext TestContext
-        {
-            get => _testContext;
-            set => _testContext = value;
-        }
-
-
         private static string _folderRoot = @"TestFolders";
         private static string _folderSub1 = @"TestFolders\SubFolder1";
         private static string _folderSub2 = @"TestFolders\SubFolder2";
 
-
-
-        /// <summary>
-        /// 非同期標準テスト
-        /// </summary>
-        [TestMethod()]
-        public async Task SearchEngineTestAsync()
-        {
-            // 初期化
-            var engine = new SearchEngine();
-            engine.Start();
-
-            // 検索パス設定
-            engine.SearchAreas.Add(new SearchArea(_folderSub1, true));
-            engine.SearchAreas.Add(new SearchArea(_folderRoot, true));
-
-
-            // 検索１：通常検索
-            SearchOption option = new SearchOption(); // { IsPerfect = false };
-            SearchResult result = await engine.SearchAsync("File1", option);
-
-            // 結果表示
-            foreach (var item in result.Items)
-            {
-                _testContext.WriteLine($"{item.Name}");
-            }
-        }
-
-
         private static string _fileAppend1 = @"TestFolders\SubFolder1\append1.txt";
         private static string _fileAppend2 = @"TestFolders\SubFolder1\append2.bin";
         private static string _fileAppend2Ex = @"TestFolders\SubFolder1\append2.txt";
+
+        private readonly ITestOutputHelper _output;
+
+
+        public SearchEngineTest(ITestOutputHelper output)
+        {
+            _output = output;
+        }
 
 
         /// <summary>
@@ -73,109 +45,107 @@ namespace NeeLaboratory.IO.Search.Test
             // エンジン初期化
             var engine = new SearchEngine();
             SearchEngine.Logger.SetLevel(SourceLevels.All);
-            engine.SearchAreas.Add(new SearchArea(_folderRoot, true));
-            engine.SearchAreas.Add(new SearchArea(_folderSub1, true));
-            engine.SearchAreas.Add(new SearchArea(_folderSub2, true));
-            engine.Start();
+            engine.AddSearchAreas(new SearchArea(_folderRoot, true), new SearchArea(_folderSub1, true), new SearchArea(_folderSub2, true));
             engine.CommandEngineLogger.SetLevel(SourceLevels.All);
 
             return engine;
         }
 
 
+
+        /// <summary>
+        /// 非同期標準テスト
+        /// </summary>
+        [Fact]
+        public async Task SearchEngineTestAsync()
+        {
+            // 初期化
+            var engine = new SearchEngine();
+
+            // 検索パス設定
+            engine.AddSearchAreas(new SearchArea(_folderSub1, true));
+            engine.AddSearchAreas(new SearchArea(_folderRoot, true));
+
+
+            // 検索１：通常検索
+            SearchOption option = new SearchOption(); // { IsPerfect = false };
+            SearchResult result = await engine.SearchAsync("File1", option);
+
+            // 結果表示
+            foreach (var item in result.Items)
+            {
+                _output.WriteLine($"{item.Name}");
+            }
+        }
+
+
+
         /// <summary>
         /// 検索範囲テスト
         /// </summary>
-        [TestMethod()]
+        [Fact]
         public async Task SearchEngineAreaTest()
         {
             Development.Logger.SetLevel(SourceLevels.Verbose);
 
             var engine = new SearchEngine();
-            engine.Start();
 
             // パスの追加
-            engine.SearchAreas.Add(new SearchArea(_folderRoot, false));
+            engine.AddSearchAreas(new SearchArea(_folderRoot, false));
             await engine.WaitAsync();
             //engine.DumpTree(true);
-            Assert.AreEqual(7, engine.NodeCount);
+            Assert.Equal(7, engine.NodeCount);
 
-            engine.SearchAreas = new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true) };
+            engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true) });
             await engine.WaitAsync();
             //engine.DumpTree(true);
-            Assert.AreEqual(13, engine.NodeCount);
+            Assert.Equal(13, engine.NodeCount);
 
-            engine.SearchAreas = new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true), new SearchArea(_folderSub1, true) };
+            engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true), new SearchArea(_folderSub1, true) });
             await engine.WaitAsync();
-            Assert.AreEqual(13, engine.NodeCount);
+            Assert.Equal(13, engine.NodeCount);
 
             // 変則エリア。NodeTreeの結合が発生
-            engine.SearchAreas = new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, false), new SearchArea(_folderSub1, true) };
+            engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, false), new SearchArea(_folderSub1, true) });
             await engine.WaitAsync();
             engine.DumpTree(true);
-            Assert.AreEqual(10, engine.NodeCount);
+            Assert.Equal(10, engine.NodeCount);
 
             var result = await engine.SearchAsync("SubFolder1", new SearchOption() { AllowFolder = true });
-            Assert.AreEqual(1, result.Items.Count);
-
-            engine.Stop();
+            Assert.Single(result.Items);
         }
 
 
         /// <summary>
         /// 基本検索テスト
         /// </summary>
-        [TestMethod()]
-        public async Task SearchEngineSearchTest()
+        [Theory]
+        [InlineData(9, "file")]
+        [InlineData(0, "/word あいう")]
+        [InlineData(1, "/word あいうえお")]
+        [InlineData(0, "/word ウエオ")]
+        [InlineData(1, "/word アイウエオ")]
+        [InlineData(0, "/re file")]
+        [InlineData(9, "/ire file")]
+        [InlineData(3, "File3")]
+        [InlineData(6, "File3 /or File2")]
+        [InlineData(3, "file3")]
+        [InlineData(1, "file3 /not sub")]
+        [InlineData(10, "/since 2018-01-01")]
+        [InlineData(0, "/until 2018-01-01")]
+        public async Task SearchEngineSearchTest(int expected, string keyword)
         {
             var engine = CreateTestEnvironment();
 
-            SearchResult result;
-
-            result = await engine.SearchAsync("file", new SearchOption());
-            Assert.AreEqual(9, result.Items.Count);
-
-            result = await engine.SearchAsync("/word あいう", new SearchOption());
-            Assert.AreEqual(0, result.Items.Count);
-
-            result = await engine.SearchAsync("/word あいうえお", new SearchOption());
-            Assert.AreEqual(1, result.Items.Count);
-
-            result = await engine.SearchAsync("/word ウエオ", new SearchOption());
-            Assert.AreEqual(0, result.Items.Count);
-
-            result = await engine.SearchAsync("/word アイウエオ", new SearchOption());
-            Assert.AreEqual(1, result.Items.Count);
-
-            result = await engine.SearchAsync("/re file", new SearchOption());
-            Assert.AreEqual(0, result.Items.Count);
-
-            result = await engine.SearchAsync("/ire file", new SearchOption());
-            Assert.AreEqual(9, result.Items.Count);
-
-            result = await engine.SearchAsync("File3", new SearchOption());
-            Assert.AreEqual(3, result.Items.Count);
-
-            result = await engine.SearchAsync("File3 /or File2", new SearchOption());
-            Assert.AreEqual(6, result.Items.Count);
-
-            result = await engine.SearchAsync("file3", new SearchOption());
-            Assert.AreEqual(3, result.Items.Count);
-
-            result = await engine.SearchAsync("file3 /not sub", new SearchOption());
-            Assert.AreEqual(1, result.Items.Count);
-
-            result = await engine.SearchAsync("/since 2018-01-01", new SearchOption());
-            Assert.AreEqual(10, result.Items.Count);
-
-            result = await engine.SearchAsync("/until 2018-01-01", new SearchOption());
-            Assert.AreEqual(0, result.Items.Count);
+            SearchResult result = await engine.SearchAsync(keyword, new SearchOption());
+            Assert.Equal(expected, result.Items.Count);
         }
+
 
         /// <summary>
         /// マルチ検索テスト
         /// </summary>
-        [TestMethod()]
+        [Fact]
         public async Task SearchEngineMultiSearchTest()
         {
             var engine = CreateTestEnvironment();
@@ -185,17 +155,17 @@ namespace NeeLaboratory.IO.Search.Test
             var keywords = new string[] { "file", "/word あいう", "/word あいうえお", "/word ウエオ" };
 
             result = await engine.MultiSearchAsync(keywords, new SearchOption());
-            Assert.AreEqual(9, result[0].Items.Count);
-            Assert.AreEqual(0, result[1].Items.Count);
-            Assert.AreEqual(1, result[2].Items.Count);
-            Assert.AreEqual(0, result[3].Items.Count);
+            Assert.Equal(9, result[0].Items.Count);
+            Assert.Equal(0, result[1].Items.Count);
+            Assert.Equal(1, result[2].Items.Count);
+            Assert.Equal(0, result[3].Items.Count);
         }
 
 
-            /// <summary>
-            /// ファイルシステム監視テスト
-            /// </summary>
-            [TestMethod()]
+        /// <summary>
+        /// ファイルシステム監視テスト
+        /// </summary>
+        [Fact]
         public async Task SearchEngineWatchResultTest()
         {
             var engine = CreateTestEnvironment();
@@ -204,21 +174,20 @@ namespace NeeLaboratory.IO.Search.Test
             var resultCount = result.Items.Count;
 
             var watcher = new SearchResultWatcher(engine, result);
-            watcher.Start();
 
             // ファイル追加 ...
             using (FileStream stream = File.Create(_fileAppend1)) { }
             using (FileStream stream = File.Create(_fileAppend2)) { }
 
             await Task.Delay(100);
-            Assert.IsTrue(result.Items.Count == resultCount + 1);
+            Assert.True(result.Items.Count == resultCount + 1);
 
 
             // 名前変更
             var fileAppend2Ex = Path.ChangeExtension(_fileAppend2, ".txt");
             File.Move(_fileAppend2, fileAppend2Ex);
             await Task.Delay(100);
-            Assert.IsTrue(result.Items.Count == resultCount + 2);
+            Assert.True(result.Items.Count == resultCount + 2);
 
             // 内容変更
             using (FileStream stream = File.Open(fileAppend2Ex, FileMode.Append))
@@ -227,7 +196,7 @@ namespace NeeLaboratory.IO.Search.Test
             }
             await Task.Delay(100);
             var item = result.Items.First(e => e.Path == Path.GetFullPath(fileAppend2Ex));
-            Assert.AreEqual(1, item.FileInfo.Size);
+            Assert.Equal(1, item.FileInfo.Size);
 
             // ファイル削除...
             File.Delete(_fileAppend1);
@@ -236,182 +205,188 @@ namespace NeeLaboratory.IO.Search.Test
             await engine.WaitAsync();
 
             // 戻ったカウント確認
-            Assert.IsTrue(result.Items.Count == resultCount);
-
-            watcher.Stop();
+            Assert.True(result.Items.Count == resultCount);
         }
 
         /// <summary>
         /// あいまい変換テスト
         /// </summary>
-        [TestMethod()]
+        [Fact]
         public void SearchEngineNormalizeTest()
         {
             string normalized;
 
             normalized = Node.ToNormalisedWord("ひらがなゔう゛か゛", true);
-            Assert.AreEqual("ヒラガナヴヴガ", normalized);
+            Assert.Equal("ヒラガナヴヴガ", normalized);
 
             normalized = Node.ToNormalisedWord("ﾊﾝｶｸｶﾞﾅｳﾞ", true);
-            Assert.AreEqual("ハンカクガナヴ", normalized);
+            Assert.Equal("ハンカクガナヴ", normalized);
 
             normalized = Node.ToNormalisedWord("混合された日本語ﾃﾞス。", true);
-            Assert.AreEqual("混合サレタ日本語デス。", normalized);
+            Assert.Equal("混合サレタ日本語デス。", normalized);
 
             normalized = Node.ToNormalisedWord("㌫", true);
-            Assert.AreEqual("パ-セント", normalized);
+            Assert.Equal("パ-セント", normalized);
 
             normalized = Node.ToNormalisedWord("♡♥❤?", true);
-            Assert.AreEqual("♡♡♡?", normalized);
+            Assert.Equal("♡♡♡?", normalized);
         }
+
+
 
 
         /// <summary>
         /// 検索キーワード解析テスト
         /// </summary>
-        [TestMethod()]
+        [Fact]
         public void SearchEngineKeywordAnalyzeTest()
         {
             var analyzer = new SearchKeyAnalyzer();
             List<SearchKey> keys;
 
             keys = analyzer.Analyze("");
-            Assert.AreEqual(0, keys.Count);
+            Assert.Empty(keys);
 
             keys = analyzer.Analyze("    ");
-            Assert.AreEqual(0, keys.Count);
+            Assert.Empty(keys);
 
             keys = analyzer.Analyze("word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
 
             keys = analyzer.Analyze("    word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("\"word1\"");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
 
             keys = analyzer.Analyze("\"word1 word2 ");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1 word2 ", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1 word2 ", SearchConjunction.And, SearchPattern.Exact), keys[0]);
 
             keys = analyzer.Analyze("/and word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("/or word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Or, SearchPattern.Standard), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.Or, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("/not word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.Not, SearchPattern.Standard), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.Not, SearchPattern.Standard), keys[0]);
 
 
             keys = analyzer.Analyze("/m0 word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
 
             keys = analyzer.Analyze("/m1 word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Word), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Word), keys[0]);
 
             keys = analyzer.Analyze("/m2 word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
 
             keys = analyzer.Analyze("/re word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpression), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpression), keys[0]);
 
             keys = analyzer.Analyze("/ire word1");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpressionIgnoreCase), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpressionIgnoreCase), keys[0]);
 
             // multi
             keys = analyzer.Analyze("\"word1 word2\" word3");
-            Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Exact), keys[0]);
-            Assert.AreEqual(new SearchKey("word3", SearchConjunction.And, SearchPattern.Standard), keys[1]);
+            Assert.Equal(2, keys.Count);
+            Assert.Equal(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.Equal(new SearchKey("word3", SearchConjunction.And, SearchPattern.Standard), keys[1]);
 
             keys = analyzer.Analyze("word1 /or word2");
-            Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Standard), keys[1]);
+            Assert.Equal(2, keys.Count);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Standard), keys[1]);
 
             keys = analyzer.Analyze("word1 /or /m1 word2");
-            Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+            Assert.Equal(2, keys.Count);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /re \"word2 word3\"");
-            Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Not, SearchPattern.RegularExpression), keys[1]);
+            Assert.Equal(2, keys.Count);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word2 word3", SearchConjunction.Not, SearchPattern.RegularExpression), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /or /re /m1 word2  ");
-            Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.AreEqual(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+            Assert.Equal(2, keys.Count);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /or /re /m1 \"word2 word3\" ");
-            Assert.AreEqual(2, keys.Count);
-            Assert.AreEqual(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.AreEqual(new SearchKey("word2 word3", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+            Assert.Equal(2, keys.Count);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word2 word3", SearchConjunction.Or, SearchPattern.Word), keys[1]);
 
 
             keys = analyzer.Analyze("/until -5day");
-            Assert.AreEqual(1, keys.Count);
+            Assert.Single(keys);
 
             keys = analyzer.Analyze("/until +10month");
-            Assert.AreEqual(1, keys.Count);
+            Assert.Single(keys);
 
             keys = analyzer.Analyze("/until 123year");
-            Assert.AreEqual(1, keys.Count);
+            Assert.Single(keys);
 
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since -day"));
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since 1"));
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since day"));
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since +-1day"));
-            Assert.ThrowsException<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since -1days"));
+            Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since -day"));
+            Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since 1"));
+            Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since day"));
+            Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since +-1day"));
+            Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since -1days"));
 
             keys = analyzer.Analyze("/since 2018-01-01");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Since), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Since), keys[0]);
 
             keys = analyzer.Analyze("/until 2018-01-01");
-            Assert.AreEqual(1, keys.Count);
-            Assert.AreEqual(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Until), keys[0]);
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Until), keys[0]);
 
         }
 
-
-        [TestMethod()]
-        [ExpectedException(typeof(SearchKeywordOptionException))]
+        [Fact]
         public void SearchEngineKeywordAnalyzeOptionExceptionTest()
         {
             var analyzer = new SearchKeyAnalyzer();
             List<SearchKey> keys;
 
-            keys = analyzer.Analyze("word1 /unknown word2");
-            Assert.AreEqual(2, keys.Count);
+            Assert.Throws<SearchKeywordOptionException>(() =>
+            {
+                keys = analyzer.Analyze("word1 /unknown word2");
+                Assert.Equal(2, keys.Count);
+            });
         }
 
-        [TestMethod()]
-        [ExpectedException(typeof(SearchKeywordRegularExpressionException))]
+        [Fact]
         public void SearchEngineKeywordAnalyzeRegularExpressionExceptionTest()
         {
             var analyzer = new SearchKeyAnalyzer();
             List<SearchKey> keys;
 
-            keys = analyzer.Analyze("word1 /re ^(hoge");
-            Assert.AreEqual(2, keys.Count);
+            Assert.Throws<SearchKeywordRegularExpressionException>(() =>
+            {
+                keys = analyzer.Analyze("word1 /re ^(hoge");
+                Assert.Equal(2, keys.Count);
+            });
 
-            keys = analyzer.Analyze("word1 /ire ^(hoge");
-            Assert.AreEqual(2, keys.Count);
+            Assert.Throws<SearchKeywordRegularExpressionException>(() =>
+            {
+                keys = analyzer.Analyze("word1 /ire ^(hoge");
+                Assert.Equal(2, keys.Count);
+            });
         }
     }
 

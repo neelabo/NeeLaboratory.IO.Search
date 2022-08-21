@@ -18,7 +18,7 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordOptionException(string message) : base(message) { }
         public SearchKeywordOptionException(string message, Exception inner) : base(message, inner) { }
 
-        public string Option { get; set; }
+        public string? Option { get; set; }
 
         public override void GetObjectData(SerializationInfo info, StreamingContext context)
         {

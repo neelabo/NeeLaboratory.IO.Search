@@ -8,8 +8,6 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class SearchContext
     {
-        #region Fields
-
         /// <summary>
         /// 通知用のノード総数
         /// 非同期で加算されるため、正確な値にならない
@@ -21,9 +19,13 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private Func<FileSystemInfo, bool> _nodeFilter = info => true;
 
-        #endregion
 
-        #region Properties
+
+        public SearchContext()
+        {
+        }
+
+
 
         /// <summary>
         /// 通知用のノード総数.
@@ -43,19 +45,5 @@ namespace NeeLaboratory.IO.Search
             get { return _nodeFilter; }
             set { if (_nodeFilter != value) { _nodeFilter = value; } }
         }
-
-        #endregion
-
-        #region Constructors
-
-        public SearchContext()
-        {
-        }
-
-        #endregion
-
-        #region Methods
-
-        #endregion
     }
 }

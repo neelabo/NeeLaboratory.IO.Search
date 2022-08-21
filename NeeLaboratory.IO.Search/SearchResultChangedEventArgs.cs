@@ -17,10 +17,6 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public NodeContent Content { get; set; }
 
-        /// <summary>
-        /// リネーム時の旧パス
-        /// </summary>
-        public string OldPath { get; set; }
 
         /// <summary>
         /// constructor
@@ -32,5 +28,19 @@ namespace NeeLaboratory.IO.Search
             this.Action = action;
             this.Content = content;
         }
+    }
+
+    public class SearchResultRenamedEventArgs : SearchResultChangedEventArgs
+    {
+        public SearchResultRenamedEventArgs(NodeChangedAction action, NodeContent content, string oldPath) : base(action, content)
+        {
+            if (action != NodeChangedAction.Rename) throw new InvalidOperationException("action must be Rename");
+            OldPath = oldPath;
+        }
+
+        /// <summary>
+        /// リネーム時の旧パス
+        /// </summary>
+        public string OldPath { get; set; }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
@@ -146,9 +147,10 @@ namespace NeeLaboratory.IO.Search
             public List<SearchKey> Result { get; private set; } = new List<SearchKey>();
 
 
+            [MemberNotNull(nameof(_work))]
             private void ResetWork()
             {
-                _work = new SearchKey(null, SearchConjunction.And, SearchPattern.Undefined);
+                _work = new SearchKey("", SearchConjunction.And, SearchPattern.Undefined);
             }
 
             public void SetPatternIfUndefined(SearchPattern pattern)
@@ -253,7 +255,7 @@ namespace NeeLaboratory.IO.Search
                             throw new SearchKeywordOptionException($"Not support option: {_work.Word}") { Option = _work.Word };
                     }
 
-                    _work.Word = null;
+                    _work.Word = "";
                 }
                 else
                 {

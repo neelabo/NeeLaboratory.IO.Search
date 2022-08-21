@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search
 {
-    #region CommandBase
-
     /// <summary>
     /// コマンドデータ基底
     /// </summary>
@@ -55,20 +53,23 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
-    #endregion
-
-    #region CollectCommand
 
     /// <summary>
     /// ノード構築コマンドデータ
     /// </summary>
     internal class CollectCommandArgs : CommandArgs
     {
+        public CollectCommandArgs(List<SearchArea> area)
+        {
+            Area = area;
+        }
+
         /// <summary>
         /// 検索エリアのパス
         /// </summary>
         public List<SearchArea> Area { get; set; }
     }
+
 
     /// <summary>
     /// ノード構築コマンド
@@ -91,7 +92,7 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
-    #endregion
+
 
     #region SearchCommand
 
@@ -100,6 +101,12 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class SearchExCommandArgs : CommandArgs
     {
+        public SearchExCommandArgs(string keyword, SearchOption option)
+        {
+            Keyword = keyword;
+            Option = option;
+        }
+
         /// <summary>
         /// 検索キーワード
         /// </summary>
@@ -118,18 +125,18 @@ namespace NeeLaboratory.IO.Search
     {
         private SearchExCommandArgs _args;
 
-        /// <summary>
-        /// 検索結果
-        /// </summary>
-        public SearchResult SearchResult { get; private set; }
-
-        //
         public SearchCommand(SearchEngine target, SearchExCommandArgs args) : base(target)
         {
             _args = args;
         }
 
-        //
+
+        /// <summary>
+        /// 検索結果
+        /// </summary>
+        public SearchResult? SearchResult { get; private set; }
+
+
         protected override async Task ExecuteAsync(CancellationToken token)
         {
             await Task.Yield();
@@ -146,6 +153,12 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class MultiSearchExCommandArgs : CommandArgs
     {
+        public MultiSearchExCommandArgs(List<string> keywords, SearchOption option)
+        {
+            Keywords = keywords;
+            Option = option;
+        }
+
         /// <summary>
         /// 検索キーワード
         /// </summary>
@@ -167,7 +180,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索結果
         /// </summary>
-        public List<SearchResult> SearchResults { get; private set; }
+        public List<SearchResult>? SearchResults { get; private set; }
 
         public MultiSearchCommand(SearchEngine target, MultiSearchExCommandArgs args) : base(target)
         {
@@ -222,9 +235,27 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class NodeChangeCommandArgs : CommandArgs
     {
+        public NodeChangeCommandArgs(NodeChangeType changeType, string? root, string path)
+        {
+            ChangeType = changeType;
+            Root = root;
+            Path = path;
+        }
+
         public NodeChangeType ChangeType { get; set; }
-        public string Root { get; set; }
+        public string? Root { get; set; }
         public string Path { get; set; }
+    }
+
+    internal class NodeRenameCommandArgs : NodeChangeCommandArgs
+    {
+        public NodeRenameCommandArgs(NodeChangeType changeType, string? root, string path, string oldPath) : base(changeType, root, path)
+        {
+            if (changeType != NodeChangeType.Rename) throw new ArgumentException("changeType must be Rename");
+
+            OldPath = oldPath;
+        }
+
         public string OldPath { get; set; }
     }
 
@@ -253,7 +284,8 @@ namespace NeeLaboratory.IO.Search
         {
             if (_args.ChangeType == NodeChangeType.Rename)
             {
-                return $"{nameof(NodeChangeCommand)}: {_args.ChangeType}: {_args.OldPath} -> {_args.Path}";
+                var remame = (NodeRenameCommandArgs)_args;
+                return $"{nameof(NodeChangeCommand)}: {_args.ChangeType}: {remame.OldPath} -> {_args.Path}";
             }
             else
             {

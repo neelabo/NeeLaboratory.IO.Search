@@ -22,7 +22,7 @@ namespace NeeLaboratory.IO.Search.Utility
         /// <summary>
         /// ワーカータスクのキャンセルトークン
         /// </summary>
-        private CancellationTokenSource _cancellationTokenSource;
+        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         /// <summary>
         /// 予約コマンド存在通知
@@ -42,16 +42,32 @@ namespace NeeLaboratory.IO.Search.Utility
         /// <summary>
         /// 実行中コマンド
         /// </summary>
-        protected ICommand _command;
+        protected ICommand? _command;
 
 
-        /// <summary>
-        /// constructor
-        /// </summary>
+
         public CommandEngine()
         {
             _logger = new Logger(nameof(CommandEngine));
+
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    WorkerAsync(_cancellationTokenSource.Token);
+                }
+                catch (Exception e)
+                {
+                    Logger.TraceEvent(TraceEventType.Critical, 0, $"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
+                    throw;
+                }
+            });
+
+            thread.Name = GetType().FullName;
+            thread.IsBackground = true;
+            thread.Start();
         }
+
 
 
         /// <summary>
@@ -60,6 +76,8 @@ namespace NeeLaboratory.IO.Search.Utility
         /// <param name="command"></param>
         public virtual void Enqueue(ICommand command)
         {
+            ThrowIfDisposed();
+
             lock (_lock)
             {
                 if (OnEnqueueing(command))
@@ -96,32 +114,6 @@ namespace NeeLaboratory.IO.Search.Utility
             get { return _queue.Count + (_command != null ? 1 : 0); }
         }
 
-
-        /// <summary>
-        /// 初期化
-        /// ワーカースレッド起動
-        /// </summary>
-        public void Initialize()
-        {
-            _cancellationTokenSource = new CancellationTokenSource();
-
-            var thread = new Thread(() =>
-            {
-                try
-                {
-                    WorkerAsync(_cancellationTokenSource.Token);
-                }
-                catch (Exception e)
-                {
-                    Logger.TraceEvent(TraceEventType.Critical, 0, $"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
-                    throw;
-                }
-            });
-
-            thread.Name = "SearchCommandEngine";
-            thread.IsBackground = true;
-            thread.Start();
-        }
 
         /// <summary>
         /// ワーカータスク
@@ -174,6 +166,11 @@ namespace NeeLaboratory.IO.Search.Utility
         #region IDisposable Support
         private bool _disposedValue = false;
 
+        protected void ThrowIfDisposed()
+        {
+            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!_disposedValue)
@@ -182,16 +179,10 @@ namespace NeeLaboratory.IO.Search.Utility
                 {
                     lock (_lock)
                     {
-                        if (_cancellationTokenSource != null)
-                        {
-                            _cancellationTokenSource.Cancel();
-                            _cancellationTokenSource.Dispose();
-                        }
+                        _cancellationTokenSource.Cancel();
+                        _cancellationTokenSource.Dispose();
 
-                        if (_ready != null)
-                        {
-                            _ready.Dispose();
-                        }
+                        _ready.Dispose();
                     }
                 }
 

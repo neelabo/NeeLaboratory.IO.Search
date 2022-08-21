@@ -19,79 +19,48 @@ namespace NeeLaboratory.IO.Search
     {
         public static Utility.Logger Logger => Development.Logger;
 
-        #region Fields
 
         /// <summary>
         /// ノード構築処理のキャンセルトークン
         /// </summary>
-        private CancellationTokenSource _resetAreaCancellationTokenSource;
+        private CancellationTokenSource _resetAreaCancellationTokenSource = new();
 
         /// <summary>
         /// 検索処理のキャンセルトークン
         /// </summary>
-        private CancellationTokenSource _searchCancellationTokenSource;
+        private CancellationTokenSource _searchCancellationTokenSource = new();
 
-        #endregion
+        private SearchCore _core;
 
-        #region Constructors
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
         public SearchEngine()
         {
-            this.SearchAreas = new ObservableCollection<SearchArea>();
-
             _core = new SearchCore();
             _core.FileSystemChanged += Core_FileSystemChanged;
+
+            _commandEngine = new SearchCommandEngine();
         }
 
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// 検索エリア
         /// </summary>
-        private ObservableCollection<SearchArea> _searchAreas;
-        public ObservableCollection<SearchArea> SearchAreas
-        {
-            get => _searchAreas;
-            set
-            {
-                if (_searchAreas != value)
-                {
-                    if (_searchAreas != null)
-                    {
-                        _searchAreas.CollectionChanged -= Areas_CollectionChanged;
-                    }
-                    _searchAreas = value;
-                    if (_searchAreas != null)
-                    {
-                        _searchAreas.CollectionChanged += Areas_CollectionChanged;
-                    }
-                    Collect();
-                }
-            }
-        }
+        private ObservableCollection<SearchArea> _searchAreas = new ObservableCollection<SearchArea>();
+
 
 
         /// <summary>
         /// コア検索エンジン
         /// </summary>
-        private SearchCore _core;
-        internal SearchCore Core
-        {
-            get { return _core; }
-        }
+        internal SearchCore Core => _core;
 
         /// <summary>
         /// ノード環境
         /// </summary>
-        public SearchContext Context
-        {
-            get { return _core?.Context; }
-        }
+        public SearchContext Context => _core.Context;
 
         /// <summary>
         /// 検索エンジン状態
@@ -119,14 +88,13 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public Utility.Logger CommandEngineLogger => _commandEngine.Logger;
 
-        #endregion
 
-        #region Methods
 
         [Conditional("DEBUG")]
         public void DumpTree(bool verbose)
         {
-            _core?.DumpTree(verbose);
+            ThrowIfDisposed();
+            _core.DumpTree(verbose);
         }
 
         /// <summary>
@@ -135,7 +103,32 @@ namespace NeeLaboratory.IO.Search
         /// <param name="areas"></param>
         public void SetSearchAreas(IEnumerable<SearchArea> areas)
         {
-            this.SearchAreas = new ObservableCollection<SearchArea>(areas);
+            ThrowIfDisposed();
+
+            var value = new ObservableCollection<SearchArea>(areas);
+
+            if (_searchAreas != value)
+            {
+                if (_searchAreas != null)
+                {
+                    _searchAreas.CollectionChanged -= Areas_CollectionChanged;
+                }
+                _searchAreas = value;
+                if (_searchAreas != null)
+                {
+                    _searchAreas.CollectionChanged += Areas_CollectionChanged;
+                }
+                Collect();
+            }
+        }
+
+        public void AddSearchAreas(params SearchArea[] areas)
+        {
+            foreach (var area in areas)
+            {
+                _searchAreas.Add(area);
+            }
+            Collect();
         }
 
         /// <summary>
@@ -143,8 +136,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Core_FileSystemChanged(object sender, NodeTreeFileSystemEventArgs e)
+        private void Core_FileSystemChanged(object? sender, NodeTreeFileSystemEventArgs e)
         {
+            if (_disposedValue) return;
+
             switch (e.FileSystemEventArgs.ChangeType)
             {
                 case WatcherChangeTypes.Created:
@@ -154,7 +149,7 @@ namespace NeeLaboratory.IO.Search
                     RemoveNode(e.NodePath, e.FileSystemEventArgs.FullPath);
                     break;
                 case WatcherChangeTypes.Renamed:
-                    var rename = e.FileSystemEventArgs as RenamedEventArgs;
+                    var rename = (RenamedEventArgs)e.FileSystemEventArgs;
                     RenameNode(e.NodePath, rename.OldFullPath, rename.FullPath);
                     break;
                 case WatcherChangeTypes.Changed:
@@ -166,44 +161,15 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
-        /// 開始
-        /// </summary>
-        public void Start()
-        {
-            _commandEngine = new SearchCommandEngine();
-            _commandEngine.Initialize();
-
-            if (_searchAreas != null) Collect();
-        }
-
-        /// <summary>
-        /// 停止
-        /// </summary>
-        public void Stop()
-        {
-            _resetAreaCancellationTokenSource?.Cancel();
-            _searchCancellationTokenSource?.Cancel();
-
-            _commandEngine?.Dispose();
-            _commandEngine = null;
-
-            if (_core != null)
-            {
-                _core.FileSystemChanged -= Core_FileSystemChanged;
-                _core.Dispose();
-                _core = null;
-            }
-        }
-
-        /// <summary>
         /// 全てのコマンドの完了待機
         /// </summary>
-        /// <returns></returns>
         public async Task WaitAsync()
         {
-            if (_commandEngine == null) throw new InvalidOperationException("engine stopped.");
+            //TODO: Disposeしたときなど、キャンセルできるようにする
 
-            var command = new WaitCommand(this, null);
+            ThrowIfDisposed();
+
+            var command = new WaitCommand(this, new CommandArgs());
             _commandEngine.Enqueue(command);
 
             await command.WaitAsync();
@@ -214,8 +180,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Areas_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        private void Areas_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
+            if (_disposedValue) return;
+
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
@@ -234,13 +202,14 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private void Collect()
         {
-            if (_commandEngine == null) return;
+            ThrowIfDisposed();
 
             // one command only.
-            _resetAreaCancellationTokenSource?.Cancel();
+            _resetAreaCancellationTokenSource.Cancel();
+            _resetAreaCancellationTokenSource.Dispose();
             _resetAreaCancellationTokenSource = new CancellationTokenSource();
 
-            var command = new CollectCommand(this, new CollectCommandArgs() { Area = _searchAreas?.ToList() });
+            var command = new CollectCommand(this, new CollectCommandArgs(_searchAreas.ToList()));
             _commandEngine.Enqueue(command, _resetAreaCancellationTokenSource.Token);
         }
 
@@ -248,7 +217,7 @@ namespace NeeLaboratory.IO.Search
         internal void Collect_Execute(CollectCommandArgs args, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
-            _core?.Collect(args.Area, token);
+            _core.Collect(args.Area, token);
         }
 
         /// <summary>
@@ -259,8 +228,11 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public async Task<SearchResult> SearchAsync(string keyword, SearchOption option)
         {
+            ThrowIfDisposed();
+
             // one command only.
-            _searchCancellationTokenSource?.Cancel();
+            _searchCancellationTokenSource.Cancel();
+            _searchCancellationTokenSource.Dispose();
             _searchCancellationTokenSource = new CancellationTokenSource();
 
             return await SearchAsync(keyword, option, _searchCancellationTokenSource.Token);
@@ -275,21 +247,23 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public async Task<SearchResult> SearchAsync(string keyword, SearchOption option, CancellationToken token)
         {
-            if (_commandEngine == null) return new SearchResult(keyword, option, new ObservableCollection<NodeContent>());
+            ThrowIfDisposed();
 
-            var command = new SearchCommand(this, new SearchExCommandArgs() { Keyword = keyword, Option = option.Clone() });
+            var command = new SearchCommand(this, new SearchExCommandArgs(keyword, option.Clone()));
             _commandEngine.Enqueue(command, token);
 
             await command.WaitAsync(token);
-            return command.SearchResult;
+            return command.SearchResult ?? throw new InvalidOperationException("SearchResult must not be null");
         }
 
         //
         internal SearchResult Search_Execute(SearchExCommandArgs args, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             try
             {
-                return new SearchResult(args.Keyword, args.Option, _core?.Search(args.Keyword, args.Option, token));
+                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, token));
             }
             catch (Exception ex)
             {
@@ -302,7 +276,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public void CancelSearch()
         {
-            _searchCancellationTokenSource?.Cancel();
+            ThrowIfDisposed();
+
+            _searchCancellationTokenSource.Cancel();
         }
 
 
@@ -326,22 +302,22 @@ namespace NeeLaboratory.IO.Search
                 return keywords.Select(e => new SearchResult(e, option, new ObservableCollection<NodeContent>())).ToList();
             }
 
-            var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs() { Keywords = keywords.ToList(), Option = option.Clone() });
+            var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs(keywords.ToList(), option.Clone()));
             _commandEngine.Enqueue(command, token);
 
             await command.WaitAsync(token);
-            return command.SearchResults;
+            return command.SearchResults ?? throw new InvalidOperationException("SearchResults must not be null");
         }
 
         internal List<SearchResult> MultiSearch_Execute(MultiSearchExCommandArgs args, CancellationToken token)
         {
-            var units = args.Keywords.Select(e => new MultiSearchUnit() { Keyword = e, Option = args.Option }).ToList();
+            var units = args.Keywords.Select(e => new MultiSearchUnit(e, args.Option)).ToList();
 
             Parallel.ForEach(units, unit =>
             {
                 try
                 {
-                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core?.Search(unit.Keyword, unit.Option, token));
+                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, token));
                 }
                 catch (Exception ex)
                 {
@@ -349,14 +325,22 @@ namespace NeeLaboratory.IO.Search
                 }
             });
 
-            return units.Select(e => e.Result).ToList();
+            return units
+                .Select(e => e.Result ?? throw new InvalidOperationException("Result must not be null"))
+                .ToList();
         }
 
         private class MultiSearchUnit
         {
+            public MultiSearchUnit(string keyword, SearchOption option)
+            {
+                Keyword = keyword;
+                Option = option;
+            }
+
             public string Keyword { get; set; }
             public SearchOption Option { get; set; }
-            public SearchResult Result { get; set; }
+            public SearchResult? Result { get; set; }
         }
 
 
@@ -368,14 +352,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         public void Reflesh(string path)
         {
-            if (_commandEngine == null) return;
+            ThrowIfDisposed();
 
-            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
-            {
-                ChangeType = NodeChangeType.Reflesh,
-                Root = null,
-                Path = path
-            });
+            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs(NodeChangeType.Reflesh, null, path));
             _commandEngine.Enqueue(command);
         }
 
@@ -387,15 +366,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="dst"></param>
         public void Rename(string src, string dst)
         {
-            if (_commandEngine == null) return;
+            ThrowIfDisposed();
 
-            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
-            {
-                ChangeType = NodeChangeType.Rename,
-                Root = null,
-                OldPath = src,
-                Path = dst
-            });
+            var command = new NodeChangeCommand(this, new NodeRenameCommandArgs(NodeChangeType.Rename, null, dst, src));
             _commandEngine.Enqueue(command);
         }
 
@@ -407,14 +380,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         internal void AddNode(string root, string path)
         {
-            if (_commandEngine == null) return;
+            ThrowIfDisposed();
 
-            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
-            {
-                ChangeType = NodeChangeType.Add,
-                Root = root,
-                Path = path
-            });
+            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs(NodeChangeType.Add, root, path));
             _commandEngine.Enqueue(command);
         }
 
@@ -425,14 +393,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         internal void RemoveNode(string root, string path)
         {
-            if (_commandEngine == null) return;
+            ThrowIfDisposed();
 
-            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
-            {
-                ChangeType = NodeChangeType.Remove,
-                Root = root,
-                Path = path
-            });
+            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs(NodeChangeType.Remove, root, path));
             _commandEngine.Enqueue(command);
         }
 
@@ -444,15 +407,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="newPath"></param>
         internal void RenameNode(string root, string oldPath, string newPath)
         {
-            if (_commandEngine == null) return;
+            ThrowIfDisposed();
 
-            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
-            {
-                ChangeType = NodeChangeType.Rename,
-                Root = root,
-                OldPath = oldPath,
-                Path = newPath
-            });
+            var command = new NodeChangeCommand(this, new NodeRenameCommandArgs(NodeChangeType.Rename, root, newPath, oldPath));
             _commandEngine.Enqueue(command);
         }
 
@@ -463,14 +420,9 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         internal void RefleshNode(string root, string path)
         {
-            if (_commandEngine == null) return;
+            ThrowIfDisposed();
 
-            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs()
-            {
-                ChangeType = NodeChangeType.Reflesh,
-                Root = root,
-                Path = path
-            });
+            var command = new NodeChangeCommand(this, new NodeChangeCommandArgs(NodeChangeType.Reflesh, root, path));
             _commandEngine.Enqueue(command);
         }
 
@@ -482,8 +434,6 @@ namespace NeeLaboratory.IO.Search
         {
             token.ThrowIfCancellationRequested();
 
-            if (_core == null) return;
-
             switch (args.ChangeType)
             {
                 case NodeChangeType.Add:
@@ -493,7 +443,8 @@ namespace NeeLaboratory.IO.Search
                     _core.RemovePath(args.Root, args.Path);
                     break;
                 case NodeChangeType.Rename:
-                    _core.RenamePath(args.Root, args.OldPath, args.Path);
+                    var rename = (NodeRenameCommandArgs)args;
+                    _core.RenamePath(rename.Root, rename.OldPath, rename.Path);
                     break;
                 case NodeChangeType.Reflesh:
                     _core.RefleshIndex(args.Root, args.Path);
@@ -503,10 +454,14 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        #endregion
 
         #region IDisposable Support
         private bool _disposedValue = false; // 重複する呼び出しを検出するには
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -514,17 +469,18 @@ namespace NeeLaboratory.IO.Search
             {
                 if (disposing)
                 {
-                    Stop();
+                    _searchAreas.CollectionChanged -= Areas_CollectionChanged;
 
-                    if (_commandEngine != null)
-                    {
-                        _commandEngine.Dispose();
-                    }
+                    _resetAreaCancellationTokenSource.Cancel();
+                    _resetAreaCancellationTokenSource.Dispose();
 
-                    if (_resetAreaCancellationTokenSource != null)
-                    {
-                        _resetAreaCancellationTokenSource.Dispose();
-                    }
+                    _searchCancellationTokenSource.Cancel();
+                    _searchCancellationTokenSource.Dispose();
+
+                    _commandEngine.Dispose();
+
+                    _core.FileSystemChanged -= Core_FileSystemChanged;
+                    _core.Dispose();
                 }
 
                 _disposedValue = true;

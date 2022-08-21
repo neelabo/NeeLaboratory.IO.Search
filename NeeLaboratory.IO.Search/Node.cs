@@ -17,8 +17,6 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class Node
     {
-        #region Fields
-
         // Logger
         private static Utility.Logger Logger => Development.Logger;
 
@@ -35,12 +33,12 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 親ノード
         /// </summary>
-        private Node _parent;
+        private Node? _parent;
 
         /// <summary>
         /// 子ノード
         /// </summary>
-        private List<Node> _children;
+        private List<Node>? _children;
 
         /// <summary>
         /// リンク式ノードパス
@@ -55,23 +53,21 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 一般検索用正規化文字列
         /// </summary>
-        private string _normalizedFazyWord;
+        private string? _normalizedFazyWord;
 
         /// <summary>
         /// サブフォルダー再帰許可数。負で無限
         /// </summary>
         private int _depth;
 
-        #endregion
 
-        #region Constructors
 
         /// <summary>
         /// コンストラクター
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parent"></param>
-        public Node(FileSystemInfo fileSystemInfo, Node parent, int depth, SearchContext ctx)
+        public Node(FileSystemInfo fileSystemInfo, Node? parent, int depth, SearchContext ctx)
         {
             _parent = parent;
             _depth = depth;
@@ -81,19 +77,17 @@ namespace NeeLaboratory.IO.Search
             ctx.TotalCount++;
         }
 
-        #endregion
 
-        #region Properties
 
         /// <summary>
         /// ノード名
         /// </summary>
-        public string Name => _nodePath?.Name;
+        public string Name => _nodePath.Name;
 
         /// <summary>
         /// 親ノード
         /// </summary>
-        public Node Parent
+        public Node? Parent
         {
             get => _parent;
             set => _parent = value;
@@ -102,12 +96,12 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 子ノード
         /// </summary>
-        public List<Node> Children => _children;
+        public List<Node>? Children => _children;
 
         /// <summary>
         /// フルパス
         /// </summary>
-        public string Path => _nodePath?.Path;
+        public string Path => _nodePath.Path;
 
         /// <summary>
         /// ディレクトリ？
@@ -180,9 +174,7 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        #endregion
 
-        #region Methods
 
         /// <summary>
         /// 名前変更
@@ -214,9 +206,10 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public static string ToNormalisedWord(string src, bool isFazy)
         {
-            string s = src;
+            string? s = src;
 
             s = KanaEx.ToPadding(s); // 濁点を１文字にまとめる
+            if (s is null) return "";
 
             try
             {
@@ -232,6 +225,8 @@ namespace NeeLaboratory.IO.Search
             if (isFazy)
             {
                 s = KanaEx.ToKatakanaWithNormalize(s); // ひらがなをカタカナにする ＋ 特定文字の正規化
+                if (s is null) return "";
+
                 s = _regexSpace.Replace(s, ""); // 空白の削除
             }
 
@@ -254,7 +249,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent">親ノード</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(string name, Node parent, int depth, SearchContext ctx, CancellationToken token)
+        public static Node? Collect(string name, Node? parent, int depth, SearchContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -286,11 +281,11 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(DirectoryInfo dirInfo, Node parent, int depth, SearchContext ctx, CancellationToken token)
+        public static Node Collect(DirectoryInfo dirInfo, Node? parent, int depth, SearchContext ctx, CancellationToken token)
         {
-            token.ThrowIfCancellationRequested();
+            if (dirInfo is null || !dirInfo.Exists) throw new ArgumentException("dirInfo must be exists");
 
-            if (dirInfo == null || !dirInfo.Exists) return null;
+            token.ThrowIfCancellationRequested();
 
             Node node = new Node(dirInfo, parent, depth, ctx);
 
@@ -338,13 +333,13 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         /// <param name="isCreate">なければ追加する</param>
         /// <returns></returns>
-        private Node Scanning(string path, bool isCreate, SearchContext ctx, CancellationToken token)
+        private Node? Scanning(string path, bool isCreate, SearchContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             if (path == Name) return this;
 
-            if (!IsDirectory) return null;
+            if (_children is null) return null;
 
             var name = Name.TrimEnd('\\');
             if (!path.StartsWith(name + '\\')) return null;
@@ -374,7 +369,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Search(string path, SearchContext ctx, CancellationToken token)
+        public Node? Search(string path, SearchContext ctx, CancellationToken token)
         {
             return Scanning(path, false, ctx, token);
         }
@@ -384,7 +379,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Add(string path, SearchContext ctx, CancellationToken token)
+        public Node? Add(string path, SearchContext ctx, CancellationToken token)
         {
             var node = Scanning(path, true, ctx, token);
             if (node != null && node.Content.IsAdded)
@@ -403,12 +398,12 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node Remove(string path, SearchContext ctx)
+        public Node? Remove(string path, SearchContext ctx)
         {
             var node = Scanning(path, false, ctx, CancellationToken.None);
             if (node == null) return null;
 
-            node._parent?._children.Remove(node);
+            node._parent?._children?.Remove(node);
             node._parent = null;
 
             foreach (var n in node.AllNodes)
@@ -428,7 +423,7 @@ namespace NeeLaboratory.IO.Search
         {
             var text = new string(' ', level * 4) + string.Format("{0}: ({1})", Name + (IsDirectory ? "\\" : ""), _depth);
             Logger.Trace(text);
-            if (IsDirectory)
+            if (_children != null)
             {
                 foreach (var child in _children)
                 {
@@ -438,7 +433,5 @@ namespace NeeLaboratory.IO.Search
 
             ////Logger.Trace($"{Path}:({AllNodes.Count()})");
         }
-
-        #endregion
     }
 }

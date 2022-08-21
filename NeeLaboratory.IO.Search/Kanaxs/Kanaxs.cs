@@ -34,7 +34,7 @@ namespace CSharp.Japanese.Kanaxs
         /// <remarks>
         /// Kana.ToHiraganaメソッドと違い、「ヽヾヷヸヹヺ」も変換します。
         /// </remarks>
-        public static string ToHiragana(string str)
+        public static string? ToHiragana(string? str)
         {
             if (str == null || str.Length == 0)
             {
@@ -80,7 +80,7 @@ namespace CSharp.Japanese.Kanaxs
         /// <remarks>
         /// Kana.ToKatakanaメソッドと違い、「ゝゞ」も変換します。
         /// </remarks>
-        public static string ToKatakana(string str)
+        public static string? ToKatakana(string? str)
         {
             if (str == null || str.Length == 0)
             {
@@ -113,7 +113,7 @@ namespace CSharp.Japanese.Kanaxs
         /// <remarks>
         /// Kana.ToHankakuメソッドと違い、「￥”’」も変換します。
         /// </remarks>
-        public static string ToHankaku(string str)
+        public static string? ToHankaku(string? str)
         {
             if (str == null || str.Length == 0)
             {
@@ -161,7 +161,7 @@ namespace CSharp.Japanese.Kanaxs
         /// <remarks>
         /// Kana.ToZenkakuメソッドと違い、「\"'」を「￥”’」に変換します。
         /// </remarks>
-        public static string ToZenkaku(string str)
+        public static string? ToZenkaku(string? str)
         {
             if (str == null || str.Length == 0)
             {
@@ -210,7 +210,7 @@ namespace CSharp.Japanese.Kanaxs
         /// Kana.ToHankakuKanaメソッドと違い、
         /// 『、。「」・゛゜U+3099（濁点）U+309A（半濁点）ヴヷヺ』も変換します。
         /// </remarks>
-        public static string ToHankakuKana(string str)
+        public static string? ToHankakuKana(string? str)
         {
             if (str == null || str.Length == 0)
             {
@@ -287,7 +287,7 @@ namespace CSharp.Japanese.Kanaxs
         /// Kana.ToZenkakuKanaと違い、「｡｢｣､･」も変換します。
         /// また、濁点、半濁点がその前の文字と合体できる時は合体させて1文字にします。
         /// </remarks>
-        public static string ToZenkakuKana(string str)
+        public static string? ToZenkakuKana(string? str)
         {
             if (str == null || str.Length == 0)
             {
@@ -394,7 +394,7 @@ namespace CSharp.Japanese.Kanaxs
         /// Kana.ToPaddingと違い、「ゔゞヴヷヸヹヺヾ」への変換も行います。
         /// また、U+3099（濁点）とU+309A（半濁点）も前の文字と合体させて1文字にします。
         /// </remarks>
-        public static string ToPadding(string str)
+        public static string? ToPadding(string? str)
         {
             if (str == null || str.Length == 0)
             {
@@ -775,7 +775,7 @@ namespace CSharp.Japanese.Kanaxs
         /// </summary>
         /// <param name="str"></param>
         /// <returns></returns>
-        public static string ToKatakanaWithNormalize(string str)
+        public static string? ToKatakanaWithNormalize(string? str)
         {
             if (str == null || str.Length == 0)
             {

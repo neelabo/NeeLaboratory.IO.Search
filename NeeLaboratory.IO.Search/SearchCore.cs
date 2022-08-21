@@ -17,8 +17,6 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class SearchCore : IDisposable
     {
-        #region Fields
-
         private static Regex _regexNumber = new Regex(@"0*(\d+)", RegexOptions.Compiled);
 
         /// <summary>
@@ -36,9 +34,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private SearchKeyAnalyzer _searchKeyAnalyzer = new SearchKeyAnalyzer();
 
-        #endregion
 
-        #region Constructors
 
         /// <summary>
         /// コンストラクタ
@@ -48,32 +44,46 @@ namespace NeeLaboratory.IO.Search
             _fileIndexDirectory = new Dictionary<string, NodeTree>();
         }
 
-        #endregion
 
-        #region Events
 
         /// <summary>
         /// ファイルシステム変更イベント
         /// </summary>
-        internal event EventHandler<NodeTreeFileSystemEventArgs> FileSystemChanged;
+        internal event EventHandler<NodeTreeFileSystemEventArgs>? FileSystemChanged;
 
         /// <summary>
         /// ノード変更イベント
         /// </summary>
-        public event EventHandler<NodeChangedEventArgs> NodeChanged;
+        public event EventHandler<NodeChangedEventArgs>? NodeChanged;
 
-        #endregion
 
-        #region Properties
 
         /// <summary>
         /// ノード環境
         /// </summary>
         public SearchContext Context => _context;
 
-        #endregion
+        /// <summary>
+        /// すべてのNodeを走査
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<Node> AllNodes
+        {
+            get
+            {
+                ThrowIfDisposed();
 
-        #region Methods
+                foreach (var nodeTree in _fileIndexDirectory.Values)
+                {
+                    if (nodeTree.Root != null && !nodeTree.IsChild)
+                    {
+                        foreach (var node in nodeTree.Root.AllChildren)
+                            yield return node;
+                    }
+                }
+            }
+        }
+
 
         #region Index
 
@@ -83,6 +93,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="areas">検索フォルダ群</param>
         public void Collect(List<SearchArea> areas, CancellationToken token)
         {
+            ThrowIfDisposed();
+
             token.ThrowIfCancellationRequested();
 
             Debug.WriteLine($"Search: Index Collect: ...");
@@ -122,13 +134,15 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private void CollectCore(List<SearchArea> areas, CancellationToken token)
         {
+            ThrowIfDisposed();
+
             token.ThrowIfCancellationRequested();
 
             var newDictionary = new Dictionary<string, NodeTree>();
 
             foreach (var area in areas)
             {
-                _fileIndexDirectory.TryGetValue(area.Path, out NodeTree nodeTree);
+                _fileIndexDirectory.TryGetValue(area.Path, out NodeTree? nodeTree);
                 if (nodeTree is null || nodeTree.IncludeSubdirectories != area.IncludeSubdirectories)
                 {
                     nodeTree = new NodeTree(area, _context);
@@ -159,19 +173,22 @@ namespace NeeLaboratory.IO.Search
             {
                 if (!nodeTree.IncludeSubdirectories)
                 {
-                    foreach (var node in nodeTree.Root.Children.Where(e => e.IsDirectory).ToList())
+                    var children = nodeTree.Root?.Children;
+                    if (children is null) continue;
+
+                    foreach (var node in children.Where(e => e.IsDirectory).ToList())
                     {
-                        if (newDictionary.TryGetValue(node.Path, out NodeTree sub))
+                        if (newDictionary.TryGetValue(node.Path, out NodeTree? sub))
                         {
-                            if (sub.Root.Parent != null) throw new InvalidOperationException("検索エリア構成が不正");
-                            nodeTree.Root.Children.Remove(node);
+                            if (sub.Root is null) throw new InvalidOperationException("sub.Root must not be null");
+                            if (sub.Root.Parent != null) throw new InvalidOperationException("Incorrectly configured SearchArea");
+                            children.Remove(node);
                             sub.Root.Parent = nodeTree.Root;
-                            nodeTree.Root.Children.Add(sub.Root);
+                            children.Add(sub.Root);
                         }
                     }
                 }
             }
-
 
             _fileIndexDirectory = newDictionary;
             System.GC.Collect();
@@ -211,14 +228,19 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="root">検索フォルダ</param>
         /// <param name="paths">追加パス</param>
-        public Node AddPath(string root, string path, CancellationToken token)
+        public Node? AddPath(string? root, string path, CancellationToken token)
         {
-            if (!_fileIndexDirectory.ContainsKey(root))
+            ThrowIfDisposed();
+
+            root = root ?? GetRoot(path);
+            if (root is null || !_fileIndexDirectory.ContainsKey(root))
             {
                 return null;
             }
 
             var node = _fileIndexDirectory[root].AddNode(path, token);
+            if (node is null) return null;
+
             NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Add, node));
             return node;
         }
@@ -228,14 +250,19 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="root">検索フォルダ</param>
         /// <param name="path">削除パス</param>
-        public Node RemovePath(string root, string path)
+        public Node? RemovePath(string? root, string path)
         {
-            if (!_fileIndexDirectory.ContainsKey(root))
+            ThrowIfDisposed();
+
+            root = root ?? GetRoot(path);
+            if (root is null || !_fileIndexDirectory.ContainsKey(root))
             {
                 return null;
             }
 
             var node = _fileIndexDirectory[root].RemoveNode(path);
+            if (node is null) return null;
+
             NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Remove, node));
 
             return node;
@@ -247,8 +274,10 @@ namespace NeeLaboratory.IO.Search
         /// <param name="root">所属するツリー。nullの場合はoldFileNameから推定する</param>
         /// <param name="oldFileName"></param>
         /// <param name="newFilename"></param>
-        public Node RenamePath(string root, string oldFileName, string newFileName)
+        public Node? RenamePath(string? root, string oldFileName, string newFileName)
         {
+            ThrowIfDisposed();
+
             root = root ?? GetRoot(oldFileName);
             if (root == null || !_fileIndexDirectory.ContainsKey(root))
             {
@@ -258,7 +287,7 @@ namespace NeeLaboratory.IO.Search
             var node = _fileIndexDirectory[root].Rename(oldFileName, newFileName);
             if (node != null)
             {
-                NodeChanged?.Invoke(this, new NodeChangedEventArgs(NodeChangedAction.Rename, node) { OldPath = oldFileName });
+                NodeChanged?.Invoke(this, new NodeRenamedEventArgs(NodeChangedAction.Rename, node, oldFileName));
             }
 
             return node;
@@ -269,8 +298,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="root">所属するツリー。nullの場合はパスから推定する</param>
         /// <param name="path">変更するインデックスのパス</param>
-        public void RefleshIndex(string root, string path)
+        public void RefleshIndex(string? root, string path)
         {
+            ThrowIfDisposed();
+
             root = root ?? GetRoot(path);
             if (root == null || !_fileIndexDirectory.ContainsKey(root))
             {
@@ -285,7 +316,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        private string GetRoot(string path)
+        private string? GetRoot(string path)
         {
             if (path == null) return null;
             return _fileIndexDirectory.Keys.FirstOrDefault(e => path.StartsWith(e.TrimEnd('\\') + "\\"));
@@ -298,7 +329,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 単語区切り用の正規表現生成
         /// </summary>
-        private static string GetNotCodeBlockRegexString(char c)
+        private static string? GetNotCodeBlockRegexString(char c)
         {
             if ('0' <= c && c <= '9')
                 return @"\D";
@@ -338,24 +369,6 @@ namespace NeeLaboratory.IO.Search
             return keys;
         }
 
-        /// <summary>
-        /// すべてのNodeを走査
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<Node> AllNodes
-        {
-            get
-            {
-                foreach (var nodeTree in _fileIndexDirectory.Values)
-                {
-                    if (nodeTree.Root != null && !nodeTree.IsChild)
-                    {
-                        foreach (var node in nodeTree.Root.AllChildren)
-                            yield return node;
-                    }
-                }
-            }
-        }
 
         /// <summary>
         /// 検索
@@ -365,6 +378,8 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public ObservableCollection<NodeContent> Search(string keyword, SearchOption option, CancellationToken token)
         {
+            ThrowIfDisposed();
+
             token.ThrowIfCancellationRequested();
 
             var items = new ObservableCollection<NodeContent>(Search(keyword, option, AllNodes.ToList(), token).Select(e => e.Content));
@@ -384,6 +399,8 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public IEnumerable<Node> Search(string keyword, SearchOption option, IEnumerable<Node> entries, CancellationToken token)
         {
+            ThrowIfDisposed();
+
             var all = entries;
 
             // pushpin保存
@@ -610,10 +627,14 @@ namespace NeeLaboratory.IO.Search
 
         #endregion
 
-        #endregion
 
         #region IDisposable Support
         private bool _disposedValue = false;
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -621,14 +642,10 @@ namespace NeeLaboratory.IO.Search
             {
                 if (disposing)
                 {
-                    if (_fileIndexDirectory != null)
+                    foreach (var pair in _fileIndexDirectory)
                     {
-                        foreach (var pair in _fileIndexDirectory)
-                        {
-                            pair.Value.Dispose();
-                        }
+                        pair.Value.Dispose();
                     }
-                    _fileIndexDirectory = null;
                 }
 
                 _disposedValue = true;

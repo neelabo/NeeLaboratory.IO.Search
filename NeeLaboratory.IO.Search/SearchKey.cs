@@ -66,12 +66,6 @@
     /// </summary>
     public class SearchKey
     {
-        #region Constructors
-
-        public SearchKey()
-        {
-        }
-
         public SearchKey(string word)
         {
             Word = word;
@@ -83,10 +77,6 @@
             Pattern = pattern;
         }
 
-
-        #endregion Constructors
-
-        #region Properties
 
         /// <summary>
         /// 検索単語
@@ -103,16 +93,14 @@
         /// </summary>
         public SearchPattern Pattern { get; set; } = SearchPattern.Standard;
 
-        #endregion Properties
 
-        #region Methods
 
         public SearchKey Clone()
         {
             return (SearchKey)this.MemberwiseClone();
         }
 
-        public override bool Equals(object other)
+        public override bool Equals(object? other)
         {
             if (other is SearchKey target)
             {
@@ -133,7 +121,5 @@
         {
             return $"{Conjunction},{Pattern},\"{Word}\"";
         }
-
-        #endregion Methods
     }
 }

@@ -26,7 +26,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索失敗時の例外
         /// </summary>
-        Exception Exception { get; }
+        Exception? Exception { get; }
     }
 
 }

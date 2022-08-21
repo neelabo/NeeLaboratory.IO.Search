@@ -5,8 +5,6 @@
     /// </summary>
     public class NodePath
     {
-        #region Fields
-
         /// <summary>
         /// 名前
         /// </summary>
@@ -15,26 +13,22 @@
         /// <summary>
         /// 親
         /// </summary>
-        private NodePath _parent;
+        private NodePath? _parent;
 
-        #endregion
 
-        #region Constructors
 
         /// <summary>
         /// コンストラクタ
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parent"></param>
-        public NodePath(string name, NodePath parent)
+        public NodePath(string name, NodePath? parent)
         {
             _name = name;
             _parent = parent;
         }
 
-        #endregion
 
-        #region Properties
 
         /// <summary>
         /// 名前
@@ -50,6 +44,5 @@
         /// </summary>
         public string Path => _parent == null ? _name : System.IO.Path.Combine(_parent.Path, Name);
 
-        #endregion
     }
 }

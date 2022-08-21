@@ -12,21 +12,18 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class SearchResult : ISearchResult
     {
-        #region Constructors
-
-        public SearchResult(string keyword, SearchOption option, ObservableCollection<NodeContent> items)
+        public SearchResult(string keyword, SearchOption option, ObservableCollection<NodeContent>? items)
         {
             Keyword = keyword;
             SearchOption = option;
             Items = items ?? new ObservableCollection<NodeContent>();
         }
 
-        public SearchResult(string keyword, SearchOption searchOption, ObservableCollection<NodeContent> items, Exception exception) : this(keyword, searchOption, items)
+        public SearchResult(string keyword, SearchOption searchOption, ObservableCollection<NodeContent>? items, Exception exception) : this(keyword, searchOption, items)
         {
             Exception = exception;
         }
 
-        #endregion
 
         #region ISearchResult Support
 
@@ -48,7 +45,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索失敗時の例外
         /// </summary>
-        public Exception Exception { get; private set; }
+        public Exception? Exception { get; private set; }
 
         #endregion
     }

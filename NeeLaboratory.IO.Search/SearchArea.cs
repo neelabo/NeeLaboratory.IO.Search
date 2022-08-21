@@ -20,7 +20,7 @@ namespace NeeLaboratory.IO.Search
         }
 
         [DataMember]
-        public string Path { get; set; }
+        public string Path { get; set; } = "";
 
         [DataMember]
         public bool IncludeSubdirectories { get; set; }
