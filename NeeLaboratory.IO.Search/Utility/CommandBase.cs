@@ -112,16 +112,6 @@ namespace NeeLaboratory.IO.Search.Utility
             }
         }
 
-        /// <summary>
-        /// コマンド終了待機
-        /// </summary>
-        /// <returns></returns>
-        public async Task WaitAsync()
-        {
-            await Task.Run(() => _complete.Wait());
-        }
-
-        static int _serial;
 
         /// <summary>
         /// コマンド終了待機
@@ -129,9 +119,9 @@ namespace NeeLaboratory.IO.Search.Utility
         /// <returns></returns>
         public async Task WaitAsync(CancellationToken token)
         {
-            var serial = _serial++;
+            token.ThrowIfCancellationRequested();
 
-            await Task.Run(() => _complete.Wait(token), token);
+            await _complete.WaitHandle.AsTask().WaitAsync(token);
         }
 
 

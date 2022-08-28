@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -92,22 +93,22 @@ namespace NeeLaboratory.IO.Search.Test
 
             // パスの追加
             engine.AddSearchAreas(new SearchArea(_folderRoot, false));
-            await engine.WaitAsync();
+            await engine.WaitAsync(CancellationToken.None);
             //engine.DumpTree(true);
             Assert.Equal(7, engine.NodeCount);
 
             engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true) });
-            await engine.WaitAsync();
+            await engine.WaitAsync(CancellationToken.None);
             //engine.DumpTree(true);
             Assert.Equal(13, engine.NodeCount);
 
             engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true), new SearchArea(_folderSub1, true) });
-            await engine.WaitAsync();
+            await engine.WaitAsync(CancellationToken.None);
             Assert.Equal(13, engine.NodeCount);
 
             // 変則エリア。NodeTreeの結合が発生
             engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, false), new SearchArea(_folderSub1, true) });
-            await engine.WaitAsync();
+            await engine.WaitAsync(CancellationToken.None);
             engine.DumpTree(true);
             Assert.Equal(10, engine.NodeCount);
 
@@ -153,12 +154,13 @@ namespace NeeLaboratory.IO.Search.Test
             List<SearchResult> result;
 
             var keywords = new string[] { "file", "/word あいう", "/word あいうえお", "/word ウエオ" };
+            var answers = new int[] { 9, 0, 1, 0 };
 
             result = await engine.MultiSearchAsync(keywords, new SearchOption());
-            Assert.Equal(9, result[0].Items.Count);
-            Assert.Equal(0, result[1].Items.Count);
-            Assert.Equal(1, result[2].Items.Count);
-            Assert.Equal(0, result[3].Items.Count);
+            Assert.Equal(answers[0], result[0].Items.Count);
+            Assert.Equal(answers[1], result[1].Items.Count);
+            Assert.Equal(answers[2], result[2].Items.Count);
+            Assert.Equal(answers[3], result[3].Items.Count);
         }
 
 
@@ -202,7 +204,7 @@ namespace NeeLaboratory.IO.Search.Test
             File.Delete(_fileAppend1);
             File.Delete(fileAppend2Ex);
             await Task.Delay(100);
-            await engine.WaitAsync();
+            await engine.WaitAsync(CancellationToken.None);
 
             // 戻ったカウント確認
             Assert.True(result.Items.Count == resultCount);

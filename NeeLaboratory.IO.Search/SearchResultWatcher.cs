@@ -41,7 +41,7 @@ namespace NeeLaboratory.IO.Search
             _engine = engine;
             _result = result;
 
-            _engine.Core.NodeChanged += Core_NodeChanged;
+            _engine.Core.NodeChanged += SearchCore_NodeChanged;
         }
 
 
@@ -53,26 +53,25 @@ namespace NeeLaboratory.IO.Search
 
 
 
-
         /// <summary>
         /// ファイル変化イベント処理
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Core_NodeChanged(object? sender, NodeChangedEventArgs e)
+        private void SearchCore_NodeChanged(object? sender, NodeChangedEventArgs e)
         {
             if (_disposedValue) return;
 
             var node = e.Node;
             if (node == null) return;
 
-            if (_engine?.Core == null) return;
+            if (_engine.IsDisposed()) return;
 
             if (e.Action == NodeChangedAction.Add)
             {
                 try
                 {
-                    var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
+                    var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
                     if (items != null)
                     {
                         foreach (var item in items)
@@ -110,7 +109,7 @@ namespace NeeLaboratory.IO.Search
                 {
                     try
                     {
-                        var items = _engine.Core?.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
+                        var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
                         if (items != null)
                         {
                             foreach (var item in items)
@@ -129,34 +128,6 @@ namespace NeeLaboratory.IO.Search
                 }
             }
         }
-
-
-        #region IDisposable Support
-        private bool _disposedValue = false;
-
-        protected void ThrowIfDisposed()
-        {
-            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                    _engine.Core.NodeChanged -= Core_NodeChanged;
-                }
-
-                _disposedValue = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-        #endregion
 
         #region ISearchResult Support
 
@@ -181,5 +152,33 @@ namespace NeeLaboratory.IO.Search
         public Exception? Exception => _result.Exception;
 
         #endregion
+
+        #region IDisposable Support
+        private bool _disposedValue = false;
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                    _engine.Core.NodeChanged -= SearchCore_NodeChanged;
+                }
+
+                _disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+        #endregion
+
     }
 }

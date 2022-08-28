@@ -30,6 +30,9 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private CancellationTokenSource _searchCancellationTokenSource = new();
 
+        /// <summary>
+        /// 検索コア
+        /// </summary>
         private SearchCore _core;
 
 
@@ -163,16 +166,16 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 全てのコマンドの完了待機
         /// </summary>
-        public async Task WaitAsync()
+        public async Task WaitAsync(CancellationToken token)
         {
-            //TODO: Disposeしたときなど、キャンセルできるようにする
+            token.ThrowIfCancellationRequested();
 
             ThrowIfDisposed();
 
             var command = new WaitCommand(this, new CommandArgs());
             _commandEngine.Enqueue(command);
 
-            await command.WaitAsync();
+            await command.WaitAsync(token);
         }
 
         /// <summary>
@@ -247,6 +250,8 @@ namespace NeeLaboratory.IO.Search
         /// <returns></returns>
         public async Task<SearchResult> SearchAsync(string keyword, SearchOption option, CancellationToken token)
         {
+            token.ThrowIfCancellationRequested();
+
             ThrowIfDisposed();
 
             var command = new SearchCommand(this, new SearchExCommandArgs(keyword, option.Clone()));
@@ -457,6 +462,11 @@ namespace NeeLaboratory.IO.Search
 
         #region IDisposable Support
         private bool _disposedValue = false; // 重複する呼び出しを検出するには
+
+        public bool IsDisposed()
+        {
+            return _disposedValue;
+        }
 
         protected void ThrowIfDisposed()
         {
