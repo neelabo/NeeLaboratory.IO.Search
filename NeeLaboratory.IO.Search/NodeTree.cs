@@ -16,13 +16,13 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class NodeTree : IDisposable
     {
-        private Utility.Logger Logger => Development.Logger;
+        private static Utility.Logger Logger => Development.Logger;
 
 
         /// <summary>
         /// ノード環境
         /// </summary>
-        private SearchContext _context;
+        private readonly SearchContext _context;
 
         /// <summary>
         /// ファイル変更監視
@@ -77,7 +77,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 他のNodeTreeの子
         /// </summary>
-        public bool IsChild => Root is null ? false : Root.Parent != null;
+        public bool IsChild => Root is not null && Root.Parent != null;
 
 
 
@@ -234,10 +234,12 @@ namespace NeeLaboratory.IO.Search
         {
             try
             {
-                _fileSystemWatcher = new FileSystemWatcher();
-                _fileSystemWatcher.Path = Path;
-                _fileSystemWatcher.IncludeSubdirectories = includeSubdirectories;
-                _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size;
+                _fileSystemWatcher = new FileSystemWatcher
+                {
+                    Path = Path,
+                    IncludeSubdirectories = includeSubdirectories,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Size
+                };
                 _fileSystemWatcher.Created += Watcher_Changed;
                 _fileSystemWatcher.Deleted += Watcher_Changed;
                 _fileSystemWatcher.Renamed += Watcher_Renamed;
@@ -310,6 +312,7 @@ namespace NeeLaboratory.IO.Search
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
         #endregion
     }

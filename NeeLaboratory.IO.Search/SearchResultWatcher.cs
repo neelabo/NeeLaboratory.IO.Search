@@ -22,12 +22,12 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 所属する検索エンジン
         /// </summary>
-        private SearchEngine _engine;
+        private readonly SearchEngine _engine;
 
         /// <summary>
         /// 監視する検索結果
         /// </summary>
-        private SearchResult _result;
+        private readonly SearchResult _result;
 
 
 
@@ -177,6 +177,7 @@ namespace NeeLaboratory.IO.Search
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
         #endregion
 

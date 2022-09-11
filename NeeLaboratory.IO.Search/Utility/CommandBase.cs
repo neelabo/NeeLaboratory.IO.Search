@@ -47,7 +47,7 @@ namespace NeeLaboratory.IO.Search.Utility
         }
 
         // コマンド終了通知
-        private ManualResetEventSlim _complete = new ManualResetEventSlim(false);
+        private readonly ManualResetEventSlim _complete = new(false);
 
         // コマンド実行結果
         private CommandResult _result;
@@ -171,6 +171,7 @@ namespace NeeLaboratory.IO.Search.Utility
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
         #endregion
     }

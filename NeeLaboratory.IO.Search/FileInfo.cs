@@ -12,12 +12,10 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class FileInfo
     {
-        #region Fields
-
         /// <summary>
         /// パス
         /// </summary>
-        private NodePath _nodePath;
+        private readonly NodePath _nodePath;
 
         /// <summary>
         /// 属性
@@ -34,9 +32,6 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private long _lastWriteTime;
 
-        #endregion
-
-        #region Constructors
 
         /// <summary>
         /// コンストラクタ
@@ -49,9 +44,6 @@ namespace NeeLaboratory.IO.Search
             SetFileSystemInfo(fileSystemInfo);
         }
 
-        #endregion
-
-        #region Properties
 
         /// <summary>
         /// パス
@@ -93,9 +85,6 @@ namespace NeeLaboratory.IO.Search
             get { return IsDirectory ? null : System.IO.Path.GetExtension(Path); }
         }
 
-        #endregion
-
-        #region Methods
 
         /// <summary>
         /// 情報の初期化
@@ -127,7 +116,5 @@ namespace NeeLaboratory.IO.Search
             _size = fileSystemInfo is System.IO.FileInfo fileInfo ? fileInfo.Length : -1;
             _lastWriteTime = fileSystemInfo.LastWriteTime.ToBinary();
         }
-
-        #endregion
     }
 }

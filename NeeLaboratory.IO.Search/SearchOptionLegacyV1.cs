@@ -6,7 +6,7 @@ namespace NeeLaboratory.IO.Search
     /// <summary>
     /// 旧検索オプション
     /// </summary>
-    [Obsolete, DataContract]
+    [Obsolete("no used"), DataContract]
     public class SearchOptionLegacyV1
     {
         [DataMember]

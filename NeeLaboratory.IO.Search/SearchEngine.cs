@@ -17,6 +17,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class SearchEngine : IDisposable
     {
+
         public static Utility.Logger Logger => Development.Logger;
 
 
@@ -33,7 +34,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索コア
         /// </summary>
-        private SearchCore _core;
+        private readonly SearchCore _core;
 
 
         /// <summary>
@@ -51,7 +52,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索エリア
         /// </summary>
-        private ObservableCollection<SearchArea> _searchAreas = new ObservableCollection<SearchArea>();
+        private ObservableCollection<SearchArea> _searchAreas = new();
 
 
 
@@ -84,7 +85,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// コマンドエンジン
         /// </summary>
-        private SearchCommandEngine _commandEngine;
+        private readonly SearchCommandEngine _commandEngine;
 
         /// <summary>
         /// コマンドエンジン Logger
@@ -502,6 +503,7 @@ namespace NeeLaboratory.IO.Search
         {
             // このコードを変更しないでください。クリーンアップ コードを上の Dispose(bool disposing) に記述します。
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
         #endregion
     }

@@ -28,7 +28,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// Space regex
         /// </summary>
-        private static Regex _regexSpace = new Regex(@"\s+", RegexOptions.Compiled);
+        private static readonly Regex _regexSpace = new(@"\s+", RegexOptions.Compiled);
 
         /// <summary>
         /// 親ノード
@@ -43,12 +43,12 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// リンク式ノードパス
         /// </summary>
-        private NodePath _nodePath;
+        private readonly NodePath _nodePath;
 
         /// <summary>
         /// コンテンツ
         /// </summary>
-        private NodeContent _content;
+        private readonly NodeContent _content;
 
         /// <summary>
         /// 一般検索用正規化文字列
@@ -58,7 +58,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// サブフォルダー再帰許可数。負で無限
         /// </summary>
-        private int _depth;
+        private readonly int _depth;
 
 
 
@@ -134,7 +134,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// PushPinフラグ
         /// </summary>
-        public bool IsPushPin => _content == null ? false : _content.IsPushPin;
+        public bool IsPushPin => _content != null && _content.IsPushPin;
 
         /// <summary>
         /// すべてのNodeを走査。自身は含まない
@@ -287,7 +287,7 @@ namespace NeeLaboratory.IO.Search
 
             token.ThrowIfCancellationRequested();
 
-            Node node = new Node(dirInfo, parent, depth, ctx);
+            var node = new Node(dirInfo, parent, depth, ctx);
 
             if (depth == 0)
             {
@@ -302,7 +302,7 @@ namespace NeeLaboratory.IO.Search
                 var files = infos.OfType<System.IO.FileInfo>().Where(e => ctx.NodeFilter?.Invoke(e) == true).ToList();
 
                 var directoryNodes = new Node[directories.Count];
-                ParallelOptions options = new ParallelOptions() { CancellationToken = token };
+                var options = new ParallelOptions() { CancellationToken = token };
                 Parallel.ForEach(directories, options, (s, state, index) =>
                 {
                     options.CancellationToken.ThrowIfCancellationRequested();
@@ -343,7 +343,7 @@ namespace NeeLaboratory.IO.Search
 
             var name = Name.TrimEnd('\\');
             if (!path.StartsWith(name + '\\')) return null;
-            var childPath = path.Substring(name.Length + 1);
+            var childPath = path[(name.Length + 1)..];
 
             foreach (var child in _children)
             {

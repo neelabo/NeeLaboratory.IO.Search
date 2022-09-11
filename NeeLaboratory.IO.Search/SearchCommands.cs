@@ -76,7 +76,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class CollectCommand : CommandBase
     {
-        CollectCommandArgs _args;
+        readonly CollectCommandArgs _args;
 
         //
         public CollectCommand(SearchEngine target, CollectCommandArgs args) : base(target)
@@ -123,7 +123,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class SearchCommand : CommandBase
     {
-        private SearchExCommandArgs _args;
+        private readonly SearchExCommandArgs _args;
 
         public SearchCommand(SearchEngine target, SearchExCommandArgs args) : base(target)
         {
@@ -175,7 +175,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class MultiSearchCommand : CommandBase
     {
-        private MultiSearchExCommandArgs _args;
+        private readonly MultiSearchExCommandArgs _args;
 
         /// <summary>
         /// 検索結果
@@ -204,6 +204,7 @@ namespace NeeLaboratory.IO.Search
     internal class WaitCommand : CommandBase
     {
         //
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:未使用のパラメーターを削除します", Justification = "<保留中>")]
         public WaitCommand(SearchEngine target, CommandArgs args) : base(target)
         {
         }
@@ -264,7 +265,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class NodeChangeCommand : CommandBase
     {
-        private NodeChangeCommandArgs _args;
+        private readonly NodeChangeCommandArgs _args;
 
         //
         public NodeChangeCommand(SearchEngine target, NodeChangeCommandArgs args) : base(target)

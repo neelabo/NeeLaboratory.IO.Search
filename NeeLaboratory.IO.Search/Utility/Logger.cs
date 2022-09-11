@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace NeeLaboratory.IO.Search.Utility
 {
     /// <summary>
@@ -15,7 +16,7 @@ namespace NeeLaboratory.IO.Search.Utility
         /// <summary>
         /// TraceSource
         /// </summary>
-        private TraceSource _traceSource;
+        private readonly TraceSource _traceSource;
         public TraceSource TraceSource => _traceSource;
 
         /// <summary>

@@ -13,7 +13,7 @@
         /// <summary>
         /// 親
         /// </summary>
-        private NodePath? _parent;
+        private readonly NodePath? _parent;
 
 
 

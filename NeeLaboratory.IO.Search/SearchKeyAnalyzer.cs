@@ -8,7 +8,7 @@ namespace NeeLaboratory.IO.Search
 {
     public class SearchKeyAnalyzer
     {
-        private static Regex _regexDateTimeCustom = new Regex(@"^([+-]?\d+)(day|month|year)$");
+        private static readonly Regex _regexDateTimeCustom = new(@"^([+-]?\d+)(day|month|year)$");
 
 
         delegate void StateFunc(Context context);
@@ -34,7 +34,7 @@ namespace NeeLaboratory.IO.Search
             Any,
         }
 
-        private State[,] _table = new State[,]
+        private readonly State[,] _table = new State[,]
         {
             {State.END, State.S01, State.S04, State.S02, }, // S00
             {State.S00, State.S00, State.S00, State.S00, }, // S01
@@ -45,7 +45,7 @@ namespace NeeLaboratory.IO.Search
             {State.END, State.END, State.END, State.END, }, // S06
         };
 
-        private List<StateFunc> _stateMap;
+        private readonly List<StateFunc> _stateMap;
 
 
         public SearchKeyAnalyzer()
@@ -131,7 +131,7 @@ namespace NeeLaboratory.IO.Search
 
         private class Context
         {
-            private string _source;
+            private readonly string _source;
             private int _header;
             private SearchKey _work;
 
@@ -185,15 +185,12 @@ namespace NeeLaboratory.IO.Search
                 {
                     return Trigger.Space;
                 }
-                switch (c)
+                return c switch
                 {
-                    case '\0':
-                        return Trigger.End;
-                    case '"':
-                        return Trigger.DoubleQuote;
-                    default:
-                        return Trigger.Any;
-                }
+                    '\0' => Trigger.End,
+                    '"' => Trigger.DoubleQuote,
+                    _ => Trigger.Any,
+                };
             }
 
             public void Push()
@@ -279,11 +276,11 @@ namespace NeeLaboratory.IO.Search
             }
 
 
-            private void ValidateRegex(string word)
+            private static void ValidateRegex(string word)
             {
                 try
                 {
-                    new Regex(word);
+                    _ = new Regex(word);
                 }
                 catch (Exception ex)
                 {
@@ -291,7 +288,7 @@ namespace NeeLaboratory.IO.Search
                 }
             }
 
-            private string ValidateDateTimeWord(string word)
+            private static string ValidateDateTimeWord(string word)
             {
                 try
                 {
@@ -299,17 +296,13 @@ namespace NeeLaboratory.IO.Search
                     if (match.Success)
                     {
                         var value = int.Parse(match.Groups[1].Value);
-                        switch (match.Groups[2].Value)
+                        return match.Groups[2].Value switch
                         {
-                            case "day":
-                                return DateTime.Now.AddDays(value).ToString();
-                            case "month":
-                                return DateTime.Now.AddMonths(value).ToString();
-                            case "year":
-                                return DateTime.Now.AddYears(value).ToString();
-                            default:
-                                throw new NotSupportedException();
-                        }
+                            "day" => DateTime.Now.AddDays(value).ToString(),
+                            "month" => DateTime.Now.AddMonths(value).ToString(),
+                            "year" => DateTime.Now.AddYears(value).ToString(),
+                            _ => throw new NotSupportedException(),
+                        };
                     }
                     else
                     {

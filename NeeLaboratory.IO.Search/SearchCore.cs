@@ -17,12 +17,12 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class SearchCore : IDisposable
     {
-        private static Regex _regexNumber = new Regex(@"0*(\d+)", RegexOptions.Compiled);
+        private static readonly Regex _regexNumber = new(@"0*(\d+)", RegexOptions.Compiled);
 
         /// <summary>
         /// ノード環境
         /// </summary>
-        private SearchContext _context = new SearchContext();
+        private readonly SearchContext _context = new();
 
         /// <summary>
         /// ノード群
@@ -32,7 +32,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索キーワード解析
         /// </summary>
-        private SearchKeyAnalyzer _searchKeyAnalyzer = new SearchKeyAnalyzer();
+        private readonly SearchKeyAnalyzer _searchKeyAnalyzer = new();
 
 
 
@@ -99,7 +99,7 @@ namespace NeeLaboratory.IO.Search
 
             Debug.WriteLine($"Search: Index Collect: ...");
 
-            if (areas.Count() == 0) return;
+            if (areas.Count == 0) return;
 
             var roots = new List<SearchArea>();
 
@@ -153,7 +153,7 @@ namespace NeeLaboratory.IO.Search
 
             _context.TotalCount = 0;
 
-            ParallelOptions options = new ParallelOptions() { CancellationToken = token };
+            var options = new ParallelOptions() { CancellationToken = token };
             Parallel.ForEach(newDictionary.Values, options, nodeTree =>
             {
                 nodeTree.Collect(options.CancellationToken);
@@ -358,7 +358,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索キーリスト生成
         /// </summary>
-        private List<SearchKey> CreateKeys(string source, SearchOption option)
+        private List<SearchKey> CreateKeys(string source)
         {
             var keys = _searchKeyAnalyzer.Analyze(source)
                 .Where(e => !string.IsNullOrEmpty(e.Word))
@@ -410,7 +410,7 @@ namespace NeeLaboratory.IO.Search
             if (string.IsNullOrWhiteSpace(keyword)) return pushpins;
 
             // キーワード登録
-            var keys = CreateKeys(keyword, option);
+            var keys = CreateKeys(keyword);
             if (keys == null || keys.Count == 0)
             {
                 return pushpins;
@@ -450,27 +450,19 @@ namespace NeeLaboratory.IO.Search
             return pushpins.Concat(entries);
         }
 
-        private IMatchable<Node> CreateMatchable(SearchKey key)
+        private static IMatchable<Node> CreateMatchable(SearchKey key)
         {
-            switch (key.Pattern)
+            return key.Pattern switch
             {
-                default:
-                    throw new NotSupportedException();
-                case SearchPattern.Exact:
-                    return new ExactMatch(key);
-                case SearchPattern.Word:
-                    return new WordMatch(key);
-                case SearchPattern.Standard:
-                    return new StandardMatch(key);
-                case SearchPattern.RegularExpression:
-                    return new RegularExpressionMatch(key);
-                case SearchPattern.RegularExpressionIgnoreCase:
-                    return new RegularExpressionIgnoreCaseMatch(key);
-                case SearchPattern.Since:
-                    return new SinceMatch(key);
-                case SearchPattern.Until:
-                    return new UntilMatch(key);
-            }
+                SearchPattern.Exact => new ExactMatch(key),
+                SearchPattern.Word => new WordMatch(key),
+                SearchPattern.Standard => new StandardMatch(key),
+                SearchPattern.RegularExpression => new RegularExpressionMatch(key),
+                SearchPattern.RegularExpressionIgnoreCase => new RegularExpressionIgnoreCaseMatch(key),
+                SearchPattern.Since => new SinceMatch(key),
+                SearchPattern.Until => new UntilMatch(key),
+                _ => throw new NotSupportedException(),
+            };
         }
 
         interface IMatchable<T>
@@ -480,7 +472,7 @@ namespace NeeLaboratory.IO.Search
 
         class SinceMatch : IMatchable<Node>
         {
-            private DateTime _since;
+            private readonly DateTime _since;
 
             public SinceMatch(SearchKey key)
             {
@@ -502,7 +494,7 @@ namespace NeeLaboratory.IO.Search
 
         class UntilMatch : IMatchable<Node>
         {
-            private DateTime _until;
+            private readonly DateTime _until;
 
             public UntilMatch(SearchKey key)
             {
@@ -524,7 +516,7 @@ namespace NeeLaboratory.IO.Search
 
         class RegularExpressionMatch : IMatchable<Node>
         {
-            private Regex _regex;
+            private readonly Regex _regex;
 
             public RegularExpressionMatch(SearchKey key)
             {
@@ -546,7 +538,7 @@ namespace NeeLaboratory.IO.Search
 
         class RegularExpressionIgnoreCaseMatch : IMatchable<Node>
         {
-            private Regex _regex;
+            private readonly Regex _regex;
 
             public RegularExpressionIgnoreCaseMatch(SearchKey key)
             {
@@ -568,7 +560,7 @@ namespace NeeLaboratory.IO.Search
 
         class ExactMatch : IMatchable<Node>
         {
-            private Regex _regex;
+            private readonly Regex _regex;
 
             public ExactMatch(SearchKey key)
             {
@@ -584,7 +576,7 @@ namespace NeeLaboratory.IO.Search
 
         class WordMatch : IMatchable<Node>
         {
-            private Regex _regex;
+            private readonly Regex _regex;
 
             public WordMatch(SearchKey key)
             {
@@ -608,7 +600,7 @@ namespace NeeLaboratory.IO.Search
 
         class StandardMatch : IMatchable<Node>
         {
-            private Regex _regex;
+            private readonly Regex _regex;
 
             public StandardMatch(SearchKey key)
             {

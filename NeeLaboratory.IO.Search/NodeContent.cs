@@ -34,12 +34,12 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// パス
         /// </summary>
-        private NodePath _nodePath;
+        private readonly NodePath _nodePath;
 
         /// <summary>
         /// ファイル情報
         /// </summary>
-        private FileInfo _fileInfo;
+        private readonly FileInfo _fileInfo;
 
         /// <summary>
         /// ノード属性
@@ -95,7 +95,7 @@ namespace NeeLaboratory.IO.Search
             get
             {
                 string sizeText = (this.FileInfo.Size >= 0) ? $"Size: {(this.FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "Size: --\n";
-                return $"{Name}\n{sizeText}Date: {this.FileInfo.LastWriteTime.ToString("yyyy/MM/dd HH:mm")}\nFolder: {DirectoryName}";
+                return $"{Name}\n{sizeText}Date: {this.FileInfo.LastWriteTime:yyyy/MM/dd HH:mm}\nFolder: {DirectoryName}";
             }
         }
 

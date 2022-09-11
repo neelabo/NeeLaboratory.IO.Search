@@ -19,11 +19,6 @@ namespace NeeLaboratory.IO.Search
         public bool AllowFolder { get; set; }
 
 
-        [OnDeserializing]
-        private void OnDeserializing(StreamingContext context)
-        {
-        }
-
         /// <summary>
         /// 複製
         /// </summary>

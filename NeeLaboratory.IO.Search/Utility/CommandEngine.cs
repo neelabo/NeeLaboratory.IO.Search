@@ -11,33 +11,33 @@ namespace NeeLaboratory.IO.Search.Utility
     /// <summary>
     /// コマンドエンジン
     /// </summary>
-    public class CommandEngine : IDisposable
+    internal class CommandEngine : IDisposable
     {
         /// <summary>
         /// Logger
         /// </summary>
-        private Logger _logger;
+        private readonly Logger _logger;
         public Logger Logger => _logger;
 
         /// <summary>
         /// ワーカータスクのキャンセルトークン
         /// </summary>
-        private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         /// <summary>
         /// 予約コマンド存在通知
         /// </summary>
-        private ManualResetEventSlim _ready = new ManualResetEventSlim(false);
+        private readonly ManualResetEventSlim _ready = new(false);
 
         /// <summary>
         /// lock
         /// </summary>
-        private object _lock = new object();
+        private readonly object _lock = new();
 
         /// <summary>
         /// 予約コマンドリスト
         /// </summary>
-        protected Queue<ICommand> _queue = new Queue<ICommand>();
+        protected Queue<ICommand> _queue = new();
 
         /// <summary>
         /// 実行中コマンド
@@ -50,21 +50,11 @@ namespace NeeLaboratory.IO.Search.Utility
         {
             _logger = new Logger(nameof(CommandEngine));
 
-            var thread = new Thread(() =>
+            var thread = new Thread(Worker)
             {
-                try
-                {
-                    WorkerAsync(_cancellationTokenSource.Token);
-                }
-                catch (Exception e)
-                {
-                    Logger.TraceEvent(TraceEventType.Critical, 0, $"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
-                    throw;
-                }
-            });
-
-            thread.Name = GetType().FullName;
-            thread.IsBackground = true;
+                Name = GetType().FullName,
+                IsBackground = true
+            };
             thread.Start();
         }
 
@@ -116,6 +106,22 @@ namespace NeeLaboratory.IO.Search.Utility
 
 
         /// <summary>
+        /// ワーカー
+        /// </summary>
+        private void Worker()
+        {
+            try
+            {
+                WorkerAsync(_cancellationTokenSource.Token);
+            }
+            catch (Exception e)
+            {
+                Logger.TraceEvent(TraceEventType.Critical, 0, $"!!!! EXCEPTION !!!!: {e.Message}\n{e.StackTrace}");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// ワーカータスク
         /// </summary>
         /// <param name="token"></param>
@@ -143,7 +149,7 @@ namespace NeeLaboratory.IO.Search.Utility
                         }
 
                         Logger.Trace($"{_command}: start... :rest={_queue.Count}");
-                        _command?.ExecuteAsync().Wait();
+                        _command?.ExecuteAsync().Wait(token);
                         Logger.Trace($"{_command}: done.");
                         if (_command is CommandBase cmd)
                         {
@@ -193,6 +199,7 @@ namespace NeeLaboratory.IO.Search.Utility
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
         #endregion
     }

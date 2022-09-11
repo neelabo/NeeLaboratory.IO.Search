@@ -16,13 +16,13 @@ namespace NeeLaboratory.IO.Search.Test
 {
     public class SearchEngineTest
     {
-        private static string _folderRoot = @"TestFolders";
-        private static string _folderSub1 = @"TestFolders\SubFolder1";
-        private static string _folderSub2 = @"TestFolders\SubFolder2";
+        private static readonly string _folderRoot = @"TestFolders";
+        private static readonly string _folderSub1 = @"TestFolders\SubFolder1";
+        private static readonly string _folderSub2 = @"TestFolders\SubFolder2";
 
-        private static string _fileAppend1 = @"TestFolders\SubFolder1\append1.txt";
-        private static string _fileAppend2 = @"TestFolders\SubFolder1\append2.bin";
-        private static string _fileAppend2Ex = @"TestFolders\SubFolder1\append2.txt";
+        private static readonly string _fileAppend1 = @"TestFolders\SubFolder1\append1.txt";
+        private static readonly string _fileAppend2 = @"TestFolders\SubFolder1\append2.bin";
+        private static readonly string _fileAppend2Ex = @"TestFolders\SubFolder1\append2.txt";
 
         private readonly ITestOutputHelper _output;
 
@@ -36,7 +36,7 @@ namespace NeeLaboratory.IO.Search.Test
         /// <summary>
         /// テスト環境初期化
         /// </summary>
-        public SearchEngine CreateTestEnvironment()
+        public static SearchEngine CreateTestEnvironment()
         {
             // 不要ファイル削除
             if (File.Exists(_fileAppend1)) File.Delete(_fileAppend1);
@@ -69,7 +69,7 @@ namespace NeeLaboratory.IO.Search.Test
 
 
             // 検索１：通常検索
-            SearchOption option = new SearchOption(); // { IsPerfect = false };
+            var option = new SearchOption(); // { IsPerfect = false };
             SearchResult result = await engine.SearchAsync("File1", option);
 
             // 結果表示

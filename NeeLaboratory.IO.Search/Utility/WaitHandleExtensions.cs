@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace NeeLaboratory.IO.Search.Utility
 {
-    public static class WaitHandleExtensions
+    internal static class WaitHandleExtensions
     {
         /// <summary>
         /// WaitHandle待ちのタスク化。
