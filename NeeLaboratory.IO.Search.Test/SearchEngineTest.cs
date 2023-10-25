@@ -218,19 +218,19 @@ namespace NeeLaboratory.IO.Search.Test
         {
             string normalized;
 
-            normalized = Node.ToNormalisedWord("ひらがなゔう゛か゛", true);
+            normalized = StringUtils.ToNormalizedWord("ひらがなゔう゛か゛", true);
             Assert.Equal("ヒラガナヴヴガ", normalized);
 
-            normalized = Node.ToNormalisedWord("ﾊﾝｶｸｶﾞﾅｳﾞ", true);
+            normalized = StringUtils.ToNormalizedWord("ﾊﾝｶｸｶﾞﾅｳﾞ", true);
             Assert.Equal("ハンカクガナヴ", normalized);
 
-            normalized = Node.ToNormalisedWord("混合された日本語ﾃﾞス。", true);
+            normalized = StringUtils.ToNormalizedWord("混合された日本語ﾃﾞス。", true);
             Assert.Equal("混合サレタ日本語デス。", normalized);
 
-            normalized = Node.ToNormalisedWord("㌫", true);
+            normalized = StringUtils.ToNormalizedWord("㌫", true);
             Assert.Equal("パ-セント", normalized);
 
-            normalized = Node.ToNormalisedWord("♡♥❤?", true);
+            normalized = StringUtils.ToNormalizedWord("♡♥❤?", true);
             Assert.Equal("♡♡♡?", normalized);
         }
 

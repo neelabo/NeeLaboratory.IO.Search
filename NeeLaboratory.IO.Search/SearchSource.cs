@@ -289,7 +289,7 @@ namespace NeeLaboratory.IO.Search
                 return;
             }
 
-            _fileIndexDirectory[root].RefleshNode(path);
+            _fileIndexDirectory[root].RefreshNode(path);
         }
 
         /// <summary>

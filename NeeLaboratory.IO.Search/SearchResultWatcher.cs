@@ -74,7 +74,7 @@ namespace NeeLaboratory.IO.Search
                     var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
                     if (items != null)
                     {
-                        foreach (var item in items)
+                        foreach (var item in items.Cast<Node>())
                         {
                             Logger.Trace($"Add: {item.Name}");
                             _result.Items.Add(item.Content);
@@ -112,7 +112,7 @@ namespace NeeLaboratory.IO.Search
                         var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
                         if (items != null)
                         {
-                            foreach (var item in items)
+                            foreach (var item in items.Cast<Node>())
                             {
                                 Logger.Trace($"Add: {item.Name}");
                                 _result.Items.Add(item.Content);

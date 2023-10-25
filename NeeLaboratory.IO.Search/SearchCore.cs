@@ -10,23 +10,40 @@ using System.Threading;
 namespace NeeLaboratory.IO.Search
 {
     /// <summary>
-    /// 検索コア
+    /// 検索コア 絞り込み
     /// </summary>
-    internal class SearchCore : IDisposable
+    public class SearchCore : IDisposable
     {
         private static readonly Regex _regexNumber = new(@"0*(\d+)", RegexOptions.Compiled);
 
-        /// <summary>
-        /// 検索キーワード解析
-        /// </summary>
         private readonly SearchKeyAnalyzer _searchKeyAnalyzer = new();
+        private bool _disposedValue = false;
 
 
-        /// <summary>
-        /// コンストラクタ
-        /// </summary>
         public SearchCore()
         {
+        }
+
+
+        protected void ThrowIfDisposed()
+        {
+            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposedValue)
+            {
+                if (disposing)
+                {
+                }
+                _disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
 
 
@@ -81,7 +98,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="entries">検索対象</param>
         /// <param name="isSearchFolder">フォルダを検索対象に含めるフラグ</param>
         /// <returns></returns>
-        public IEnumerable<Node> Search(string keyword, SearchOption option, IEnumerable<Node> entries, CancellationToken token)
+        public IEnumerable<ISearchItem> Search(string keyword, SearchOption option, IEnumerable<ISearchItem> entries, CancellationToken token)
         {
             ThrowIfDisposed();
             token.ThrowIfCancellationRequested();
@@ -135,7 +152,7 @@ namespace NeeLaboratory.IO.Search
             return pushpins.Concat(entries);
         }
 
-        private static IMatchable<Node> CreateMatch(SearchKey key)
+        private static IMatchable<ISearchItem> CreateMatch(SearchKey key)
         {
             return key.Pattern switch
             {
@@ -155,7 +172,7 @@ namespace NeeLaboratory.IO.Search
             bool IsMatch(T e);
         }
 
-        class SinceMatch : IMatchable<Node>
+        class SinceMatch : IMatchable<ISearchItem>
         {
             private readonly DateTime _since;
 
@@ -171,13 +188,13 @@ namespace NeeLaboratory.IO.Search
                 }
             }
 
-            public bool IsMatch(Node e)
+            public bool IsMatch(ISearchItem e)
             {
-                return _since <= e.LastWriteTime;
+                return _since <= e.DateTime;
             }
         }
 
-        class UntilMatch : IMatchable<Node>
+        class UntilMatch : IMatchable<ISearchItem>
         {
             private readonly DateTime _until;
 
@@ -193,13 +210,13 @@ namespace NeeLaboratory.IO.Search
                 }
             }
 
-            public bool IsMatch(Node e)
+            public bool IsMatch(ISearchItem e)
             {
-                return e.LastWriteTime <= _until;
+                return e.DateTime <= _until;
             }
         }
 
-        class RegularExpressionMatch : IMatchable<Node>
+        class RegularExpressionMatch : IMatchable<ISearchItem>
         {
             private readonly Regex _regex;
 
@@ -215,13 +232,13 @@ namespace NeeLaboratory.IO.Search
                 }
             }
 
-            public bool IsMatch(Node e)
+            public bool IsMatch(ISearchItem e)
             {
                 return _regex.Match(e.Name).Success;
             }
         }
 
-        class RegularExpressionIgnoreCaseMatch : IMatchable<Node>
+        class RegularExpressionIgnoreCaseMatch : IMatchable<ISearchItem>
         {
             private readonly Regex _regex;
 
@@ -237,13 +254,13 @@ namespace NeeLaboratory.IO.Search
                 }
             }
 
-            public bool IsMatch(Node e)
+            public bool IsMatch(ISearchItem e)
             {
                 return _regex.Match(e.Name).Success;
             }
         }
 
-        class ExactMatch : IMatchable<Node>
+        class ExactMatch : IMatchable<ISearchItem>
         {
             private readonly Regex _regex;
 
@@ -253,13 +270,13 @@ namespace NeeLaboratory.IO.Search
                 _regex = new Regex(s, RegexOptions.Compiled);
             }
 
-            public bool IsMatch(Node e)
+            public bool IsMatch(ISearchItem e)
             {
                 return _regex.Match(e.Name).Success;
             }
         }
 
-        class WordMatch : IMatchable<Node>
+        class WordMatch : IMatchable<ISearchItem>
         {
             private readonly Regex _regex;
 
@@ -268,7 +285,7 @@ namespace NeeLaboratory.IO.Search
                 var s = key.Word;
                 var first = GetNotCodeBlockRegexString(s.First());
                 var last = GetNotCodeBlockRegexString(s.Last());
-                s = Node.ToNormalisedWord(s, false);
+                s = StringUtils.ToNormalizedWord(s, false);
                 s = Regex.Escape(s);
                 s = ToFuzzyNumberRegex(s);
                 if (first != null) s = $"(^|{first}){s}";
@@ -277,56 +294,31 @@ namespace NeeLaboratory.IO.Search
                 _regex = new Regex(s, RegexOptions.Compiled);
             }
 
-            public bool IsMatch(Node e)
+            public bool IsMatch(ISearchItem e)
             {
                 return _regex.Match(e.NormalizedUnitWord).Success;
             }
         }
 
-        class StandardMatch : IMatchable<Node>
+        class StandardMatch : IMatchable<ISearchItem>
         {
             private readonly Regex _regex;
 
             public StandardMatch(SearchKey key)
             {
                 var s = key.Word;
-                s = Node.ToNormalisedWord(s, true);
+                s = StringUtils.ToNormalizedWord(s, true);
                 s = Regex.Escape(s);
                 s = ToFuzzyNumberRegex(s);
                 _regex = new Regex(s, RegexOptions.Compiled);
             }
 
-            public bool IsMatch(Node e)
+            public bool IsMatch(ISearchItem e)
             {
-                return _regex.Match(e.NormalizedFazyWord).Success;
+                return _regex.Match(e.NormalizedFuzzyWord).Success;
             }
         }
 
 
-
-        #region IDisposable Support
-        private bool _disposedValue = false;
-
-        protected void ThrowIfDisposed()
-        {
-            if (_disposedValue) throw new ObjectDisposedException(GetType().FullName);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposedValue)
-            {
-                if (disposing)
-                {
-                }
-                _disposedValue = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-        #endregion
     }
 }

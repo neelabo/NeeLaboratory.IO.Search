@@ -281,7 +281,7 @@ namespace NeeLaboratory.IO.Search
 
             try
             {
-                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, _source.AllNodes.ToList(), token));
+                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, _source.AllNodes.ToList(), token).Cast<Node>());
             }
             catch (Exception ex)
             {
@@ -335,7 +335,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token));
+                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token).Cast<Node>());
                 }
                 catch (Exception ex)
                 {

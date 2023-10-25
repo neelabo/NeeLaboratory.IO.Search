@@ -41,7 +41,7 @@ namespace NeeLaboratory.IO.Search
 
             Path = area.Path;
             IncludeSubdirectories = area.IncludeSubdirectories;
-            IsDarty = true;
+            IsDirty = true;
 
             InitializeWatcher(area.IncludeSubdirectories);
         }
@@ -72,7 +72,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 更新必要フラグ
         /// </summary>
-        public bool IsDarty { get; private set; }
+        public bool IsDirty { get; private set; }
 
         /// <summary>
         /// 他のNodeTreeの子
@@ -91,12 +91,12 @@ namespace NeeLaboratory.IO.Search
 
             token.ThrowIfCancellationRequested();
 
-            if (!IsDarty)
+            if (!IsDirty)
             {
                 _context.TotalCount += NodeCount();
                 return;
             }
-            IsDarty = false;
+            IsDirty = false;
 
             // フォルダ監視開始
             if (_fileSystemWatcher != null)
@@ -210,15 +210,15 @@ namespace NeeLaboratory.IO.Search
         /// 情報更新
         /// </summary>
         /// <param name="path"></param>
-        /// <returns>更新処理がされたらtrue</returns>
-        public bool RefleshNode(string path)
+        /// <returns>更新処理がされたら true</returns>
+        public bool RefreshNode(string path)
         {
             ThrowIfDisposed();
 
             var node = Root?.Search(path, _context, CancellationToken.None);
             if (node != null)
             {
-                node.Reflesh();
+                node.Refresh();
                 return true;
             }
             else

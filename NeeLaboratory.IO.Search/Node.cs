@@ -1,12 +1,8 @@
-﻿using CSharp.Japanese.Kanaxs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +11,7 @@ namespace NeeLaboratory.IO.Search
     /// <summary>
     /// Node
     /// </summary>
-    public class Node
+    public class Node : ISearchItem
     {
         // Logger
         private static Utility.Logger Logger => Development.Logger;
@@ -24,11 +20,6 @@ namespace NeeLaboratory.IO.Search
         /// Splitter
         /// </summary>
         private static readonly char[] s_splitter = new char[] { '\\' };
-
-        /// <summary>
-        /// Space regex
-        /// </summary>
-        private static readonly Regex _regexSpace = new(@"\s+", RegexOptions.Compiled);
 
         /// <summary>
         /// 親ノード
@@ -53,7 +44,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 一般検索用正規化文字列
         /// </summary>
-        private string? _normalizedFazyWord;
+        private string? _normalizedFuzzyWord;
 
         /// <summary>
         /// サブフォルダー再帰許可数。負で無限
@@ -111,15 +102,15 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索用正規化ファイル名
         /// </summary>
-        public string NormalizedFazyWord
+        public string NormalizedFuzzyWord
         {
-            get { return _normalizedFazyWord ?? (_normalizedFazyWord = ToNormalisedWord(this.Name, true)); }
+            get { return _normalizedFuzzyWord ?? (_normalizedFuzzyWord = StringUtils.ToNormalizedWord(this.Name, true)); }
         }
 
         /// <summary>
         /// 検索用正規化ファイル名。ひらかな、カタカナを区別する
         /// </summary>
-        public string NormalizedUnitWord => ToNormalisedWord(this.Name, false);
+        public string NormalizedUnitWord => StringUtils.ToNormalizedWord(this.Name, false);
 
         /// <summary>
         /// コンテンツ
@@ -129,7 +120,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ファイル最終更新日
         /// </summary>
-        public DateTime LastWriteTime => _content.FileInfo.LastWriteTime;
+        public DateTime DateTime => _content.FileInfo.LastWriteTime;
 
         /// <summary>
         /// PushPinフラグ
@@ -183,54 +174,19 @@ namespace NeeLaboratory.IO.Search
         public void Rename(string name)
         {
             _nodePath.Name = name;
-            Reflesh();
+            Refresh();
         }
 
         /// <summary>
         /// ファイル情報更新
         /// </summary>
-        public void Reflesh()
+        public void Refresh()
         {
             foreach (var node in AllNodes)
             {
-                node._normalizedFazyWord = null;
+                node._normalizedFuzzyWord = null;
                 node._content?.Reflesh();
             }
-        }
-
-        /// <summary>
-        /// 正規化された文字列に変換する
-        /// </summary>
-        /// <param name="src"></param>
-        /// <param name="isFazy"></param>
-        /// <returns></returns>
-        public static string ToNormalisedWord(string src, bool isFazy)
-        {
-            string? s = src;
-
-            s = KanaEx.ToPadding(s); // 濁点を１文字にまとめる
-            if (s is null) return "";
-
-            try
-            {
-                s = s.Normalize(NormalizationForm.FormKC); // 正規化
-            }
-            catch (ArgumentException)
-            {
-                // 無効なコードポイントがある場合は正規化はスキップする
-            }
-
-            s = s.ToUpper(); // アルファベットを大文字にする
-
-            if (isFazy)
-            {
-                s = KanaEx.ToKatakanaWithNormalize(s); // ひらがなをカタカナにする ＋ 特定文字の正規化
-                if (s is null) return "";
-
-                s = _regexSpace.Replace(s, ""); // 空白の削除
-            }
-
-            return s;
         }
 
         /// <summary>
@@ -245,7 +201,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ノード収拾
         /// </summary>
-        /// <param name="name">ノード名。親がnullの場合はフルパス</param>
+        /// <param name="name">ノード名。親が null の場合はフルパス</param>
         /// <param name="parent">親ノード</param>
         /// <param name="token"></param>
         /// <returns></returns>
@@ -253,15 +209,15 @@ namespace NeeLaboratory.IO.Search
         {
             token.ThrowIfCancellationRequested();
 
-            var fullpath = parent != null ? System.IO.Path.Combine(parent.Path, name) : name;
-            var dirInfo = new DirectoryInfo(fullpath);
+            var fullPath = parent != null ? System.IO.Path.Combine(parent.Path, name) : name;
+            var dirInfo = new DirectoryInfo(fullPath);
             if (dirInfo.Exists)
             {
                 return Collect(dirInfo, parent, depth, ctx, token);
             }
             else
             {
-                var fileInfo = new System.IO.FileInfo(fullpath);
+                var fileInfo = new System.IO.FileInfo(fullPath);
                 if (fileInfo.Exists)
                 {
                     return new Node(fileInfo, parent, depth, ctx);
