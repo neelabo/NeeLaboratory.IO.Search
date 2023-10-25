@@ -12,20 +12,18 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class SearchResult : ISearchResult
     {
-        public SearchResult(string keyword, SearchOption option, ObservableCollection<NodeContent>? items)
+        public SearchResult(string keyword, SearchOption option, IEnumerable<Node>? items) : this(keyword, option, items, null)
+        {
+        }
+
+        public SearchResult(string keyword, SearchOption option, IEnumerable<Node>? items, Exception? exception)
         {
             Keyword = keyword;
             SearchOption = option;
-            Items = items ?? new ObservableCollection<NodeContent>();
-        }
-
-        public SearchResult(string keyword, SearchOption searchOption, ObservableCollection<NodeContent>? items, Exception exception) : this(keyword, searchOption, items)
-        {
+            Items = new ObservableCollection<NodeContent>(items?.Select(e => e.Content) ?? Array.Empty<NodeContent>());
             Exception = exception;
         }
 
-
-        #region ISearchResult Support
 
         /// <summary>
         /// 検索キーワード
@@ -46,8 +44,6 @@ namespace NeeLaboratory.IO.Search
         /// 検索失敗時の例外
         /// </summary>
         public Exception? Exception { get; private set; }
-
-        #endregion
     }
 
 }

@@ -20,11 +20,9 @@ namespace NeeLaboratory.IO.Search
         private Func<FileSystemInfo, bool> _nodeFilter = info => true;
 
 
-
         public SearchContext()
         {
         }
-
 
 
         /// <summary>

@@ -41,7 +41,7 @@ namespace NeeLaboratory.IO.Search
             _engine = engine;
             _result = result;
 
-            _engine.Core.NodeChanged += SearchCore_NodeChanged;
+            _engine.Source.NodeChanged += SearchSource_NodeChanged;
         }
 
 
@@ -58,7 +58,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void SearchCore_NodeChanged(object? sender, NodeChangedEventArgs e)
+        private void SearchSource_NodeChanged(object? sender, NodeChangedEventArgs e)
         {
             if (_disposedValue) return;
 
@@ -167,7 +167,7 @@ namespace NeeLaboratory.IO.Search
             {
                 if (disposing)
                 {
-                    _engine.Core.NodeChanged -= SearchCore_NodeChanged;
+                    _engine.Source.NodeChanged -= SearchSource_NodeChanged;
                 }
 
                 _disposedValue = true;

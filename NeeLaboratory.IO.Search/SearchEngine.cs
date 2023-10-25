@@ -32,6 +32,11 @@ namespace NeeLaboratory.IO.Search
         private CancellationTokenSource _searchCancellationTokenSource = new();
 
         /// <summary>
+        /// 検索ソース
+        /// </summary>
+        private readonly SearchSource _source;
+
+        /// <summary>
         /// 検索コア
         /// </summary>
         private readonly SearchCore _core;
@@ -42,8 +47,10 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public SearchEngine()
         {
+            _source = new SearchSource();
+            _source.FileSystemChanged += Source_FileSystemChanged;
+
             _core = new SearchCore();
-            _core.FileSystemChanged += Core_FileSystemChanged;
 
             _commandEngine = new SearchCommandEngine();
         }
@@ -62,9 +69,14 @@ namespace NeeLaboratory.IO.Search
         internal SearchCore Core => _core;
 
         /// <summary>
+        /// ノードツリー
+        /// </summary>
+        public SearchSource Source => _source;
+
+        /// <summary>
         /// ノード環境
         /// </summary>
-        public SearchContext Context => _core.Context;
+        public SearchContext Context => _source.Context;
 
         /// <summary>
         /// 検索エンジン状態
@@ -80,7 +92,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ノード数(計測するので重い)
         /// </summary>
-        public int NodeCount => _core.NodeCount();
+        public int NodeCount => _source.NodeCount();
 
         /// <summary>
         /// コマンドエンジン
@@ -98,7 +110,7 @@ namespace NeeLaboratory.IO.Search
         public void DumpTree(bool verbose)
         {
             ThrowIfDisposed();
-            _core.DumpTree(verbose);
+            _source.DumpTree(verbose);
         }
 
         /// <summary>
@@ -140,7 +152,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Core_FileSystemChanged(object? sender, NodeTreeFileSystemEventArgs e)
+        private void Source_FileSystemChanged(object? sender, NodeTreeFileSystemEventArgs e)
         {
             if (_disposedValue) return;
 
@@ -157,7 +169,7 @@ namespace NeeLaboratory.IO.Search
                     RenameNode(e.NodePath, rename.OldFullPath, rename.FullPath);
                     break;
                 case WatcherChangeTypes.Changed:
-                    RefleshNode(e.NodePath, e.FileSystemEventArgs.FullPath);
+                    RefreshNode(e.NodePath, e.FileSystemEventArgs.FullPath);
                     break;
                 default:
                     throw new NotSupportedException();
@@ -221,7 +233,7 @@ namespace NeeLaboratory.IO.Search
         internal void Collect_Execute(CollectCommandArgs args, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
-            _core.Collect(args.Area, token);
+            _source.Collect(args.Area, token);
         }
 
         /// <summary>
@@ -269,7 +281,7 @@ namespace NeeLaboratory.IO.Search
 
             try
             {
-                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, token));
+                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, _source.AllNodes.ToList(), token));
             }
             catch (Exception ex)
             {
@@ -305,7 +317,7 @@ namespace NeeLaboratory.IO.Search
         {
             if (_commandEngine == null)
             {
-                return keywords.Select(e => new SearchResult(e, option, new ObservableCollection<NodeContent>())).ToList();
+                return keywords.Select(e => new SearchResult(e, option, new List<Node>())).ToList();
             }
 
             var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs(keywords.ToList(), option.Clone()));
@@ -323,7 +335,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, token));
+                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token));
                 }
                 catch (Exception ex)
                 {
@@ -424,7 +436,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="root"></param>
         /// <param name="path"></param>
-        internal void RefleshNode(string root, string path)
+        internal void RefreshNode(string root, string path)
         {
             ThrowIfDisposed();
 
@@ -443,17 +455,17 @@ namespace NeeLaboratory.IO.Search
             switch (args.ChangeType)
             {
                 case NodeChangeType.Add:
-                    _core.AddPath(args.Root, args.Path, token);
+                    _source.AddPath(args.Root, args.Path, token);
                     break;
                 case NodeChangeType.Remove:
-                    _core.RemovePath(args.Root, args.Path);
+                    _source.RemovePath(args.Root, args.Path);
                     break;
                 case NodeChangeType.Rename:
                     var rename = (NodeRenameCommandArgs)args;
-                    _core.RenamePath(rename.Root, rename.OldPath, rename.Path);
+                    _source.RenamePath(rename.Root, rename.OldPath, rename.Path);
                     break;
                 case NodeChangeType.Reflesh:
-                    _core.RefleshIndex(args.Root, args.Path);
+                    _source.RefreshIndex(args.Root, args.Path);
                     break;
                 default:
                     throw new NotSupportedException();
@@ -490,8 +502,10 @@ namespace NeeLaboratory.IO.Search
 
                     _commandEngine.Dispose();
 
-                    _core.FileSystemChanged -= Core_FileSystemChanged;
                     _core.Dispose();
+
+                    _source.FileSystemChanged -= Source_FileSystemChanged;
+                    _source.Dispose();
                 }
 
                 _disposedValue = true;
