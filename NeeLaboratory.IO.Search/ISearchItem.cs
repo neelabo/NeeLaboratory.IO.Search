@@ -9,8 +9,8 @@ namespace NeeLaboratory.IO.Search
         bool IsPushPin { get; }
 
         string Name { get; }
-        string NormalizedUnitWord { get; }
-        string NormalizedFuzzyWord { get; }
+        string NormalizedUnitName { get; }
+        string NormalizedFuzzyName { get; }
          DateTime DateTime { get; }
     }
 }

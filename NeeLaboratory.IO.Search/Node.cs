@@ -102,7 +102,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索用正規化ファイル名
         /// </summary>
-        public string NormalizedFuzzyWord
+        public string NormalizedFuzzyName
         {
             get { return _normalizedFuzzyWord ?? (_normalizedFuzzyWord = StringUtils.ToNormalizedWord(this.Name, true)); }
         }
@@ -110,7 +110,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索用正規化ファイル名。ひらかな、カタカナを区別する
         /// </summary>
-        public string NormalizedUnitWord => StringUtils.ToNormalizedWord(this.Name, false);
+        public string NormalizedUnitName => StringUtils.ToNormalizedWord(this.Name, false);
 
         /// <summary>
         /// コンテンツ

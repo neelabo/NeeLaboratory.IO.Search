@@ -296,7 +296,7 @@ namespace NeeLaboratory.IO.Search
 
             public bool IsMatch(ISearchItem e)
             {
-                return _regex.Match(e.NormalizedUnitWord).Success;
+                return _regex.Match(e.NormalizedUnitName).Success;
             }
         }
 
@@ -315,7 +315,7 @@ namespace NeeLaboratory.IO.Search
 
             public bool IsMatch(ISearchItem e)
             {
-                return _regex.Match(e.NormalizedFuzzyWord).Success;
+                return _regex.Match(e.NormalizedFuzzyName).Success;
             }
         }
 
