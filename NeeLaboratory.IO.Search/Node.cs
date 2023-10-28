@@ -100,6 +100,11 @@ namespace NeeLaboratory.IO.Search
         public bool IsDirectory => _children != null;
 
         /// <summary>
+        /// 検索名
+        /// </summary>
+        public string SearchName => Name;
+
+        /// <summary>
         /// 検索用正規化ファイル名
         /// </summary>
         public string NormalizedFuzzyName

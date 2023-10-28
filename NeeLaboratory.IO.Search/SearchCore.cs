@@ -234,7 +234,7 @@ namespace NeeLaboratory.IO.Search
 
             public bool IsMatch(ISearchItem e)
             {
-                return _regex.Match(e.Name).Success;
+                return _regex.Match(e.SearchName).Success;
             }
         }
 
@@ -256,7 +256,7 @@ namespace NeeLaboratory.IO.Search
 
             public bool IsMatch(ISearchItem e)
             {
-                return _regex.Match(e.Name).Success;
+                return _regex.Match(e.SearchName).Success;
             }
         }
 
@@ -272,7 +272,7 @@ namespace NeeLaboratory.IO.Search
 
             public bool IsMatch(ISearchItem e)
             {
-                return _regex.Match(e.Name).Success;
+                return _regex.Match(e.SearchName).Success;
             }
         }
 

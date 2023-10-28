@@ -8,7 +8,7 @@ namespace NeeLaboratory.IO.Search
         bool IsDirectory { get; }
         bool IsPushPin { get; }
 
-        string Name { get; }
+        string SearchName { get; }
         string NormalizedUnitName { get; }
         string NormalizedFuzzyName { get; }
          DateTime DateTime { get; }
