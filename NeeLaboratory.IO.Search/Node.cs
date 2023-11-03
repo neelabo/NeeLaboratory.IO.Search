@@ -100,22 +100,26 @@ namespace NeeLaboratory.IO.Search
         public bool IsDirectory => _children != null;
 
         /// <summary>
-        /// 検索名
+        /// 検索用 値の取得
         /// </summary>
-        public string SearchName => Name;
-
-        /// <summary>
-        /// 検索用正規化ファイル名
-        /// </summary>
-        public string NormalizedFuzzyName
+        /// <param name="key"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
+        public SearchValue GetValue(string key)
         {
-            get { return _normalizedFuzzyWord ?? (_normalizedFuzzyWord = StringUtils.ToNormalizedWord(this.Name, true)); }
+            if (key == "text")
+            {
+                return new StringSearchValue(Name);
+            }
+            else if (key == "date")
+            {
+                return new DateTimeSearchValue(_content.FileInfo.LastWriteTime);
+            }
+
+            Debug.Assert(false, $"not support property: {key}");
+            throw new NotSupportedException();
         }
 
-        /// <summary>
-        /// 検索用正規化ファイル名。ひらかな、カタカナを区別する
-        /// </summary>
-        public string NormalizedUnitName => StringUtils.ToNormalizedWord(this.Name, false);
 
         /// <summary>
         /// コンテンツ
@@ -394,5 +398,6 @@ namespace NeeLaboratory.IO.Search
 
             ////Logger.Trace($"{Path}:({AllNodes.Count()})");
         }
+
     }
 }

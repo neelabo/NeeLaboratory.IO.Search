@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -8,9 +11,9 @@ namespace NeeLaboratory.IO.Search
         bool IsDirectory { get; }
         bool IsPushPin { get; }
 
-        string SearchName { get; }
-        string NormalizedUnitName { get; }
-        string NormalizedFuzzyName { get; }
-         DateTime DateTime { get; }
+        SearchValue GetValue(string key);
+
+        DateTime DateTime { get; }
     }
+
 }

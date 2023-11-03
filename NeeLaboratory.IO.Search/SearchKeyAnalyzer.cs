@@ -226,26 +226,33 @@ namespace NeeLaboratory.IO.Search
                             break;
                         case "/re":
                             _work.Pattern = SearchPattern.RegularExpression;
+                            _work.Property = StringSearchValue.DefaultPropertyName;
                             break;
                         case "/ire":
                             _work.Pattern = SearchPattern.RegularExpressionIgnoreCase;
+                            _work.Property = StringSearchValue.DefaultPropertyName;
                             break;
                         case "/m0":
                         case "/exact":
                             _work.Pattern = SearchPattern.Exact;
+                            _work.Property = StringSearchValue.DefaultPropertyName;
                             break;
                         case "/m1":
                         case "/word":
                             _work.Pattern = SearchPattern.Word;
+                            _work.Property = StringSearchValue.DefaultPropertyName;
                             break;
                         case "/m2":
                             _work.Pattern = SearchPattern.Standard;
+                            _work.Property = StringSearchValue.DefaultPropertyName;
                             break;
                         case "/since":
                             _work.Pattern = SearchPattern.Since;
+                            _work.Property = DateTimeSearchValue.DefaultPropertyName;
                             break;
                         case "/until":
                             _work.Pattern = SearchPattern.Until;
+                            _work.Property = DateTimeSearchValue.DefaultPropertyName;
                             break;
                         default:
                             ////Debug.WriteLine($"not support option: {_work.Word}");

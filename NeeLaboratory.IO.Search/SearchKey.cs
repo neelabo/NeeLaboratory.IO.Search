@@ -93,6 +93,10 @@
         /// </summary>
         public SearchPattern Pattern { get; set; } = SearchPattern.Standard;
 
+        /// <summary>
+        /// 検索対象プロパティ
+        /// </summary>
+        public string Property { get; set; } = StringSearchValue.DefaultPropertyName;
 
 
         public SearchKey Clone()

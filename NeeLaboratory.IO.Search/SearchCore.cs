@@ -18,12 +18,18 @@ namespace NeeLaboratory.IO.Search
 
         private readonly SearchKeyAnalyzer _searchKeyAnalyzer = new();
         private bool _disposedValue = false;
+        private SearchValueContext _context;
 
 
         public SearchCore()
+            : this(SearchValueContext.Default)
         {
         }
 
+        public SearchCore(SearchValueContext context)
+        {
+            _context = context;
+        }
 
         protected void ThrowIfDisposed()
         {
@@ -50,7 +56,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 単語区切り用の正規表現生成
         /// </summary>
-        private static string? GetNotCodeBlockRegexString(char c)
+        public static string? GetNotCodeBlockRegexString(char c)
         {
             if ('0' <= c && c <= '9')
                 return @"\D";
@@ -71,7 +77,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// (数値)部分を0*(数値)という正規表現に変換
         /// </summary>
-        private static string ToFuzzyNumberRegex(string source)
+        public static string ToFuzzyNumberRegex(string source)
         {
             return _regexNumber.Replace(source, match => "0*" + match.Groups[1]);
         }
@@ -123,12 +129,12 @@ namespace NeeLaboratory.IO.Search
             {
                 token.ThrowIfCancellationRequested();
 
-                var match = CreateMatch(key);
+                var match = _context.CreateSearchOperation(key.Pattern.ToString(), key.Property, key.Word);
 
                 switch (key.Conjunction)
                 {
                     case SearchConjunction.And:
-                        entries = entries.Where(e => match.IsMatch(e));
+                        entries = entries.Where(e => match.IsMatch(e)).ToList();
                         break;
                     case SearchConjunction.Or:
                         entries = entries.Union(all.Where(e => match.IsMatch(e)));
@@ -151,174 +157,6 @@ namespace NeeLaboratory.IO.Search
             // pushpinを先頭に連結して返す
             return pushpins.Concat(entries);
         }
-
-        private static IMatchable<ISearchItem> CreateMatch(SearchKey key)
-        {
-            return key.Pattern switch
-            {
-                SearchPattern.Exact => new ExactMatch(key),
-                SearchPattern.Word => new WordMatch(key),
-                SearchPattern.Standard => new StandardMatch(key),
-                SearchPattern.RegularExpression => new RegularExpressionMatch(key),
-                SearchPattern.RegularExpressionIgnoreCase => new RegularExpressionIgnoreCaseMatch(key),
-                SearchPattern.Since => new SinceMatch(key),
-                SearchPattern.Until => new UntilMatch(key),
-                _ => throw new NotSupportedException(),
-            };
-        }
-
-        interface IMatchable<T>
-        {
-            bool IsMatch(T e);
-        }
-
-        class SinceMatch : IMatchable<ISearchItem>
-        {
-            private readonly DateTime _since;
-
-            public SinceMatch(SearchKey key)
-            {
-                try
-                {
-                    _since = DateTime.Parse(key.Word);
-                }
-                catch (Exception ex)
-                {
-                    throw new SearchKeywordDateTimeException($"DateTime parse error: {key.Word}", ex);
-                }
-            }
-
-            public bool IsMatch(ISearchItem e)
-            {
-                return _since <= e.DateTime;
-            }
-        }
-
-        class UntilMatch : IMatchable<ISearchItem>
-        {
-            private readonly DateTime _until;
-
-            public UntilMatch(SearchKey key)
-            {
-                try
-                {
-                    _until = DateTime.Parse(key.Word);
-                }
-                catch (Exception ex)
-                {
-                    throw new SearchKeywordDateTimeException($"DateTime parse error: {key.Word}", ex);
-                }
-            }
-
-            public bool IsMatch(ISearchItem e)
-            {
-                return e.DateTime <= _until;
-            }
-        }
-
-        class RegularExpressionMatch : IMatchable<ISearchItem>
-        {
-            private readonly Regex _regex;
-
-            public RegularExpressionMatch(SearchKey key)
-            {
-                try
-                {
-                    _regex = new Regex(key.Word, RegexOptions.Compiled);
-                }
-                catch (Exception ex)
-                {
-                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {key.Word}", ex);
-                }
-            }
-
-            public bool IsMatch(ISearchItem e)
-            {
-                return _regex.Match(e.SearchName).Success;
-            }
-        }
-
-        class RegularExpressionIgnoreCaseMatch : IMatchable<ISearchItem>
-        {
-            private readonly Regex _regex;
-
-            public RegularExpressionIgnoreCaseMatch(SearchKey key)
-            {
-                try
-                {
-                    _regex = new Regex(key.Word, RegexOptions.IgnoreCase | RegexOptions.Compiled);
-                }
-                catch (Exception ex)
-                {
-                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {key.Word}", ex);
-                }
-            }
-
-            public bool IsMatch(ISearchItem e)
-            {
-                return _regex.Match(e.SearchName).Success;
-            }
-        }
-
-        class ExactMatch : IMatchable<ISearchItem>
-        {
-            private readonly Regex _regex;
-
-            public ExactMatch(SearchKey key)
-            {
-                var s = Regex.Escape(key.Word);
-                _regex = new Regex(s, RegexOptions.Compiled);
-            }
-
-            public bool IsMatch(ISearchItem e)
-            {
-                return _regex.Match(e.SearchName).Success;
-            }
-        }
-
-        class WordMatch : IMatchable<ISearchItem>
-        {
-            private readonly Regex _regex;
-
-            public WordMatch(SearchKey key)
-            {
-                var s = key.Word;
-                var first = GetNotCodeBlockRegexString(s.First());
-                var last = GetNotCodeBlockRegexString(s.Last());
-                s = StringUtils.ToNormalizedWord(s, false);
-                s = Regex.Escape(s);
-                s = ToFuzzyNumberRegex(s);
-                if (first != null) s = $"(^|{first}){s}";
-                if (last != null) s = $"{s}({last}|$)";
-
-                _regex = new Regex(s, RegexOptions.Compiled);
-            }
-
-            public bool IsMatch(ISearchItem e)
-            {
-                return _regex.Match(e.NormalizedUnitName).Success;
-            }
-        }
-
-        class StandardMatch : IMatchable<ISearchItem>
-        {
-            private readonly Regex _regex;
-
-            public StandardMatch(SearchKey key)
-            {
-                var s = key.Word;
-                s = StringUtils.ToNormalizedWord(s, true);
-                s = Regex.Escape(s);
-                s = ToFuzzyNumberRegex(s);
-                _regex = new Regex(s, RegexOptions.Compiled);
-            }
-
-            public bool IsMatch(ISearchItem e)
-            {
-                return _regex.Match(e.NormalizedFuzzyName).Success;
-            }
-        }
-
-
     }
+
 }

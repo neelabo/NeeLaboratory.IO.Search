@@ -279,6 +279,8 @@ namespace NeeLaboratory.IO.Search
         {
             token.ThrowIfCancellationRequested();
 
+            // ## [DEV]
+            var sw = Stopwatch.StartNew();
             try
             {
                 return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, _source.AllNodes.ToList(), token).Cast<Node>());
@@ -286,6 +288,11 @@ namespace NeeLaboratory.IO.Search
             catch (Exception ex)
             {
                 return new SearchResult(args.Keyword, args.Option, null, ex);
+            }
+            finally
+            {
+                sw.Stop();
+                Debug.WriteLine($"SearchTime: {sw.ElapsedMilliseconds} ms");
             }
         }
 
