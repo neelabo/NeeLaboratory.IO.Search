@@ -11,9 +11,7 @@ namespace NeeLaboratory.IO.Search
         bool IsDirectory { get; }
         bool IsPushPin { get; }
 
-        SearchValue GetValue(string key);
-
-        DateTime DateTime { get; }
+        SearchValue GetValue(SearchPropertyProfile profile);
     }
 
 }

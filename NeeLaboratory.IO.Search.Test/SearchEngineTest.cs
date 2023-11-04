@@ -254,84 +254,84 @@ namespace NeeLaboratory.IO.Search.Test
 
             keys = analyzer.Analyze("word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
 
             keys = analyzer.Analyze("    word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("\"word1\"");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.ExactSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("\"word1 word2 ");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1 word2 ", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.Equal(new SearchKey("word1 word2 ", SearchConjunction.And, SearchOperatorProfiles.ExactSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/and word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/or word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.Or, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.Or, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/not word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.Not, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.Not, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
 
             keys = analyzer.Analyze("/m0 word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Exact), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.ExactSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/m1 word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Word), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.WordSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/m2 word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/re word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpression), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.RegularExpressionSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/ire word1");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.RegularExpressionIgnoreCase), keys[0]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.RegularExpressionIgnoreSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
 
             // multi
             keys = analyzer.Analyze("\"word1 word2\" word3");
             Assert.Equal(2, keys.Count);
-            Assert.Equal(new SearchKey("word1 word2", SearchConjunction.And, SearchPattern.Exact), keys[0]);
-            Assert.Equal(new SearchKey("word3", SearchConjunction.And, SearchPattern.Standard), keys[1]);
+            Assert.Equal(new SearchKey("word1 word2", SearchConjunction.And, SearchOperatorProfiles.ExactSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
+            Assert.Equal(new SearchKey("word3", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[1]);
 
             keys = analyzer.Analyze("word1 /or word2");
             Assert.Equal(2, keys.Count);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Standard), keys[1]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
+            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[1]);
 
             keys = analyzer.Analyze("word1 /or /m1 word2");
             Assert.Equal(2, keys.Count);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
+            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchOperatorProfiles.WordSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /re \"word2 word3\"");
             Assert.Equal(2, keys.Count);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.Equal(new SearchKey("word2 word3", SearchConjunction.Not, SearchPattern.RegularExpression), keys[1]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
+            Assert.Equal(new SearchKey("word2 word3", SearchConjunction.Not, SearchOperatorProfiles.RegularExpressionSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /or /re /m1 word2  ");
             Assert.Equal(2, keys.Count);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
+            Assert.Equal(new SearchKey("word2", SearchConjunction.Or, SearchOperatorProfiles.WordSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[1]);
 
             keys = analyzer.Analyze("word1 /not /or /re /m1 \"word2 word3\" ");
             Assert.Equal(2, keys.Count);
-            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchPattern.Standard), keys[0]);
-            Assert.Equal(new SearchKey("word2 word3", SearchConjunction.Or, SearchPattern.Word), keys[1]);
+            Assert.Equal(new SearchKey("word1", SearchConjunction.And, SearchOperatorProfiles.FuzzySearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[0]);
+            Assert.Equal(new SearchKey("word2 word3", SearchConjunction.Or, SearchOperatorProfiles.WordSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile), keys[1]);
 
 
             keys = analyzer.Analyze("/until -5day");
@@ -351,11 +351,11 @@ namespace NeeLaboratory.IO.Search.Test
 
             keys = analyzer.Analyze("/since 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Since), keys[0]);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.GraterThanSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/until 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchPattern.Until), keys[0]);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.LessThanSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
 
         }
 

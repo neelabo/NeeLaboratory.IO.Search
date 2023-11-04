@@ -2,15 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
 {
     public class SearchKeyAnalyzer
     {
-        private static readonly Regex _regexDateTimeCustom = new(@"^([+-]?\d+)(day|month|year)$");
-
-
         delegate void StateFunc(Context context);
 
         private enum State
@@ -45,11 +41,19 @@ namespace NeeLaboratory.IO.Search
             {State.END, State.END, State.END, State.END, }, // S06
         };
 
+        private readonly SearchOptionAliasMap _alias;
+        private readonly SearchOptionMap _options;
         private readonly List<StateFunc> _stateMap;
 
 
-        public SearchKeyAnalyzer()
+        public SearchKeyAnalyzer() : this(new SearchOptionMap(), new SearchOptionAliasMap())
         {
+        }
+
+        public SearchKeyAnalyzer(SearchOptionMap options, SearchOptionAliasMap alias)
+        {
+            _options = options;
+            _alias = alias;
             _stateMap = new List<StateFunc>
             {
                 State00,
@@ -60,6 +64,7 @@ namespace NeeLaboratory.IO.Search
                 State05,
                 State06,
             };
+
         }
 
 
@@ -70,7 +75,7 @@ namespace NeeLaboratory.IO.Search
                 return new List<SearchKey>();
             }
 
-            var context = new Context(source);
+            var context = new Context(_options, _alias, source);
             while (!context.IsEnd)
             {
                 var state = State.S00;
@@ -108,7 +113,7 @@ namespace NeeLaboratory.IO.Search
 
         private void State03(Context context)
         {
-            context.Answer(SearchPattern.Standard);
+            context.Answer(false);
         }
 
         private void State04(Context context)
@@ -124,19 +129,24 @@ namespace NeeLaboratory.IO.Search
 
         private void State06(Context context)
         {
-            context.Answer(SearchPattern.Exact);
+            context.Answer(true);
             context.Next();
         }
 
 
         private class Context
         {
+            private readonly SearchOptionMap _options;
+            private readonly SearchOptionAliasMap _alias;
             private readonly string _source;
             private int _header;
             private SearchKey _work;
 
-            public Context(string source)
+
+            public Context(SearchOptionMap options, SearchOptionAliasMap alias, string source)
             {
+                _options = options;
+                _alias = alias;
                 _source = source;
                 _header = 0;
                 ResetWork();
@@ -150,17 +160,7 @@ namespace NeeLaboratory.IO.Search
             [MemberNotNull(nameof(_work))]
             private void ResetWork()
             {
-                _work = new SearchKey("", SearchConjunction.And, SearchPattern.Undefined);
-            }
-
-            public void SetPatternIfUndefined(SearchPattern pattern)
-            {
-                _work.Pattern = pattern;
-            }
-
-            public void SetConjunction(SearchConjunction conjunction)
-            {
-                _work.Conjunction = conjunction;
+                _work = new SearchKey("", SearchConjunction.And, SearchOperatorProfiles.TrueSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile);
             }
 
             public void Next()
@@ -198,7 +198,8 @@ namespace NeeLaboratory.IO.Search
                 _work.Word += Read();
             }
 
-            public void Answer(SearchPattern pattern)
+
+            public void Answer(bool isExact)
             {
                 if (string.IsNullOrEmpty(_work.Word))
                 {
@@ -206,120 +207,48 @@ namespace NeeLaboratory.IO.Search
                     return;
                 }
 
-                if (_work.Pattern == SearchPattern.Undefined)
+                if (_work.Pattern == SearchOperatorProfiles.TrueSearchOperationProfile)
                 {
-                    _work.Pattern = pattern;
+                    _work.Pattern = isExact ? SearchOperatorProfiles.ExactSearchOperationProfile : SearchOperatorProfiles.FuzzySearchOperationProfile;
                 }
 
-                if (_work.Pattern != SearchPattern.Exact && _work.Word[0] == '/')
+                if (_work.Pattern != SearchOperatorProfiles.ExactSearchOperationProfile && _work.Word[0] == '/')
                 {
-                    switch (_work.Word)
+                    var options = _alias.Decode(_work.Word);
+                    foreach (var option in options)
                     {
-                        case "/and":
-                            _work.Conjunction = SearchConjunction.And;
-                            break;
-                        case "/or":
-                            _work.Conjunction = SearchConjunction.Or;
-                            break;
-                        case "/not":
-                            _work.Conjunction = SearchConjunction.Not;
-                            break;
-                        case "/re":
-                            _work.Pattern = SearchPattern.RegularExpression;
-                            _work.Property = StringSearchValue.DefaultPropertyName;
-                            break;
-                        case "/ire":
-                            _work.Pattern = SearchPattern.RegularExpressionIgnoreCase;
-                            _work.Property = StringSearchValue.DefaultPropertyName;
-                            break;
-                        case "/m0":
-                        case "/exact":
-                            _work.Pattern = SearchPattern.Exact;
-                            _work.Property = StringSearchValue.DefaultPropertyName;
-                            break;
-                        case "/m1":
-                        case "/word":
-                            _work.Pattern = SearchPattern.Word;
-                            _work.Property = StringSearchValue.DefaultPropertyName;
-                            break;
-                        case "/m2":
-                            _work.Pattern = SearchPattern.Standard;
-                            _work.Property = StringSearchValue.DefaultPropertyName;
-                            break;
-                        case "/since":
-                            _work.Pattern = SearchPattern.Since;
-                            _work.Property = DateTimeSearchValue.DefaultPropertyName;
-                            break;
-                        case "/until":
-                            _work.Pattern = SearchPattern.Until;
-                            _work.Property = DateTimeSearchValue.DefaultPropertyName;
-                            break;
-                        default:
-                            ////Debug.WriteLine($"not support option: {_work.Word}");
-                            throw new SearchKeywordOptionException($"Not support option: {_work.Word}") { Option = _work.Word };
+                        if (_options.TryGetValue(option, out var value))
+                        {
+                            switch (value)
+                            {
+                                case ConjunctionSearchOption conjunctionSearchOption:
+                                    _work.Conjunction = conjunctionSearchOption.SearchConjunction;
+                                    break;
+                                case PropertySearchOption propertySearchOption:
+                                    _work.Property = propertySearchOption.Profile;
+                                    break;
+                                case OperationSearchOption operationSearchOption:
+                                    _work.Pattern = operationSearchOption.Profile;
+                                    break;
+                                default:
+                                    throw new InvalidOperationException($"Not supported search option type: {value.GetType()}");
+                            }
+                        }
+                        else
+                        {
+                            throw new SearchKeywordOptionException($"Not supported option: {_work.Word}") { Option = _work.Word };
+                        }
                     }
-
                     _work.Word = "";
                 }
                 else
                 {
-                    switch (_work.Pattern)
-                    {
-                        case SearchPattern.RegularExpression:
-                        case SearchPattern.RegularExpressionIgnoreCase:
-                            ValidateRegex(_work.Word);
-                            break;
-
-                        case SearchPattern.Since:
-                        case SearchPattern.Until:
-                            _work.Word = ValidateDateTimeWord(_work.Word);
-                            break;
-                    }
+                    // 実際にフィルターを生成することでフォーマットをチェックする
+                    var _ = _work.Pattern.CreateFunc(_work.Property, _work.Word);
 
                     ////Debug.WriteLine($"SearchKey: {_work}");
                     Result.Add(_work);
                     ResetWork();
-                }
-            }
-
-
-            private static void ValidateRegex(string word)
-            {
-                try
-                {
-                    _ = new Regex(word);
-                }
-                catch (Exception ex)
-                {
-                    throw new SearchKeywordRegularExpressionException($"RegularExpression error: {word}", ex);
-                }
-            }
-
-            private static string ValidateDateTimeWord(string word)
-            {
-                try
-                {
-                    var match = _regexDateTimeCustom.Match(word);
-                    if (match.Success)
-                    {
-                        var value = int.Parse(match.Groups[1].Value);
-                        return match.Groups[2].Value switch
-                        {
-                            "day" => DateTime.Now.AddDays(value).ToString(),
-                            "month" => DateTime.Now.AddMonths(value).ToString(),
-                            "year" => DateTime.Now.AddYears(value).ToString(),
-                            _ => throw new NotSupportedException(),
-                        };
-                    }
-                    else
-                    {
-                        var dateTime =  DateTime.Parse(word);
-                        return word;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    throw new SearchKeywordDateTimeException($"DateTime parse error: Cannot parse {word}", ex);
                 }
             }
 
@@ -329,5 +258,4 @@ namespace NeeLaboratory.IO.Search
             }
         }
     }
-
 }

@@ -7,30 +7,33 @@ namespace NeeLaboratory.IO.Search
 {
     public abstract class SearchOperation
     {
-        public SearchOperation(SearchValueContext context, string property, string format)
+        public SearchOperation(SearchPropertyProfile property, string format)
         {
-            Context = context;
             Property = property;
             Format = format;
         }
 
-        protected SearchValueContext Context { get; }
-        public string Property { get; }
+        public SearchPropertyProfile Property { get; }
         protected string Format { get; }
 
-        public abstract bool IsMatch(ISearchItem e);
+        public abstract bool IsMatch(SearchValueContext context, ISearchItem e);
+    }
 
 
-#if false
-        // NOTE: リフレクションを使っているので微妙
-        public static SearchOperation Create<T>(SearchValueContext context, string value)
-            where T : SearchOperation, new()
+    /// <summary>
+    /// 全一致 (既定のフィルター)
+    /// </summary>
+    public class TrueSearchOperation : SearchOperation
+    {
+        public TrueSearchOperation(SearchPropertyProfile property, string format)
+            : base(property, format)
         {
-            var constructor = typeof(T).GetConstructor(new Type[] { typeof(SearchValueContext), typeof(string) });
-            if (constructor == null) throw new InvalidOperationException();
-            return (T)constructor.Invoke(new object[] {context, value });
         }
-#endif
+
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
+        {
+            return true;
+        }
     }
 
     /// <summary>
@@ -40,8 +43,8 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public FuzzySearchOperation(SearchValueContext context, string property, string format)
-            : base(context, property, format)
+        public FuzzySearchOperation(SearchPropertyProfile property, string format)
+            : base(property, format)
         {
             var s = format;
             s = StringUtils.ToNormalizedWord(s, true);
@@ -50,17 +53,11 @@ namespace NeeLaboratory.IO.Search
             _regex = new Regex(s, RegexOptions.Compiled);
         }
 
-        public override bool IsMatch(ISearchItem e)
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
         {
             var s = e.GetValue(Property).ToString();
-            s = this.Context.FuzzyStringCache.GetString(s);
+            s = context.FuzzyStringCache.GetString(s);
             return _regex.Match(s).Success;
-        }
-
-        // TODO: for static virtual method (C#11)
-        public static SearchOperation Create(SearchValueContext context, string property, string pattern)
-        {
-            return new FuzzySearchOperation(context, property, pattern);
         }
     }
 
@@ -71,7 +68,7 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public WordSearchOperation(SearchValueContext context, string property, string format) : base(context, property, format)
+        public WordSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
         {
             var s = format;
             var first = SearchCore.GetNotCodeBlockRegexString(s.First());
@@ -81,20 +78,14 @@ namespace NeeLaboratory.IO.Search
             s = SearchCore.ToFuzzyNumberRegex(s);
             if (first != null) s = $"(^|{first}){s}";
             if (last != null) s = $"{s}({last}|$)";
-
             _regex = new Regex(s, RegexOptions.Compiled);
         }
 
-        public override bool IsMatch(ISearchItem e)
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
         {
             var s = e.GetValue(Property).ToString();
-            s = this.Context.WordStringCache.GetString(s);
+            s = context.WordStringCache.GetString(s);
             return _regex.Match(s).Success;
-        }
-
-        public static SearchOperation Create(SearchValueContext context, string property, string pattern)
-        {
-            return new WordSearchOperation(context, property, pattern);
         }
     }
 
@@ -105,21 +96,16 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public ExactSearchOperation(SearchValueContext context, string property, string format) : base(context, property, format)
+        public ExactSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
         {
             var s = Regex.Escape(format);
             _regex = new Regex(s, RegexOptions.Compiled);
         }
 
-        public override bool IsMatch(ISearchItem e)
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
         {
             var s = e.GetValue(Property).ToString();
             return _regex.Match(s).Success;
-        }
-
-        public static SearchOperation Create(SearchValueContext context, string property, string pattern)
-        {
-            return new ExactSearchOperation(context, property, pattern);
         }
     }
 
@@ -130,7 +116,7 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public RegularExpressionSearchOperation(SearchValueContext context, string property, string format) : base(context, property, format)
+        public RegularExpressionSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
         {
             try
             {
@@ -142,15 +128,10 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        public override bool IsMatch(ISearchItem e)
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
         {
-            var s = e.GetValue(Property).ToString();
+          var s = e.GetValue(Property).ToString();
             return _regex.Match(s).Success;
-        }
-
-        public static SearchOperation Create(SearchValueContext context, string property, string pattern)
-        {
-            return new RegularExpressionSearchOperation(context, property, pattern);
         }
     }
 
@@ -161,7 +142,7 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public RegularExpressionIgnoreSearchOperation(SearchValueContext context, string property, string format) : base(context, property, format)
+        public RegularExpressionIgnoreSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
         {
             try
             {
@@ -173,15 +154,10 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        public override bool IsMatch(ISearchItem e)
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
         {
             var s = e.GetValue(Property).ToString();
             return _regex.Match(s).Success;
-        }
-
-        public static SearchOperation Create(SearchValueContext context, string property, string pattern)
-        {
-            return new RegularExpressionIgnoreSearchOperation(context, property, pattern);
         }
     }
 
@@ -192,21 +168,16 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public GraterThanSearchOperation(SearchValueContext context, string property, string format) : base(context, property, format)
+        public GraterThanSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
         {
-            _referenceValue = context.CreateSearchValue(property, format);
+            _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(ISearchItem e)
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
         {
             var value = e.GetValue(Property);
 
             return value.CompareTo(_referenceValue) > 0;
-        }
-
-        public static SearchOperation Create(SearchValueContext context, string property, string pattern)
-        {
-            return new GraterThanSearchOperation(context, property, pattern);
         }
     }
 
@@ -217,23 +188,17 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public LessThanSearchOperation(SearchValueContext context, string property, string format) : base(context, property, format)
+        public LessThanSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
         {
-            _referenceValue = context.CreateSearchValue(property, format);
+            _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(ISearchItem e)
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
         {
             var value = e.GetValue(Property);
 
             return value.CompareTo(_referenceValue) < 0;
         }
-
-        public static SearchOperation Create(SearchValueContext context, string property, string pattern)
-        {
-            return new LessThanSearchOperation(context, property, pattern);
-        }
     }
-
 
 }

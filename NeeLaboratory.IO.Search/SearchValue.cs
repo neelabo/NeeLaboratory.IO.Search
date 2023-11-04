@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -10,10 +11,10 @@ namespace NeeLaboratory.IO.Search
         public override string ToString() => base.ToString() ?? "";
     }
 
+
     public class StringSearchValue : SearchValue
     {
         public static StringSearchValue Default { get; } = new("");
-        public static string DefaultPropertyName => "text";
 
 
         private readonly string _value;
@@ -37,18 +38,14 @@ namespace NeeLaboratory.IO.Search
         {
             return _value;
         }
-
-        public static SearchValue CreateSearchValue(string format)
-        {
-            return new StringSearchValue(format);
-        }
     }
 
     public class DateTimeSearchValue : SearchValue
     {
         public static DateTimeSearchValue Default { get; } = new(default);
-        public static string DefaultPropertyName => "date";
 
+        private static readonly Regex _regexDateTimeCustom = new(@"^([+-]?\d+)(day|month|year)$");
+        private static readonly string _stringFormat = "yyyy/MM/dd HH:mm";
 
         private readonly DateTime _value;
 
@@ -64,56 +61,36 @@ namespace NeeLaboratory.IO.Search
 
         public override SearchValue Parse(string value)
         {
-            return new DateTimeSearchValue(DateTime.Parse(value));
+            try
+            {
+                var match = _regexDateTimeCustom.Match(value);
+                if (match.Success)
+                {
+                    var num = int.Parse(match.Groups[1].Value);
+                    var dateTime = match.Groups[2].Value switch
+                    {
+                        "day" => DateTime.Now.AddDays(num),
+                        "month" => DateTime.Now.AddMonths(num),
+                        "year" => DateTime.Now.AddYears(num),
+                        _ => throw new NotSupportedException(),
+                    };
+                    return new DateTimeSearchValue(dateTime);
+                }
+                else
+                {
+                    var dateTime = DateTime.Parse(value);
+                    return new DateTimeSearchValue(dateTime);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new SearchKeywordDateTimeException($"DateTime parse error: Cannot parse {value}", ex);
+            }
         }
 
-        public static SearchValue CreateSearchValue(string format)
+        public override string ToString()
         {
-            return new DateTimeSearchValue(DateTime.Parse(format));
-        }
-    }
-
-
-    //public delegate SearchValue CreateSearchValueFunc(string format);
-
-
-    public class SearchPropertyMap
-    {
-        private Dictionary<string, SearchPropertyProfile> _map = new();
-
-
-        public SearchPropertyProfile this[string s]
-        {
-            get => _map[s];
-        }
-
-
-        public void Add(SearchPropertyProfile profile)
-        {
-            _map.Add(profile.Name, profile);
-        }
-
-        //public SearchValue Parse(string property, string format)
-        //{
-        //    return _map[property].Parse(format);
-        //}
-    }
-
-
-    public class SearchPropertyProfile
-    {
-        public SearchPropertyProfile(string name, SearchValue defaultValue)
-        {
-            Name = name;
-            DefaultValue = defaultValue;
-        }
-
-        public string Name { get; }
-        public SearchValue DefaultValue { get; }
-
-        public SearchValue Parse(string format)
-        {
-            return DefaultValue.Parse(format);
+            return _value.ToString(_stringFormat);
         }
     }
 

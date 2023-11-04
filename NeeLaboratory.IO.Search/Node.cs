@@ -42,11 +42,6 @@ namespace NeeLaboratory.IO.Search
         private readonly NodeContent _content;
 
         /// <summary>
-        /// 一般検索用正規化文字列
-        /// </summary>
-        private string? _normalizedFuzzyWord;
-
-        /// <summary>
         /// サブフォルダー再帰許可数。負で無限
         /// </summary>
         private readonly int _depth;
@@ -102,22 +97,21 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索用 値の取得
         /// </summary>
-        /// <param name="key"></param>
+        /// <param name="property"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public SearchValue GetValue(string key)
+        public SearchValue GetValue(SearchPropertyProfile property)
         {
-            if (key == "text")
+            switch (property.Name)
             {
-                return new StringSearchValue(Name);
+                case "text":
+                    return new StringSearchValue(Name);
+                case "date":
+                    return new DateTimeSearchValue(_content.FileInfo.LastWriteTime);
+                default:
+                    Debug.Assert(false, $"not support property: {property}");
+                    throw new NotSupportedException();
             }
-            else if (key == "date")
-            {
-                return new DateTimeSearchValue(_content.FileInfo.LastWriteTime);
-            }
-
-            Debug.Assert(false, $"not support property: {key}");
-            throw new NotSupportedException();
         }
 
 
@@ -193,7 +187,6 @@ namespace NeeLaboratory.IO.Search
         {
             foreach (var node in AllNodes)
             {
-                node._normalizedFuzzyWord = null;
                 node._content?.Reflesh();
             }
         }

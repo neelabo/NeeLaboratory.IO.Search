@@ -16,7 +16,7 @@ namespace NeeLaboratory.IO.Search
     {
         private static readonly Regex _regexNumber = new(@"0*(\d+)", RegexOptions.Compiled);
 
-        private readonly SearchKeyAnalyzer _searchKeyAnalyzer = new();
+        private readonly SearchKeyAnalyzer _searchKeyAnalyzer;
         private bool _disposedValue = false;
         private SearchValueContext _context;
 
@@ -29,6 +29,7 @@ namespace NeeLaboratory.IO.Search
         public SearchCore(SearchValueContext context)
         {
             _context = context;
+            _searchKeyAnalyzer = new SearchKeyAnalyzer(_context.Options, _context.OptionAlias);
         }
 
         protected void ThrowIfDisposed()
@@ -129,18 +130,18 @@ namespace NeeLaboratory.IO.Search
             {
                 token.ThrowIfCancellationRequested();
 
-                var match = _context.CreateSearchOperation(key.Pattern.ToString(), key.Property, key.Word);
+                var match = key.Pattern.CreateFunc(key.Property, key.Word);
 
                 switch (key.Conjunction)
                 {
                     case SearchConjunction.And:
-                        entries = entries.Where(e => match.IsMatch(e)).ToList();
+                        entries = entries.Where(e => match.IsMatch(_context, e)).ToList();
                         break;
                     case SearchConjunction.Or:
-                        entries = entries.Union(all.Where(e => match.IsMatch(e)));
+                        entries = entries.Union(all.Where(e => match.IsMatch(_context, e)));
                         break;
                     case SearchConjunction.Not:
-                        entries = entries.Where(e => !match.IsMatch(e));
+                        entries = entries.Where(e => !match.IsMatch(_context, e));
                         break;
                 }
             }

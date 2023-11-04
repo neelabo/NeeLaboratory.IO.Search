@@ -1,80 +1,16 @@
 ﻿namespace NeeLaboratory.IO.Search
 {
-    public enum SearchConjunction
-    {
-        /// <summary>
-        /// AND接続
-        /// </summary>
-        And,
-
-        /// <summary>
-        /// OR接続
-        /// </summary>
-        Or,
-
-        /// <summary>
-        /// NOT接続
-        /// </summary>
-        Not,
-    }
-
-    public enum SearchPattern
-    {
-        /// <summary>
-        /// 完全一致 (m0)
-        /// </summary>
-        Exact,
-        
-        /// <summary>
-        /// 単語一致 (m1)
-        /// </summary>
-        Word,
-
-        /// <summary>
-        /// あいまい一致 (m2)
-        /// </summary>
-        Standard,
-
-        /// <summary>
-        /// 正規表現
-        /// </summary>
-        RegularExpression,
-
-        /// <summary>
-        /// 正規表現 (IgnoreCase)
-        /// </summary>
-        RegularExpressionIgnoreCase,
-
-        /// <summary>
-        /// 日時検索、開始日時
-        /// </summary>
-        Since,
-
-        /// <summary>
-        /// 日時検索、終了日時
-        /// </summary>
-        Until,
-
-        /// <summary>
-        /// 未定義 (解析用)
-        /// </summary>
-        Undefined = -1,
-    }
-
     /// <summary>
     /// 検索キー
     /// </summary>
     public class SearchKey
     {
-        public SearchKey(string word)
+        public SearchKey(string word, SearchConjunction conjunction, SearchOperatorProfile pattern, SearchPropertyProfile property)
         {
             Word = word;
-        }
-
-        public SearchKey(string word, SearchConjunction conjunction, SearchPattern pattern) : this(word)
-        {
             Conjunction = conjunction;
             Pattern = pattern;
+            Property = property;
         }
 
 
@@ -91,12 +27,13 @@
         /// <summary>
         /// 適応パターン
         /// </summary>
-        public SearchPattern Pattern { get; set; } = SearchPattern.Standard;
+        public SearchOperatorProfile Pattern { get; set; }
 
         /// <summary>
         /// 検索対象プロパティ
         /// </summary>
-        public string Property { get; set; } = StringSearchValue.DefaultPropertyName;
+        public SearchPropertyProfile Property { get; set; }
+
 
 
         public SearchKey Clone()
@@ -110,7 +47,8 @@
             {
                 return this.Word == target.Word
                     && this.Conjunction == target.Conjunction
-                    && this.Pattern == target.Pattern;
+                    && this.Pattern == target.Pattern
+                    && this.Property == target.Property;
             }
 
             return false;
@@ -123,7 +61,9 @@
 
         public override string ToString()
         {
-            return $"{Conjunction},{Pattern},\"{Word}\"";
+            return $"{Conjunction},{Pattern},\"{Word}\",{Property}";
         }
     }
+
+
 }
