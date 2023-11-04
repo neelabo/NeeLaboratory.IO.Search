@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -97,6 +98,28 @@ namespace NeeLaboratory.IO.Search
             return keys;
         }
 
+        /// <summary>
+        /// 検索
+        /// </summary>
+        /// <remarks>
+        /// SearchOption から SearchDescription を生成している。
+        /// TODO: 上位に移動
+        /// </remarks>
+        public IEnumerable<ISearchItem> Search(string keyword, SearchOption option, IEnumerable<ISearchItem> entries, CancellationToken token)
+        {
+            var description = new SearchDescription();
+
+            // allow folder
+            if (!option.AllowFolder)
+            {
+                description.PreKeys.Add(new SearchKey("false", SearchConjunction.And, SearchOperatorProfiles.EqualsSearchOperationProfile, SearchPropertyProfiles.IsDirectoryPropertyProfile));
+            }
+
+            // pushpin
+            description.PostKeys.Add(new SearchKey("true", SearchConjunction.Or, SearchOperatorProfiles.EqualsSearchOperationProfile, SearchPropertyProfiles.IsPinnedPropertyProfile));
+
+            return Search(keyword, description, entries, token);
+        }
 
         /// <summary>
         /// 検索
@@ -105,24 +128,21 @@ namespace NeeLaboratory.IO.Search
         /// <param name="entries">検索対象</param>
         /// <param name="isSearchFolder">フォルダを検索対象に含めるフラグ</param>
         /// <returns></returns>
-        public IEnumerable<ISearchItem> Search(string keyword, SearchOption option, IEnumerable<ISearchItem> entries, CancellationToken token)
+        public IEnumerable<ISearchItem> Search(string keyword, SearchDescription description, IEnumerable<ISearchItem> entries, CancellationToken token)
         {
             ThrowIfDisposed();
             token.ThrowIfCancellationRequested();
 
             var all = entries;
 
-            // pushpin保存
-            var pushpins = entries.Where(f => f.IsPushPin);
-
-            // キーワード無し
-            if (string.IsNullOrWhiteSpace(keyword)) return pushpins;
-
             // キーワード登録
             var keys = CreateKeys(keyword);
+            keys = description.PreKeys.Concat(keys).Concat(description.PostKeys).ToList();
+
             if (keys == null || keys.Count == 0)
             {
-                return pushpins;
+                //return pushpins;
+                return Array.Empty<ISearchItem>();
             }
 
             // キーワードによる絞込
@@ -146,18 +166,17 @@ namespace NeeLaboratory.IO.Search
                 }
             }
 
-            // ディレクトリ除外
-            if (!option.AllowFolder)
-            {
-                entries = entries.Where(f => !f.IsDirectory);
-            }
-
-            // pushpin除外
-            entries = entries.Where(f => !f.IsPushPin);
-
-            // pushpinを先頭に連結して返す
-            return pushpins.Concat(entries);
+            return entries;
         }
     }
 
+
+
+    // TODO: SearchOption のほが名前はふさわしいが競合している
+    public class SearchDescription
+    {
+        public List<SearchKey> PreKeys { get; } = new();
+
+        public List<SearchKey> PostKeys { get; } = new();
+    }
 }

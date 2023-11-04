@@ -351,12 +351,35 @@ namespace NeeLaboratory.IO.Search.Test
 
             keys = analyzer.Analyze("/since 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.GraterThanSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.GreaterThanSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
 
             keys = analyzer.Analyze("/until 2018-01-01");
             Assert.Single(keys);
             Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.LessThanSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
 
+            keys = analyzer.Analyze("/p.date /m.lt 2018-01-01");
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.LessThanSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
+
+            keys = analyzer.Analyze("/p.date /m.le 2018-01-01");
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.LessThanEqualSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
+
+            keys = analyzer.Analyze("/p.date /m.eq 2018-01-01");
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.EqualsSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
+
+            keys = analyzer.Analyze("/p.date /m.ne 2018-01-01");
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.NotEqualsSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
+
+            keys = analyzer.Analyze("/p.date /m.ge 2018-01-01");
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.GreaterThanEqualSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
+
+            keys = analyzer.Analyze("/p.date /m.gt 2018-01-01");
+            Assert.Single(keys);
+            Assert.Equal(new SearchKey("2018-01-01", SearchConjunction.And, SearchOperatorProfiles.GreaterThanSearchOperationProfile, SearchPropertyProfiles.DatePropertyProfile), keys[0]);
         }
 
         [Fact]
@@ -389,6 +412,55 @@ namespace NeeLaboratory.IO.Search.Test
                 keys = analyzer.Analyze("word1 /ire ^(hoge");
                 Assert.Equal(2, keys.Count);
             });
+        }
+
+
+        [Theory]
+        [InlineData(1, "/p.date /m.eq 2018-02-01")]
+        [InlineData(2, "/p.date /m.ne 2018-02-01")]
+        [InlineData(1, "/p.date /m.lt 2018-02-01")]
+        [InlineData(2, "/p.date /m.le 2018-02-01")]
+        [InlineData(1, "/p.date /m.gt 2018-02-01")]
+        [InlineData(2, "/p.date /m.ge 2018-02-01")]
+        public void SearchCoreCompareTest(int expected, string keyword)
+        {
+            var search = new SearchCore();
+            var items = new List<SampleSearchItem>
+            {
+                new SampleSearchItem("2018-01-01"),
+                new SampleSearchItem("2018-02-01"),
+                new SampleSearchItem("2018-03-01"),
+            };
+
+            var result = search.Search(keyword, new SearchDescription(), items, CancellationToken.None);
+            Assert.Equal(expected, result.Count());
+        }
+    }
+
+    public class SampleSearchItem : ISearchItem
+    {
+        private string _value;
+
+        public SampleSearchItem(string value)
+        {
+            _value = value;
+        }
+
+        public bool IsDirectory => false;
+
+        public bool IsPushPin => false;
+
+        public SearchValue GetValue(SearchPropertyProfile profile)
+        {
+            switch (profile.Name)
+            {
+                case "text":
+                    return new StringSearchValue(_value);
+                case "date":
+                    return new DateTimeSearchValue(DateTime.Parse(_value));
+                default:
+                    throw new NotSupportedException();
+            }
         }
     }
 

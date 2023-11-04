@@ -14,16 +14,25 @@ namespace NeeLaboratory.IO.Search
             Add(SearchConjunction.Or);
             Add(SearchConjunction.Not);
 
+            // TODO: 基本文字列検索セット以外は拡張セットとして外部から追加するように
+
             Add(SearchPropertyProfiles.TextPropertyProfile);
             Add(SearchPropertyProfiles.DatePropertyProfile);
+            Add(SearchPropertyProfiles.IsDirectoryPropertyProfile);
+            Add(SearchPropertyProfiles.IsPinnedPropertyProfile);
 
             Add(SearchOperatorProfiles.ExactSearchOperationProfile);
             Add(SearchOperatorProfiles.WordSearchOperationProfile);
             Add(SearchOperatorProfiles.FuzzySearchOperationProfile);
             Add(SearchOperatorProfiles.RegularExpressionSearchOperationProfile);
             Add(SearchOperatorProfiles.RegularExpressionIgnoreSearchOperationProfile);
-            Add(SearchOperatorProfiles.GraterThanSearchOperationProfile);
+
             Add(SearchOperatorProfiles.LessThanSearchOperationProfile);
+            Add(SearchOperatorProfiles.LessThanEqualSearchOperationProfile);
+            Add(SearchOperatorProfiles.EqualsSearchOperationProfile);
+            Add(SearchOperatorProfiles.NotEqualsSearchOperationProfile);
+            Add(SearchOperatorProfiles.GreaterThanEqualSearchOperationProfile);
+            Add(SearchOperatorProfiles.GreaterThanSearchOperationProfile);
         }
 
         public SearchOptionBase this[string key]

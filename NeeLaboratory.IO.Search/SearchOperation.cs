@@ -161,14 +161,53 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
+
     /// <summary>
-    /// 比較：より大きい
+    /// 比較：等しい
     /// </summary>
-    public class GraterThanSearchOperation : SearchOperation
+    public class EqualsSearchOperation : SearchOperation
     {
         private readonly SearchValue _referenceValue;
 
-        public GraterThanSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
+        public EqualsSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
+        {
+            _referenceValue = property.Parse(format);
+        }
+
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
+        {
+            var value = e.GetValue(Property);
+            return value.CompareTo(_referenceValue) == 0;
+        }
+    }
+
+    /// <summary>
+    /// 比較：等しくない
+    /// </summary>
+    public class NotEqualsSearchOperation : SearchOperation
+    {
+        private readonly SearchValue _referenceValue;
+
+        public NotEqualsSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
+        {
+            _referenceValue = property.Parse(format);
+        }
+
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
+        {
+            var value = e.GetValue(Property);
+            return value.CompareTo(_referenceValue) != 0;
+        }
+    }
+
+    /// <summary>
+    /// 比較：より大きい
+    /// </summary>
+    public class GreaterThanSearchOperation : SearchOperation
+    {
+        private readonly SearchValue _referenceValue;
+
+        public GreaterThanSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
         {
             _referenceValue = property.Parse(format);
         }
@@ -198,6 +237,47 @@ namespace NeeLaboratory.IO.Search
             var value = e.GetValue(Property);
 
             return value.CompareTo(_referenceValue) < 0;
+        }
+    }
+
+
+    /// <summary>
+    /// 比較：以上
+    /// </summary>
+    public class GreaterThanEqualSearchOperation : SearchOperation
+    {
+        private readonly SearchValue _referenceValue;
+
+        public GreaterThanEqualSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
+        {
+            _referenceValue = property.Parse(format);
+        }
+
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
+        {
+            var value = e.GetValue(Property);
+
+            return value.CompareTo(_referenceValue) >= 0;
+        }
+    }
+
+    /// <summary>
+    /// 比較：以下
+    /// </summary>
+    public class LessThanEqualSearchOperation : SearchOperation
+    {
+        private readonly SearchValue _referenceValue;
+
+        public LessThanEqualSearchOperation(SearchPropertyProfile property, string format) : base(property, format)
+        {
+            _referenceValue = property.Parse(format);
+        }
+
+        public override bool IsMatch(SearchValueContext context, ISearchItem e)
+        {
+            var value = e.GetValue(Property);
+
+            return value.CompareTo(_referenceValue) <= 0;
         }
     }
 

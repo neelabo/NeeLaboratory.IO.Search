@@ -22,6 +22,13 @@ namespace NeeLaboratory.IO.Search
                 ["/m2"] = new() { "/m.fuzzy" },
                 ["/since"] = new() { "/p.date", "/m.gt" },
                 ["/until"] = new() { "/p.date", "/m.lt" },
+
+                ["/lt"] = new() { "m.lt" },
+                ["/le"] = new() { "m.le" },
+                ["/eq"] = new() { "m.eq" },
+                ["/ne"] = new() { "m.ne" },
+                ["/ge"] = new() { "m.ge" },
+                ["/gt"] = new() { "m.gte" },
             };
         }
 

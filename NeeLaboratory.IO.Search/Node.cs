@@ -108,6 +108,10 @@ namespace NeeLaboratory.IO.Search
                     return new StringSearchValue(Name);
                 case "date":
                     return new DateTimeSearchValue(_content.FileInfo.LastWriteTime);
+                case "isdir":
+                    return new BooleanSearchValue(IsDirectory);
+                case "ispinned":
+                    return new BooleanSearchValue(IsPushPin);
                 default:
                     Debug.Assert(false, $"not support property: {property}");
                     throw new NotSupportedException();

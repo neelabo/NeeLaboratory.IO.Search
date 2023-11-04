@@ -42,4 +42,12 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordDateTimeException(string message) : base(message) { }
         public SearchKeywordDateTimeException(string message, Exception inner) : base(message, inner) { }
     }
+
+    [Serializable]
+    public class SearchKeywordBooleanException : SearchKeywordException
+    {
+        public SearchKeywordBooleanException() : base() { }
+        public SearchKeywordBooleanException(string message) : base(message) { }
+        public SearchKeywordBooleanException(string message, Exception inner) : base(message, inner) { }
+    }
 }

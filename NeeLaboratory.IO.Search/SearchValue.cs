@@ -40,6 +40,42 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
+
+    public class BooleanSearchValue : SearchValue
+    {
+        public static BooleanSearchValue Default { get; } = new(false);
+
+        private readonly bool _value;
+
+        public BooleanSearchValue(bool value)
+        {
+            _value = value;
+        }
+
+        public override int CompareTo(SearchValue other)
+        {
+            return _value.CompareTo(((BooleanSearchValue)other)._value);
+        }
+
+        public override SearchValue Parse(string value)
+        {
+            try
+            {
+                return new BooleanSearchValue(bool.Parse(value));
+            }
+            catch (Exception ex)
+            {
+                throw new SearchKeywordBooleanException($"Boolean parse error: Cannot parse {value}", ex);
+            }
+        }
+
+        public override string ToString()
+        {
+            return _value.ToString();
+        }
+    }
+
+
     public class DateTimeSearchValue : SearchValue
     {
         public static DateTimeSearchValue Default { get; } = new(default);

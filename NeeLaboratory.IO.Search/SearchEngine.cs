@@ -283,7 +283,7 @@ namespace NeeLaboratory.IO.Search
             var sw = Stopwatch.StartNew();
             try
             {
-                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, _source.AllNodes.ToList(), token).Cast<Node>());
+                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, _source.AllNodes.ToList(), token).Cast<Node>().OrderByDescending(e => e.IsPushPin));
             }
             catch (Exception ex)
             {
@@ -342,7 +342,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token).Cast<Node>());
+                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token).Cast<Node>().OrderByDescending(e => e.IsPushPin));
                 }
                 catch (Exception ex)
                 {

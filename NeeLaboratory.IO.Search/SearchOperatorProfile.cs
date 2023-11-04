@@ -24,8 +24,13 @@
         public static SearchOperatorProfile FuzzySearchOperationProfile { get; } = new SearchOperatorProfile("fuzzy", (property, format) => new FuzzySearchOperation(property, format));
         public static SearchOperatorProfile RegularExpressionSearchOperationProfile { get; } = new SearchOperatorProfile("re", (property, format) => new RegularExpressionSearchOperation(property, format));
         public static SearchOperatorProfile RegularExpressionIgnoreSearchOperationProfile { get; } = new SearchOperatorProfile("ire", (property, format) => new RegularExpressionIgnoreSearchOperation(property, format));
-        public static SearchOperatorProfile GraterThanSearchOperationProfile { get; } = new SearchOperatorProfile("gt", (property, format) => new GraterThanSearchOperation(property, format));
+
         public static SearchOperatorProfile LessThanSearchOperationProfile { get; } = new SearchOperatorProfile("lt", (property, format) => new LessThanSearchOperation(property, format));
+        public static SearchOperatorProfile LessThanEqualSearchOperationProfile { get; } = new SearchOperatorProfile("le", (property, format) => new LessThanEqualSearchOperation(property, format));
+        public static SearchOperatorProfile EqualsSearchOperationProfile { get; } = new SearchOperatorProfile("eq", (property, format) => new EqualsSearchOperation(property, format));
+        public static SearchOperatorProfile NotEqualsSearchOperationProfile { get; } = new SearchOperatorProfile("ne", (property, format) => new NotEqualsSearchOperation(property, format));
+        public static SearchOperatorProfile GreaterThanEqualSearchOperationProfile { get; } = new SearchOperatorProfile("ge", (property, format) => new GreaterThanEqualSearchOperation(property, format));
+        public static SearchOperatorProfile GreaterThanSearchOperationProfile { get; } = new SearchOperatorProfile("gt", (property, format) => new GreaterThanSearchOperation(property, format));
     }
 
 }

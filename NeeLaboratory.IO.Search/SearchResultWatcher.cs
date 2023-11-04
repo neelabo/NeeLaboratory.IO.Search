@@ -71,15 +71,12 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None);
-                    if (items != null)
+                    var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None).Cast<Node>();
+                    foreach (var item in items)
                     {
-                        foreach (var item in items.Cast<Node>())
-                        {
-                            Logger.Trace($"Add: {item.Name}");
-                            _result.Items.Add(item.Content);
-                            SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
-                        }
+                        Logger.Trace($"Add: {item.Name}");
+                        _result.Items.Add(item.Content);
+                        SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
                     }
                 }
                 catch (SearchKeywordException ex)
@@ -109,15 +106,12 @@ namespace NeeLaboratory.IO.Search
                 {
                     try
                     {
-                        var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None);
-                        if (items != null)
+                        var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None).Cast<Node>();
+                        foreach (var item in items)
                         {
-                            foreach (var item in items.Cast<Node>())
-                            {
-                                Logger.Trace($"Add: {item.Name}");
-                                _result.Items.Add(item.Content);
-                                SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
-                            }
+                            Logger.Trace($"Add: {item.Name}");
+                            _result.Items.Add(item.Content);
+                            SearchResultChanged?.Invoke(this, new SearchResultChangedEventArgs(NodeChangedAction.Add, item.Content));
                         }
                     }
                     catch (SearchKeywordException ex)
