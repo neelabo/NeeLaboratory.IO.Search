@@ -4,6 +4,9 @@ using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
 {
+    /// <summary>
+    /// 検索値
+    /// </summary>
     public abstract class SearchValue
     {
         public abstract int CompareTo(SearchValue other);
@@ -11,11 +14,12 @@ namespace NeeLaboratory.IO.Search
         public override string ToString() => base.ToString() ?? "";
     }
 
-
+    /// <summary>
+    /// 検索値：文字列
+    /// </summary>
     public class StringSearchValue : SearchValue
     {
         public static StringSearchValue Default { get; } = new("");
-
 
         private readonly string _value;
 
@@ -40,10 +44,12 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
-
+    /// <summary>
+    /// 検索値：Boolean
+    /// </summary>
     public class BooleanSearchValue : SearchValue
     {
-        public static BooleanSearchValue Default { get; } = new(false);
+        public static BooleanSearchValue Default { get; } = new(default);
 
         private readonly bool _value;
 
@@ -65,6 +71,43 @@ namespace NeeLaboratory.IO.Search
             }
             catch (Exception ex)
             {
+                throw new SearchKeywordIntegerException($"Integer parse error: Cannot parse {value}", ex);
+            }
+        }
+
+        public override string ToString()
+        {
+            return _value.ToString();
+        }
+    }
+
+    /// <summary>
+    /// 検索値：整数
+    /// </summary>
+    public class IntegerSearchValue : SearchValue
+    {
+        public static IntegerSearchValue Default { get; } = new(default);
+
+        private readonly int _value;
+
+        public IntegerSearchValue(int value)
+        {
+            _value = value;
+        }
+
+        public override int CompareTo(SearchValue other)
+        {
+            return _value.CompareTo(((IntegerSearchValue)other)._value);
+        }
+
+        public override SearchValue Parse(string value)
+        {
+            try
+            {
+                return new IntegerSearchValue(int.Parse(value));
+            }
+            catch (Exception ex)
+            {
                 throw new SearchKeywordBooleanException($"Boolean parse error: Cannot parse {value}", ex);
             }
         }
@@ -75,7 +118,9 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
-
+    /// <summary>
+    /// 検索値：DateTime
+    /// </summary>
     public class DateTimeSearchValue : SearchValue
     {
         public static DateTimeSearchValue Default { get; } = new(default);

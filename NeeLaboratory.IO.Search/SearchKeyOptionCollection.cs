@@ -4,23 +4,23 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace NeeLaboratory.IO.Search
 {
-    public class SearchKeyOptionMap : IEnumerable<KeyValuePair<string, SearchKeyOption>>
+    public class SearchKeyOptionCollection : IEnumerable<KeyValuePair<string, SearchKeyOption>>
     {
-        private readonly Dictionary<string, SearchKeyOption> _map = new();
+        private readonly Dictionary<string, SearchKeyOption> _items = new();
 
-        public SearchKeyOptionMap()
+        public SearchKeyOptionCollection()
         {
         }
 
         public SearchKeyOption this[string key]
         {
-            get { return _map[key]; }
-            set { _map[key] = value; }
+            get { return _items[key]; }
+            set { _items[key] = value; }
         }
 
         public IEnumerator<KeyValuePair<string, SearchKeyOption>> GetEnumerator()
         {
-            return _map.GetEnumerator();
+            return _items.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -30,33 +30,33 @@ namespace NeeLaboratory.IO.Search
 
         public bool TryGetValue(string key, [MaybeNullWhen(false)] out SearchKeyOption value)
         {
-            return _map.TryGetValue(key, out value);
+            return _items.TryGetValue(key, out value);
         }
 
 
         public void Add(SearchConjunction conjunction)
         {
             var option = new ConjunctionSearchKeyOption("/c." + conjunction.ToString().ToLower(), conjunction);
-            _map.Add(option.Name, option);
+            _items.Add(option.Name, option);
         }
 
         public void Add(SearchPropertyProfile profile)
         {
             var option = new PropertySearchKeyOption("/p." + profile.Name, profile);
-            _map.Add(option.Name, option);
+            _items.Add(option.Name, option);
         }
 
         public void Add(SearchFilterProfile profile)
         {
             var option = new FilterSearchKeyOption("/m." + profile.Name, profile);
-            _map.Add(option.Name, option);
+            _items.Add(option.Name, option);
         }
 
-        public void AddRange(SearchKeyOptionMap options)
+        public void AddRange(SearchKeyOptionCollection options)
         {
             foreach(var option in options)
             {
-                _map[option.Key] = option.Value;
+                _items[option.Key] = option.Value;
             }
         }
 

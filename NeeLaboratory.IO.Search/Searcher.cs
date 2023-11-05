@@ -23,7 +23,7 @@ namespace NeeLaboratory.IO.Search
         public Searcher(SearchContext context)
         {
             _context = context;
-            _searchKeyAnalyzer = new SearchKeyAnalyzer(_context.KeyOptions, _context.KeyOptionAlias);
+            _searchKeyAnalyzer = new SearchKeyAnalyzer(_context.KeyOptions, _context.KeyAlias);
         }
 
 

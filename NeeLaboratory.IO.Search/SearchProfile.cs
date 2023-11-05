@@ -2,9 +2,9 @@
 {
     public class SearchProfile
     {
-        public SearchKeyOptionMap Options { get; } = new();
+        public SearchKeyOptionCollection Options { get; } = new();
 
-        public SearchKeyOptionAliasMap Alias { get; } = new();
+        public SearchKeyAliasCollection Alias { get; } = new();
     }
 
 

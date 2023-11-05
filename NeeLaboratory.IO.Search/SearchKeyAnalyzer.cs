@@ -41,12 +41,12 @@ namespace NeeLaboratory.IO.Search
             {State.END, State.END, State.END, State.END, }, // S06
         };
 
-        private readonly SearchKeyOptionAliasMap _alias;
-        private readonly SearchKeyOptionMap _options;
+        private readonly SearchKeyAliasCollection _alias;
+        private readonly SearchKeyOptionCollection _options;
         private readonly List<StateFunc> _stateMap;
 
 
-        public SearchKeyAnalyzer(SearchKeyOptionMap options, SearchKeyOptionAliasMap alias)
+        public SearchKeyAnalyzer(SearchKeyOptionCollection options, SearchKeyAliasCollection alias)
         {
             _options = options;
             _alias = alias;
@@ -132,14 +132,14 @@ namespace NeeLaboratory.IO.Search
 
         private class Context
         {
-            private readonly SearchKeyOptionMap _options;
-            private readonly SearchKeyOptionAliasMap _alias;
+            private readonly SearchKeyOptionCollection _options;
+            private readonly SearchKeyAliasCollection _alias;
             private readonly string _source;
             private int _header;
             private SearchKey _work;
 
 
-            public Context(SearchKeyOptionMap options, SearchKeyOptionAliasMap alias, string source)
+            public Context(SearchKeyOptionCollection options, SearchKeyAliasCollection alias, string source)
             {
                 _options = options;
                 _alias = alias;
@@ -217,14 +217,14 @@ namespace NeeLaboratory.IO.Search
                         {
                             switch (value)
                             {
-                                case ConjunctionSearchKeyOption conjunctionSearchOption:
-                                    _work.Conjunction = conjunctionSearchOption.SearchConjunction;
+                                case ConjunctionSearchKeyOption conjunction:
+                                    _work.Conjunction = conjunction.SearchConjunction;
                                     break;
-                                case PropertySearchKeyOption propertySearchOption:
-                                    _work.Property = propertySearchOption.Profile;
+                                case PropertySearchKeyOption property:
+                                    _work.Property = property.Profile;
                                     break;
-                                case FilterSearchKeyOption operationSearchOption:
-                                    _work.Filter = operationSearchOption.Profile;
+                                case FilterSearchKeyOption filter:
+                                    _work.Filter = filter.Profile;
                                     break;
                                 default:
                                     throw new InvalidOperationException($"Not supported search option type: {value.GetType()}");

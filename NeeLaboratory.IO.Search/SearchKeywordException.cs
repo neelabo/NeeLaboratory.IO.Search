@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
+// TODO: 定義が細分化されすぎでは？
 namespace NeeLaboratory.IO.Search
 {
     [Serializable]
@@ -49,5 +50,13 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordBooleanException() : base() { }
         public SearchKeywordBooleanException(string message) : base(message) { }
         public SearchKeywordBooleanException(string message, Exception inner) : base(message, inner) { }
+    }
+
+    [Serializable]
+    public class SearchKeywordIntegerException : SearchKeywordException
+    {
+        public SearchKeywordIntegerException() : base() { }
+        public SearchKeywordIntegerException(string message) : base(message) { }
+        public SearchKeywordIntegerException(string message, Exception inner) : base(message, inner) { }
     }
 }

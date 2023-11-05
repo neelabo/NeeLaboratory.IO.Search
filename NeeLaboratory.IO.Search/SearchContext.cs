@@ -22,8 +22,8 @@ namespace NeeLaboratory.IO.Search
         }
 
 
-        public SearchKeyOptionMap KeyOptions { get; } = new SearchKeyOptionMap();
-        public SearchKeyOptionAliasMap KeyOptionAlias { get; } = new SearchKeyOptionAliasMap();
+        public SearchKeyOptionCollection KeyOptions { get; } = new SearchKeyOptionCollection();
+        public SearchKeyAliasCollection KeyAlias { get; } = new SearchKeyAliasCollection();
 
         public FuzzyStringCache FuzzyStringCache => _cache.FuzzyStringCache;
         public WordStringCache WordStringCache => _cache.WordStringCache;
@@ -32,7 +32,7 @@ namespace NeeLaboratory.IO.Search
         public void AddProfile(SearchProfile profile)
         {
             KeyOptions.AddRange(profile.Options);
-            KeyOptionAlias.AddRange(profile.Alias);
+            KeyAlias.AddRange(profile.Alias);
         }
     }
 }

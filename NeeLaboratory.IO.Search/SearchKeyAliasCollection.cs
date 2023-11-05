@@ -3,24 +3,24 @@ using System.Collections.Generic;
 
 namespace NeeLaboratory.IO.Search
 {
-    public class SearchKeyOptionAliasMap : IEnumerable<KeyValuePair<string, List<string>>>
+    public class SearchKeyAliasCollection : IEnumerable<KeyValuePair<string, List<string>>>
     {
-        private readonly Dictionary<string, List<string>> _map = new();
+        private readonly Dictionary<string, List<string>> _items = new();
 
-        public SearchKeyOptionAliasMap()
+        public SearchKeyAliasCollection()
         {
         }
 
 
         public List<string> this[string key]
         {
-            get { return _map[key]; }
-            set { _map[key] = value; }
+            get { return _items[key]; }
+            set { _items[key] = value; }
         }
 
         public IEnumerator<KeyValuePair<string, List<string>>> GetEnumerator()
         {
-            return _map.GetEnumerator();
+            return _items.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -31,12 +31,12 @@ namespace NeeLaboratory.IO.Search
 
         public void Add(string key, List<string> value)
         {
-            _map[key] = value;
+            _items[key] = value;
         }
 
         public List<string> Decode(string s)
         {
-            if (_map.TryGetValue(s, out var options))
+            if (_items.TryGetValue(s, out var options))
             {
                 return options;
             }
@@ -47,11 +47,11 @@ namespace NeeLaboratory.IO.Search
         }
 
 
-        public void AddRange(SearchKeyOptionAliasMap options)
+        public void AddRange(SearchKeyAliasCollection options)
         {
             foreach (var option in options)
             {
-                _map[option.Key] = option.Value;
+                _items[option.Key] = option.Value;
             }
         }
     }

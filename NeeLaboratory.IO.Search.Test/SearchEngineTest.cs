@@ -247,7 +247,7 @@ namespace NeeLaboratory.IO.Search.Test
         {
             var context = new SearchContext();
             context.AddProfile(new DateSearchProfile());
-            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyOptionAlias);
+            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyAlias);
             List<SearchKey> keys;
 
             keys = analyzer.Analyze("");
@@ -390,7 +390,7 @@ namespace NeeLaboratory.IO.Search.Test
         public void SearchEngineKeywordAnalyzeOptionExceptionTest()
         {
             var context = new SearchContext();
-            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyOptionAlias);
+            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyAlias);
             List<SearchKey> keys;
 
             Assert.Throws<SearchKeywordOptionException>(() =>
@@ -404,7 +404,7 @@ namespace NeeLaboratory.IO.Search.Test
         public void SearchEngineKeywordAnalyzeRegularExpressionExceptionTest()
         {
             var context = new SearchContext();
-            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyOptionAlias);
+            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyAlias);
             List<SearchKey> keys;
 
             Assert.Throws<SearchKeywordRegularExpressionException>(() =>
