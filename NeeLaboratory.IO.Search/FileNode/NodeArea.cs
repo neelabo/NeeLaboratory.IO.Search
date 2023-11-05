@@ -2,7 +2,6 @@
 
 namespace NeeLaboratory.IO.Search.FileNode
 {
-    [DataContract]
     public class NodeArea
     {
         public NodeArea()
@@ -19,10 +18,8 @@ namespace NeeLaboratory.IO.Search.FileNode
             IncludeSubdirectories = includeSubdirectories;
         }
 
-        [DataMember]
         public string Path { get; set; } = "";
 
-        [DataMember]
         public bool IncludeSubdirectories { get; set; }
     }
 
