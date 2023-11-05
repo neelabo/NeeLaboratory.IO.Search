@@ -428,7 +428,9 @@ namespace NeeLaboratory.IO.Search.Test
         [InlineData(2, "/p.date /m.ge 2018-02-01")]
         public void SearchCoreCompareTest(int expected, string keyword)
         {
-            var search = new NodeSearcher();
+            var context = new SearchContext();
+            context.AddProfile(new DateSearchProfile());
+            var search = new Searcher(context);
             var items = new List<SampleSearchItem>
             {
                 new SampleSearchItem("2018-01-01"),
@@ -445,6 +447,7 @@ namespace NeeLaboratory.IO.Search.Test
     {
         private string _value;
 
+
         public SampleSearchItem(string value)
         {
             _value = value;
@@ -458,10 +461,6 @@ namespace NeeLaboratory.IO.Search.Test
                     return new StringSearchValue(_value);
                 case "date":
                     return new DateTimeSearchValue(DateTime.Parse(_value));
-                case "isdir":
-                    return new BooleanSearchValue(false);
-                case "ispinned":
-                    return new BooleanSearchValue(false);
                 default:
                     throw new NotSupportedException();
             }

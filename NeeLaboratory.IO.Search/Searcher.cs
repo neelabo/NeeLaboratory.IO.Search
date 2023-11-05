@@ -94,9 +94,8 @@ namespace NeeLaboratory.IO.Search
             // キーワード登録
             var keys = CreateKeys(keyword);
 
-            if (keys == null || keys.Count == 0)
+            if (keys == null || keys.Count == 0 || !entries.Any())
             {
-                //return pushpins;
                 return Array.Empty<ISearchItem>();
             }
 
@@ -110,7 +109,7 @@ namespace NeeLaboratory.IO.Search
                 switch (key.Conjunction)
                 {
                     case SearchConjunction.And:
-                        entries = entries.Where(e => filter.IsMatch(_context, e)).ToList();
+                        entries = entries.Where(e => filter.IsMatch(_context, e));
                         break;
                     case SearchConjunction.Or:
                         entries = entries.Union(all.Where(e => filter.IsMatch(_context, e)));
@@ -125,15 +124,4 @@ namespace NeeLaboratory.IO.Search
         }
     }
 
-
-#if false
-    // TODO: SearchOption のほが名前はふさわしいが競合している
-    // これは SearchCore もしくは SearchContext に直接定義すべきでは？
-    public class SearchDescription
-    {
-        public List<SearchKey> PreKeys { get; } = new();
-
-        public List<SearchKey> PostKeys { get; } = new();
-    }
-#endif
 }
