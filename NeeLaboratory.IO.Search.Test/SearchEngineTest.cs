@@ -243,7 +243,9 @@ namespace NeeLaboratory.IO.Search.Test
         [Fact]
         public void SearchEngineKeywordAnalyzeTest()
         {
-            var analyzer = new SearchKeyAnalyzer();
+            var context = new SearchContext();
+            context.AddProfile(new DateSearchProfile());
+            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyOptionAlias);
             List<SearchKey> keys;
 
             keys = analyzer.Analyze("");
@@ -351,41 +353,42 @@ namespace NeeLaboratory.IO.Search.Test
 
             keys = analyzer.Analyze("/since 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.GreaterThan, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.GreaterThanEqual, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
 
             keys = analyzer.Analyze("/until 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.LessThan, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.LessThanEqual, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
 
             keys = analyzer.Analyze("/p.date /m.lt 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.LessThan, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.LessThan, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
 
             keys = analyzer.Analyze("/p.date /m.le 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.LessThanEqual, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.LessThanEqual, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
 
             keys = analyzer.Analyze("/p.date /m.eq 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
 
             keys = analyzer.Analyze("/p.date /m.ne 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.NotEqual, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.NotEqual, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
 
             keys = analyzer.Analyze("/p.date /m.ge 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.GreaterThanEqual, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.GreaterThanEqual, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
 
             keys = analyzer.Analyze("/p.date /m.gt 2018-01-01");
             Assert.Single(keys);
-            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.GreaterThan, SearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
+            Assert.Equal(new SearchKey(SearchConjunction.And, SearchFilterProfiles.GreaterThan, DateSearchPropertyProfiles.Date, "2018-01-01"), keys[0]);
         }
 
         [Fact]
         public void SearchEngineKeywordAnalyzeOptionExceptionTest()
         {
-            var analyzer = new SearchKeyAnalyzer();
+            var context = new SearchContext();
+            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyOptionAlias);
             List<SearchKey> keys;
 
             Assert.Throws<SearchKeywordOptionException>(() =>
@@ -398,7 +401,8 @@ namespace NeeLaboratory.IO.Search.Test
         [Fact]
         public void SearchEngineKeywordAnalyzeRegularExpressionExceptionTest()
         {
-            var analyzer = new SearchKeyAnalyzer();
+            var context = new SearchContext();
+            var analyzer = new SearchKeyAnalyzer(context.KeyOptions, context.KeyOptionAlias);
             List<SearchKey> keys;
 
             Assert.Throws<SearchKeywordRegularExpressionException>(() =>
@@ -424,7 +428,7 @@ namespace NeeLaboratory.IO.Search.Test
         [InlineData(2, "/p.date /m.ge 2018-02-01")]
         public void SearchCoreCompareTest(int expected, string keyword)
         {
-            var search = new Searcher();
+            var search = new NodeSearcher();
             var items = new List<SampleSearchItem>
             {
                 new SampleSearchItem("2018-01-01"),
@@ -446,10 +450,6 @@ namespace NeeLaboratory.IO.Search.Test
             _value = value;
         }
 
-        public bool IsDirectory => false;
-
-        public bool IsPushPin => false;
-
         public SearchValue GetValue(SearchPropertyProfile profile)
         {
             switch (profile.Name)
@@ -458,6 +458,10 @@ namespace NeeLaboratory.IO.Search.Test
                     return new StringSearchValue(_value);
                 case "date":
                     return new DateTimeSearchValue(DateTime.Parse(_value));
+                case "isdir":
+                    return new BooleanSearchValue(false);
+                case "ispinned":
+                    return new BooleanSearchValue(false);
                 default:
                     throw new NotSupportedException();
             }

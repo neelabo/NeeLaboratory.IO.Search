@@ -12,7 +12,7 @@ namespace NeeLaboratory.IO.Search
         private bool _allowFolder;
 
 
-        public NodeSearcher()
+        public NodeSearcher() : base(CreateContext())
         {
             UpdateProperties();
         }
@@ -31,14 +31,21 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
+        private static SearchContext CreateContext()
+        {
+            var context = new SearchContext();
+            context.AddProfile(new DateSearchProfile());
+            context.AddProfile(new NodeSearchProfile());
+            return context;
+        }
 
         private void UpdateProperties()
         {
             // allow folder
-            PreKeys = AllowFolder ? new() : new() { new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, SearchPropertyProfiles.IsDirectory, "false") };
+            PreKeys = AllowFolder ? new() : new() { new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, NodeSearchPropertyProfiles.IsDirectory, "false") };
 
             // pushpin
-            PostKeys = new() { new SearchKey(SearchConjunction.Or, SearchFilterProfiles.Equal, SearchPropertyProfiles.IsPinned, "true") };
+            PostKeys = new() { new SearchKey(SearchConjunction.Or, SearchFilterProfiles.Equal, NodeSearchPropertyProfiles.IsPinned, "true") };
         }
 
         /// <summary>
@@ -48,5 +55,32 @@ namespace NeeLaboratory.IO.Search
         {
             return base.Search(keyword, entries, token).Cast<Node>().OrderByDescending(e => e.IsPushPin);
         }
+    }
+
+
+    public class DateSearchProfile : SearchProfile
+    {
+        public DateSearchProfile()
+        {
+            Options.Add(DateSearchPropertyProfiles.Date);
+
+            Alias.Add("/since", new() { "/p.date", "/m.ge" });
+            Alias.Add("/until", new() { "/p.date", "/m.le" });
+        }
+    }
+
+    public class NodeSearchProfile : SearchProfile
+    {
+        public NodeSearchProfile()
+        {
+            Options.Add(NodeSearchPropertyProfiles.IsDirectory);
+            Options.Add(NodeSearchPropertyProfiles.IsPinned);
+        }
+    }
+
+    public static class NodeSearchPropertyProfiles
+    {
+        public static SearchPropertyProfile IsDirectory { get; } = new SearchPropertyProfile("isdir", BooleanSearchValue.Default);
+        public static SearchPropertyProfile IsPinned { get; } = new SearchPropertyProfile("ispinned", BooleanSearchValue.Default);
     }
 }

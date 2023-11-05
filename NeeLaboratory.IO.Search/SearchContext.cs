@@ -14,6 +14,7 @@ namespace NeeLaboratory.IO.Search
 
         public SearchContext() : this(SearchValueCache.Default)
         {
+            AddProfile(new DefaultSearchProfile());
         }
 
         public SearchContext(SearchValueCache cache)
@@ -27,5 +28,12 @@ namespace NeeLaboratory.IO.Search
 
         public FuzzyStringCache FuzzyStringCache => _cache.FuzzyStringCache;
         public WordStringCache WordStringCache => _cache.WordStringCache;
+
+
+        public void AddProfile(SearchProfile profile)
+        {
+            KeyOptions.AddRange(profile.Options);
+            KeyOptionAlias.AddRange(profile.Alias);
+        }
     }
 }

@@ -46,10 +46,6 @@ namespace NeeLaboratory.IO.Search
         private readonly List<StateFunc> _stateMap;
 
 
-        public SearchKeyAnalyzer() : this(new SearchKeyOptionMap(), new SearchKeyOptionAliasMap())
-        {
-        }
-
         public SearchKeyAnalyzer(SearchKeyOptionMap options, SearchKeyOptionAliasMap alias)
         {
             _options = options;

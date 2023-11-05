@@ -1,35 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 
 namespace NeeLaboratory.IO.Search
 {
-    public class SearchKeyOptionAliasMap
+    public class SearchKeyOptionAliasMap : IEnumerable<KeyValuePair<string, List<string>>>
     {
-        private Dictionary<string, List<string>> _map;
+        private readonly Dictionary<string, List<string>> _map = new();
 
         public SearchKeyOptionAliasMap()
         {
-            _map = new Dictionary<string, List<string>>()
-            {
-                ["/and"] = new() { "/c.and" },
-                ["/or"] = new() { "/c.or" },
-                ["/not"] = new() { "/c.not" },
-                ["/re"] = new() { "/m.re" },
-                ["/ire"] = new() { "/m.ire" },
-                ["/m0"] = new() { "/m.exact" },
-                ["/exact"] = new() { "/m.exact" },
-                ["/m1"] = new() { "/m.word" },
-                ["/word"] = new() { "/m.word" },
-                ["/m2"] = new() { "/m.fuzzy" },
-                ["/since"] = new() { "/p.date", "/m.gt" },
-                ["/until"] = new() { "/p.date", "/m.lt" },
+        }
 
-                ["/lt"] = new() { "m.lt" },
-                ["/le"] = new() { "m.le" },
-                ["/eq"] = new() { "m.eq" },
-                ["/ne"] = new() { "m.ne" },
-                ["/ge"] = new() { "m.ge" },
-                ["/gt"] = new() { "m.gte" },
-            };
+
+        public List<string> this[string key]
+        {
+            get { return _map[key]; }
+            set { _map[key] = value; }
+        }
+
+        public IEnumerator<KeyValuePair<string, List<string>>> GetEnumerator()
+        {
+            return _map.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
 
@@ -47,6 +43,15 @@ namespace NeeLaboratory.IO.Search
             else
             {
                 return new List<string> { s };
+            }
+        }
+
+
+        public void AddRange(SearchKeyOptionAliasMap options)
+        {
+            foreach (var option in options)
+            {
+                _map[option.Key] = option.Value;
             }
         }
     }

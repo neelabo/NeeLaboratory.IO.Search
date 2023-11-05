@@ -1,44 +1,31 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NeeLaboratory.IO.Search
 {
-    public class SearchKeyOptionMap
+    public class SearchKeyOptionMap : IEnumerable<KeyValuePair<string, SearchKeyOption>>
     {
-        private Dictionary<string, SearchKeyOption> _map;
+        private readonly Dictionary<string, SearchKeyOption> _map = new();
 
         public SearchKeyOptionMap()
         {
-            _map = new();
-            Add(SearchConjunction.And);
-            Add(SearchConjunction.Or);
-            Add(SearchConjunction.Not);
-
-            // TODO: 基本文字列検索セット以外は拡張セットとして外部から追加するように
-
-            Add(SearchPropertyProfiles.Text);
-            Add(SearchPropertyProfiles.Date);
-            Add(SearchPropertyProfiles.IsDirectory);
-            Add(SearchPropertyProfiles.IsPinned);
-
-            Add(SearchFilterProfiles.Exact);
-            Add(SearchFilterProfiles.Word);
-            Add(SearchFilterProfiles.Fuzzy);
-            Add(SearchFilterProfiles.RegularExpression);
-            Add(SearchFilterProfiles.RegularExpressionIgnoreCase);
-
-            Add(SearchFilterProfiles.LessThan);
-            Add(SearchFilterProfiles.LessThanEqual);
-            Add(SearchFilterProfiles.Equal);
-            Add(SearchFilterProfiles.NotEqual);
-            Add(SearchFilterProfiles.GreaterThanEqual);
-            Add(SearchFilterProfiles.GreaterThan);
         }
 
         public SearchKeyOption this[string key]
         {
             get { return _map[key]; }
             set { _map[key] = value; }
+        }
+
+        public IEnumerator<KeyValuePair<string, SearchKeyOption>> GetEnumerator()
+        {
+            return _map.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         public bool TryGetValue(string key, [MaybeNullWhen(false)] out SearchKeyOption value)
@@ -64,6 +51,15 @@ namespace NeeLaboratory.IO.Search
             var option = new FilterSearchKeyOption("/m." + profile.Name, profile);
             _map.Add(option.Name, option);
         }
+
+        public void AddRange(SearchKeyOptionMap options)
+        {
+            foreach(var option in options)
+            {
+                _map[option.Key] = option.Value;
+            }
+        }
+
     }
 
 }

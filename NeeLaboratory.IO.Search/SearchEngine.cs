@@ -55,7 +55,7 @@ namespace NeeLaboratory.IO.Search
             _commandEngine = new SearchCommandEngine();
         }
 
-       
+
         /// <summary>
         /// 検索にフォルダーを含める
         /// </summary>

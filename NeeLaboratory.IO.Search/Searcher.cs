@@ -66,6 +66,11 @@ namespace NeeLaboratory.IO.Search
             var keys = _searchKeyAnalyzer.Analyze(source)
                 .Where(e => !string.IsNullOrEmpty(e.Format));
 
+            if (!keys.Any())
+            {
+                return new List<SearchKey>();
+            }
+
             keys = PreKeys.Concat(keys).Concat(PostKeys);
 
             ////Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString())));
