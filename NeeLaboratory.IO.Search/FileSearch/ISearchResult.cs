@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using NeeLaboratory.IO.Search.FileNode;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileSearch
 {
     /// <summary>
     /// 検索結果インターフェイス

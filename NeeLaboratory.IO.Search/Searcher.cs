@@ -1,17 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace NeeLaboratory.IO.Search
 {
     /// <summary>
-    /// 検索コア 絞り込み
+    /// 検索本体
     /// </summary>
     public class Searcher : IDisposable
     {

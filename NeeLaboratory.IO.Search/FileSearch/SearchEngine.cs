@@ -9,8 +9,10 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NeeLaboratory.IO.Search.Diagnostics;
+using NeeLaboratory.IO.Search.FileNode;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileSearch
 {
     /// <summary>
     /// 検索エンジン
@@ -68,7 +70,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索エリア
         /// </summary>
-        private ObservableCollection<SearchArea> _searchAreas = new();
+        private ObservableCollection<NodeArea> _searchAreas = new();
 
         /// <summary>
         /// コア検索エンジン
@@ -94,7 +96,7 @@ namespace NeeLaboratory.IO.Search
         /// ノード数(おおよそ)
         /// 通知用
         /// </summary>
-        public int NodeCountMaybe => this.Context.TotalCount;
+        public int NodeCountMaybe => Context.TotalCount;
 
         /// <summary>
         /// ノード数(計測するので重い)
@@ -124,11 +126,11 @@ namespace NeeLaboratory.IO.Search
         /// 検索エリア設定
         /// </summary>
         /// <param name="areas"></param>
-        public void SetSearchAreas(IEnumerable<SearchArea> areas)
+        public void SetSearchAreas(IEnumerable<NodeArea> areas)
         {
             ThrowIfDisposed();
 
-            var value = new ObservableCollection<SearchArea>(areas);
+            var value = new ObservableCollection<NodeArea>(areas);
 
             if (_searchAreas != value)
             {
@@ -145,7 +147,7 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        public void AddSearchAreas(params SearchArea[] areas)
+        public void AddSearchAreas(params NodeArea[] areas)
         {
             foreach (var area in areas)
             {

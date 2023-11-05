@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileNode
 {
     /// <summary>
     /// Nodeコンテンツ
@@ -22,11 +22,11 @@ namespace NeeLaboratory.IO.Search
         }
 
         #region NotifyPropertyChanged
-        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void RaisePropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string? name = null)
         {
-            PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(name));
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
         #endregion
 
@@ -46,7 +46,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         private NodeContentFlag _flags;
 
-  
+
 
         /// <summary>
         /// コンストラクター
@@ -55,7 +55,7 @@ namespace NeeLaboratory.IO.Search
         public NodeContent(NodePath nodePath, FileSystemInfo fileSystemInfo)
         {
             _nodePath = nodePath;
-            this.IsDirectory = fileSystemInfo.Attributes.HasFlag(FileAttributes.Directory);
+            IsDirectory = fileSystemInfo.Attributes.HasFlag(FileAttributes.Directory);
             _fileInfo = new FileInfo(_nodePath, fileSystemInfo);
         }
 
@@ -83,7 +83,7 @@ namespace NeeLaboratory.IO.Search
             {
                 string? dir = System.IO.Path.GetDirectoryName(Path);
                 string? parentDir = System.IO.Path.GetDirectoryName(dir);
-                return (parentDir == null) ? dir : System.IO.Path.GetFileName(dir) + " (" + parentDir + ")";
+                return parentDir == null ? dir : System.IO.Path.GetFileName(dir) + " (" + parentDir + ")";
             }
         }
 
@@ -94,8 +94,8 @@ namespace NeeLaboratory.IO.Search
         {
             get
             {
-                string sizeText = (this.FileInfo.Size >= 0) ? $"Size: {(this.FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "Size: --\n";
-                return $"{Name}\n{sizeText}Date: {this.FileInfo.LastWriteTime:yyyy/MM/dd HH:mm}\nFolder: {DirectoryName}";
+                string sizeText = FileInfo.Size >= 0 ? $"Size: {(FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "Size: --\n";
+                return $"{Name}\n{sizeText}Date: {FileInfo.LastWriteTime:yyyy/MM/dd HH:mm}\nFolder: {DirectoryName}";
             }
         }
 
@@ -104,7 +104,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         public FileInfo FileInfo
         {
-            get { return _fileInfo; } 
+            get { return _fileInfo; }
         }
 
 
@@ -174,7 +174,7 @@ namespace NeeLaboratory.IO.Search
             if (obj == null) return 1;
 
             NodeContent other = (NodeContent)obj;
-            return NativeMethods.StrCmpLogicalW(this.Name, other.Name);
+            return NativeMethods.StrCmpLogicalW(Name, other.Name);
         }
     }
 }

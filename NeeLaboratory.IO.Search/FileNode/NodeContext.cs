@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileNode
 {
     /// <summary>
     /// ノード環境

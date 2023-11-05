@@ -3,6 +3,7 @@ using System.Linq;
 
 namespace NeeLaboratory.IO.Search
 {
+    // NOTE: 未使用
     public class StringKey
     {
         private readonly int _key;

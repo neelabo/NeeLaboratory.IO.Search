@@ -6,9 +6,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NeeLaboratory.IO.Search.Diagnostics;
+using NeeLaboratory.IO.Search.FileNode;
 using static System.Formats.Asn1.AsnWriter;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileSearch
 {
     /// <summary>
     /// 結果の変更を監視する。

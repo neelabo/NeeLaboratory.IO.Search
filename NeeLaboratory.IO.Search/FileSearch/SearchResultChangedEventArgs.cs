@@ -1,6 +1,7 @@
 ﻿using System;
+using NeeLaboratory.IO.Search.FileNode;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileSearch
 {
     /// <summary>
     /// 検索結果変更通知イベントデータ
@@ -25,8 +26,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="content"></param>
         public SearchResultChangedEventArgs(NodeChangedAction action, NodeContent content)
         {
-            this.Action = action;
-            this.Content = content;
+            Action = action;
+            Content = content;
         }
     }
 

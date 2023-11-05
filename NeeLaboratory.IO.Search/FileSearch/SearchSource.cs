@@ -4,8 +4,9 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NeeLaboratory.IO.Search.FileNode;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileSearch
 {
     /// <summary>
     /// 検索ファイルをインデックス化
@@ -72,7 +73,7 @@ namespace NeeLaboratory.IO.Search
         /// 検索フォルダのインデックス化
         /// </summary>
         /// <param name="areas">検索フォルダ群</param>
-        public void Collect(List<SearchArea> areas, CancellationToken token)
+        public void Collect(List<NodeArea> areas, CancellationToken token)
         {
             ThrowIfDisposed();
 
@@ -82,7 +83,7 @@ namespace NeeLaboratory.IO.Search
 
             if (areas.Count == 0) return;
 
-            var roots = new List<SearchArea>();
+            var roots = new List<NodeArea>();
 
             foreach (var area in areas)
             {
@@ -113,7 +114,7 @@ namespace NeeLaboratory.IO.Search
         /// 検索フォルダのインデックス化
         /// 更新分のみ
         /// </summary>
-        private void CollectCore(List<SearchArea> areas, CancellationToken token)
+        private void CollectCore(List<NodeArea> areas, CancellationToken token)
         {
             ThrowIfDisposed();
 
@@ -172,7 +173,7 @@ namespace NeeLaboratory.IO.Search
             }
 
             _fileIndexDirectory = newDictionary;
-            System.GC.Collect();
+            GC.Collect();
         }
 
 

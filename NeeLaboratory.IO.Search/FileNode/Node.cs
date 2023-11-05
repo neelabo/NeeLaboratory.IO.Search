@@ -5,8 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NeeLaboratory.IO.Search.Diagnostics;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileNode
 {
     /// <summary>
     /// Node

@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileNode
 {
     /// <summary>
     /// ファイル監視による変更イベンのトデータ
@@ -24,8 +24,8 @@ namespace NeeLaboratory.IO.Search
         /// <param name="args"></param>
         public NodeTreeFileSystemEventArgs(string path, FileSystemEventArgs args)
         {
-            this.NodePath = path;
-            this.FileSystemEventArgs = args;
+            NodePath = path;
+            FileSystemEventArgs = args;
         }
     }
 }

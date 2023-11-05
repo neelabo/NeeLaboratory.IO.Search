@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileNode
 {
     /// <summary>
     /// NodeContent属性
@@ -13,22 +13,22 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ディレクトリ
         /// </summary>
-        Directory = (1 << 0),
+        Directory = 1 << 0,
 
         /// <summary>
         /// 追加された
         /// </summary>
-        Added = (1 << 1),
+        Added = 1 << 1,
 
         /// <summary>
         /// 削除された
         /// </summary>
-        Removed = (1 << 2),
+        Removed = 1 << 2,
 
         /// <summary>
         /// ピン留め
         /// </summary>
-        PushPin = (1 << 3),
+        PushPin = 1 << 3,
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="flag"></param>
         public static NodeContentFlag SetFlag(this NodeContentFlag self, NodeContentFlag flag, bool state)
         {
-            return state ? (self | flag) : (self & ~flag);
+            return state ? self | flag : self & ~flag;
         }
 
         /// <summary>

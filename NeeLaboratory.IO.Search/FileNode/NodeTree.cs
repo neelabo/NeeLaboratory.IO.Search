@@ -7,8 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Threading;
+using NeeLaboratory.IO.Search.Diagnostics;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileNode
 {
     /// <summary>
     /// ノード木
@@ -35,7 +36,7 @@ namespace NeeLaboratory.IO.Search
         /// コンストラクター
         /// </summary>
         /// <param name="path"></param>
-        public NodeTree(SearchArea area, NodeContext ctx)
+        public NodeTree(NodeArea area, NodeContext ctx)
         {
             _context = ctx;
 

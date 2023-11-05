@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileSearch
 {
 
     /// <summary>

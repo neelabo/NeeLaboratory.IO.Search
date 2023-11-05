@@ -1,4 +1,4 @@
-﻿namespace NeeLaboratory.IO.Search
+﻿namespace NeeLaboratory.IO.Search.FileNode
 {
     /// <summary>
     ///  リンク形式のパス表現

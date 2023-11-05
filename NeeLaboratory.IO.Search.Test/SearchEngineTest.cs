@@ -1,4 +1,6 @@
-﻿using NeeLaboratory.IO.Search;
+﻿using NeeLaboratory.IO.Search.Diagnostics;
+using NeeLaboratory.IO.Search.FileSearch;
+using NeeLaboratory.IO.Search.FileNode;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -46,7 +48,7 @@ namespace NeeLaboratory.IO.Search.Test
             // エンジン初期化
             var engine = new SearchEngine();
             SearchEngine.Logger.SetLevel(SourceLevels.All);
-            engine.AddSearchAreas(new SearchArea(_folderRoot, true), new SearchArea(_folderSub1, true), new SearchArea(_folderSub2, true));
+            engine.AddSearchAreas(new NodeArea(_folderRoot, true), new NodeArea(_folderSub1, true), new NodeArea(_folderSub2, true));
             engine.CommandEngineLogger.SetLevel(SourceLevels.All);
 
             return engine;
@@ -64,8 +66,8 @@ namespace NeeLaboratory.IO.Search.Test
             var engine = new SearchEngine();
 
             // 検索パス設定
-            engine.AddSearchAreas(new SearchArea(_folderSub1, true));
-            engine.AddSearchAreas(new SearchArea(_folderRoot, true));
+            engine.AddSearchAreas(new NodeArea(_folderSub1, true));
+            engine.AddSearchAreas(new NodeArea(_folderRoot, true));
 
 
             // 検索１：通常検索
@@ -91,22 +93,22 @@ namespace NeeLaboratory.IO.Search.Test
             var engine = new SearchEngine();
 
             // パスの追加
-            engine.AddSearchAreas(new SearchArea(_folderRoot, false));
+            engine.AddSearchAreas(new NodeArea(_folderRoot, false));
             await engine.WaitAsync(CancellationToken.None);
             //engine.DumpTree(true);
             Assert.Equal(7, engine.NodeCount);
 
-            engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true) });
+            engine.SetSearchAreas(new ObservableCollection<NodeArea>() { new NodeArea(_folderRoot, true) });
             await engine.WaitAsync(CancellationToken.None);
             //engine.DumpTree(true);
             Assert.Equal(13, engine.NodeCount);
 
-            engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, true), new SearchArea(_folderSub1, true) });
+            engine.SetSearchAreas(new ObservableCollection<NodeArea>() { new NodeArea(_folderRoot, true), new NodeArea(_folderSub1, true) });
             await engine.WaitAsync(CancellationToken.None);
             Assert.Equal(13, engine.NodeCount);
 
             // 変則エリア。NodeTreeの結合が発生
-            engine.SetSearchAreas(new ObservableCollection<SearchArea>() { new SearchArea(_folderRoot, false), new SearchArea(_folderSub1, true) });
+            engine.SetSearchAreas(new ObservableCollection<NodeArea>() { new NodeArea(_folderRoot, false), new NodeArea(_folderSub1, true) });
             await engine.WaitAsync(CancellationToken.None);
             engine.DumpTree(true);
             Assert.Equal(10, engine.NodeCount);

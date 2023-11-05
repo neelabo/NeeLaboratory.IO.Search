@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NeeLaboratory.IO.Search.FileNode;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileSearch
 {
     /// <summary>
     /// コマンドデータ基底
@@ -59,7 +60,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class CollectCommandArgs : CommandArgs
     {
-        public CollectCommandArgs(List<SearchArea> area)
+        public CollectCommandArgs(List<NodeArea> area)
         {
             Area = area;
         }
@@ -67,7 +68,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索エリアのパス
         /// </summary>
-        public List<SearchArea> Area { get; set; }
+        public List<NodeArea> Area { get; set; }
     }
 
 

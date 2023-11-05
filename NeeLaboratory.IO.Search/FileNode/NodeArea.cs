@@ -1,20 +1,20 @@
 ﻿using System.Runtime.Serialization;
 
-namespace NeeLaboratory.IO.Search
+namespace NeeLaboratory.IO.Search.FileNode
 {
     [DataContract]
-    public class SearchArea
+    public class NodeArea
     {
-        public SearchArea()
+        public NodeArea()
         {
         }
 
-        public SearchArea(string path)
+        public NodeArea(string path)
         {
             Path = System.IO.Path.GetFullPath(path);
         }
 
-        public SearchArea(string path, bool includeSubdirectories) : this(path)
+        public NodeArea(string path, bool includeSubdirectories) : this(path)
         {
             IncludeSubdirectories = includeSubdirectories;
         }
