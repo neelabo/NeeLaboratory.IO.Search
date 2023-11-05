@@ -28,12 +28,12 @@
     /// </summary>
     public class OperationSearchOption : SearchOptionBase
     {
-        public OperationSearchOption(string option, SearchOperatorProfile profile) : base(option)
+        public OperationSearchOption(string option, SearchFilterProfile profile) : base(option)
         {
             Profile = profile;
         }
 
-        public SearchOperatorProfile Profile { get; }
+        public SearchFilterProfile Profile { get; }
     }
 
    /// <summary>

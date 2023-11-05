@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -71,7 +72,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, node.AllNodes, CancellationToken.None).Cast<Node>();
+                    var items = _engine.Core.Search(_result.Keyword, _result.SearchDescription, node.AllNodes, CancellationToken.None);
                     foreach (var item in items)
                     {
                         Logger.Trace($"Add: {item.Name}");
@@ -106,7 +107,7 @@ namespace NeeLaboratory.IO.Search
                 {
                     try
                     {
-                        var items = _engine.Core.Search(_result.Keyword, _result.SearchOption, new List<Node>() { node }, CancellationToken.None).Cast<Node>();
+                        var items = _engine.Core.Search(_result.Keyword, _result.SearchDescription, new List<Node>() { node }, CancellationToken.None);
                         foreach (var item in items)
                         {
                             Logger.Trace($"Add: {item.Name}");
@@ -138,7 +139,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索オプション
         /// </summary>
-        public SearchOption SearchOption => _result.SearchOption;
+        public SearchDescription SearchDescription => _result.SearchDescription;
 
         /// <summary>
         /// 検索失敗時の例外

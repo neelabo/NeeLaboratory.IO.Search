@@ -1,47 +1,29 @@
-﻿using System;
-using System.IO;
+﻿using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace NeeLaboratory.IO.Search
 {
-    /// <summary>
-    /// ノード環境
-    /// </summary>
     public class SearchContext
     {
-        /// <summary>
-        /// 通知用のノード総数
-        /// 非同期で加算されるため、正確な値にならない
-        /// </summary>
-        private int _totalCount;
-
-        /// <summary>
-        /// ノード用フィルター関数
-        /// </summary>
-        private Func<FileSystemInfo, bool> _nodeFilter = info => true;
+        public static SearchContext Default { get; } = new();
 
 
-        public SearchContext()
+        private SearchValueCache _cache;
+
+
+        public SearchContext() : this(SearchValueCache.Default)
         {
         }
 
-
-        /// <summary>
-        /// 通知用のノード総数.
-        /// 非同期で加算されるため、正確な値にならない
-        /// </summary>
-        public int TotalCount
+        public SearchContext(SearchValueCache cache)
         {
-            get { return _totalCount; }
-            set { _totalCount = value; }
+            _cache = cache;
         }
 
-        /// <summary>
-        /// NodeFilter property.
-        /// </summary>
-        public Func<FileSystemInfo, bool> NodeFilter
-        {
-            get { return _nodeFilter; }
-            set { if (_nodeFilter != value) { _nodeFilter = value; } }
-        }
+        public SearchOptionMap Options { get; } = new SearchOptionMap();
+        public SearchOptionAliasMap OptionAlias { get; } = new SearchOptionAliasMap();
+
+        public FuzzyStringCache FuzzyStringCache => _cache.FuzzyStringCache;
+        public WordStringCache WordStringCache => _cache.WordStringCache;
     }
 }

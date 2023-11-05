@@ -53,7 +53,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="name"></param>
         /// <param name="parent"></param>
-        public Node(FileSystemInfo fileSystemInfo, Node? parent, int depth, SearchContext ctx)
+        public Node(FileSystemInfo fileSystemInfo, Node? parent, int depth, NodeContext ctx)
         {
             _parent = parent;
             _depth = depth;
@@ -211,7 +211,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent">親ノード</param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node? Collect(string name, Node? parent, int depth, SearchContext ctx, CancellationToken token)
+        public static Node? Collect(string name, Node? parent, int depth, NodeContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -243,7 +243,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="parent"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public static Node Collect(DirectoryInfo dirInfo, Node? parent, int depth, SearchContext ctx, CancellationToken token)
+        public static Node Collect(DirectoryInfo dirInfo, Node? parent, int depth, NodeContext ctx, CancellationToken token)
         {
             if (dirInfo is null || !dirInfo.Exists) throw new ArgumentException("dirInfo must be exists");
 
@@ -295,7 +295,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="path"></param>
         /// <param name="isCreate">なければ追加する</param>
         /// <returns></returns>
-        private Node? Scanning(string path, bool isCreate, SearchContext ctx, CancellationToken token)
+        private Node? Scanning(string path, bool isCreate, NodeContext ctx, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -331,7 +331,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node? Search(string path, SearchContext ctx, CancellationToken token)
+        public Node? Search(string path, NodeContext ctx, CancellationToken token)
         {
             return Scanning(path, false, ctx, token);
         }
@@ -341,7 +341,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node? Add(string path, SearchContext ctx, CancellationToken token)
+        public Node? Add(string path, NodeContext ctx, CancellationToken token)
         {
             var node = Scanning(path, true, ctx, token);
             if (node != null && node.Content.IsAdded)
@@ -360,7 +360,7 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public Node? Remove(string path, SearchContext ctx)
+        public Node? Remove(string path, NodeContext ctx)
         {
             var node = Scanning(path, false, ctx, CancellationToken.None);
             if (node == null) return null;

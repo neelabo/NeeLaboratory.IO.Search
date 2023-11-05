@@ -12,14 +12,14 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class SearchResult : ISearchResult
     {
-        public SearchResult(string keyword, SearchOption option, IEnumerable<Node>? items) : this(keyword, option, items, null)
+        public SearchResult(string keyword, SearchDescription option, IEnumerable<Node>? items) : this(keyword, option, items, null)
         {
         }
 
-        public SearchResult(string keyword, SearchOption option, IEnumerable<Node>? items, Exception? exception)
+        public SearchResult(string keyword, SearchDescription option, IEnumerable<Node>? items, Exception? exception)
         {
             Keyword = keyword;
-            SearchOption = option;
+            SearchDescription = option;
             Items = new ObservableCollection<NodeContent>(items?.Select(e => e.Content) ?? Array.Empty<NodeContent>());
             Exception = exception;
         }
@@ -33,7 +33,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索オプション
         /// </summary>
-        public SearchOption SearchOption { get; private set; }
+        public SearchDescription SearchDescription { get; private set; }
 
         /// <summary>
         /// 検索結果

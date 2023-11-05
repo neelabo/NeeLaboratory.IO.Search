@@ -39,7 +39,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索コア
         /// </summary>
-        private readonly SearchCore _core;
+        private readonly NodeSearcher _core;
 
 
         /// <summary>
@@ -50,7 +50,7 @@ namespace NeeLaboratory.IO.Search
             _source = new SearchSource();
             _source.FileSystemChanged += Source_FileSystemChanged;
 
-            _core = new SearchCore();
+            _core = new NodeSearcher();
 
             _commandEngine = new SearchCommandEngine();
         }
@@ -66,7 +66,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// コア検索エンジン
         /// </summary>
-        internal SearchCore Core => _core;
+        internal NodeSearcher Core => _core;
 
         /// <summary>
         /// ノードツリー
@@ -76,7 +76,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ノード環境
         /// </summary>
-        public SearchContext Context => _source.Context;
+        public NodeContext Context => _source.Context;
 
         /// <summary>
         /// 検索エンジン状態
@@ -283,11 +283,13 @@ namespace NeeLaboratory.IO.Search
             var sw = Stopwatch.StartNew();
             try
             {
-                return new SearchResult(args.Keyword, args.Option, _core.Search(args.Keyword, args.Option, _source.AllNodes.ToList(), token).Cast<Node>().OrderByDescending(e => e.IsPushPin));
+                var description = _core.CreateSearchDescription(args.Option.AllowFolder);
+                return new SearchResult(args.Keyword, description, _core.Search(args.Keyword, description, _source.AllNodes.ToList(), token));
             }
             catch (Exception ex)
             {
-                return new SearchResult(args.Keyword, args.Option, null, ex);
+                var description = _core.CreateSearchDescription(args.Option.AllowFolder);
+                return new SearchResult(args.Keyword, description, null, ex);
             }
             finally
             {
@@ -311,7 +313,7 @@ namespace NeeLaboratory.IO.Search
         /// マルチ検索
         /// </summary>
 
-        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchOption option)
+        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchDescription option)
         {
             // one command only.
             _searchCancellationTokenSource?.Cancel();
@@ -320,14 +322,14 @@ namespace NeeLaboratory.IO.Search
             return await MultiSearchAsync(keywords, option, _searchCancellationTokenSource.Token);
         }
 
-        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchOption option, CancellationToken token)
+        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchDescription option, CancellationToken token)
         {
             if (_commandEngine == null)
             {
                 return keywords.Select(e => new SearchResult(e, option, new List<Node>())).ToList();
             }
 
-            var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs(keywords.ToList(), option.Clone()));
+            var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs(keywords.ToList(), option));
             _commandEngine.Enqueue(command, token);
 
             await command.WaitAsync(token);
@@ -342,7 +344,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token).Cast<Node>().OrderByDescending(e => e.IsPushPin));
+                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token));
                 }
                 catch (Exception ex)
                 {
@@ -357,14 +359,14 @@ namespace NeeLaboratory.IO.Search
 
         private class MultiSearchUnit
         {
-            public MultiSearchUnit(string keyword, SearchOption option)
+            public MultiSearchUnit(string keyword, SearchDescription option)
             {
                 Keyword = keyword;
                 Option = option;
             }
 
             public string Keyword { get; set; }
-            public SearchOption Option { get; set; }
+            public SearchDescription Option { get; set; }
             public SearchResult? Result { get; set; }
         }
 

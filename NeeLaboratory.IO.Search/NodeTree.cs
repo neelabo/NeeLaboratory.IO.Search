@@ -22,7 +22,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ノード環境
         /// </summary>
-        private readonly SearchContext _context;
+        private readonly NodeContext _context;
 
         /// <summary>
         /// ファイル変更監視
@@ -35,7 +35,7 @@ namespace NeeLaboratory.IO.Search
         /// コンストラクター
         /// </summary>
         /// <param name="path"></param>
-        public NodeTree(SearchArea area, SearchContext ctx)
+        public NodeTree(SearchArea area, NodeContext ctx)
         {
             _context = ctx;
 

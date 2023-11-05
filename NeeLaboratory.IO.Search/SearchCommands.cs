@@ -153,7 +153,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class MultiSearchExCommandArgs : CommandArgs
     {
-        public MultiSearchExCommandArgs(List<string> keywords, SearchOption option)
+        public MultiSearchExCommandArgs(List<string> keywords, SearchDescription option)
         {
             Keywords = keywords;
             Option = option;
@@ -167,7 +167,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索オプション
         /// </summary>
-        public SearchOption Option { get; set; }
+        public SearchDescription Option { get; set; }
     }
 
     /// <summary>

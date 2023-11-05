@@ -13,21 +13,19 @@ namespace NeeLaboratory.IO.Search
     /// <summary>
     /// 検索コア 絞り込み
     /// </summary>
-    public class SearchCore : IDisposable
+    public class Searcher : IDisposable
     {
-        private static readonly Regex _regexNumber = new(@"0*(\d+)", RegexOptions.Compiled);
-
         private readonly SearchKeyAnalyzer _searchKeyAnalyzer;
         private bool _disposedValue = false;
-        private SearchValueContext _context;
+        private readonly SearchContext _context;
 
 
-        public SearchCore()
-            : this(SearchValueContext.Default)
+        public Searcher()
+            : this(SearchContext.Default)
         {
         }
 
-        public SearchCore(SearchValueContext context)
+        public Searcher(SearchContext context)
         {
             _context = context;
             _searchKeyAnalyzer = new SearchKeyAnalyzer(_context.Options, _context.OptionAlias);
@@ -54,71 +52,18 @@ namespace NeeLaboratory.IO.Search
             Dispose(true);
         }
 
-
-        /// <summary>
-        /// 単語区切り用の正規表現生成
-        /// </summary>
-        public static string? GetNotCodeBlockRegexString(char c)
-        {
-            if ('0' <= c && c <= '9')
-                return @"\D";
-            //else if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
-            //    return @"\P{L}";
-            else if (0x3040 <= c && c <= 0x309F)
-                return @"\P{IsHiragana}";
-            else if (0x30A0 <= c && c <= 0x30FF)
-                return @"\P{IsKatakana}";
-            else if ((0x3400 <= c && c <= 0x4DBF) || (0x4E00 <= c && c <= 0x9FFF) || (0xF900 <= c && c <= 0xFAFF))
-                return @"[^\p{IsCJKUnifiedIdeographsExtensionA}\p{IsCJKUnifiedIdeographs}\p{IsCJKCompatibilityIdeographs}]";
-            else if (new Regex(@"^\p{L}").IsMatch(c.ToString()))
-                return @"\P{L}";
-            else
-                return null;
-        }
-
-        /// <summary>
-        /// (数値)部分を0*(数値)という正規表現に変換
-        /// </summary>
-        public static string ToFuzzyNumberRegex(string source)
-        {
-            return _regexNumber.Replace(source, match => "0*" + match.Groups[1]);
-        }
-
         /// <summary>
         /// 検索キーリスト生成
         /// </summary>
         private List<SearchKey> CreateKeys(string source)
         {
             var keys = _searchKeyAnalyzer.Analyze(source)
-                .Where(e => !string.IsNullOrEmpty(e.Word))
+                .Where(e => !string.IsNullOrEmpty(e.Format))
                 ////.Select(e => ValidateKey(e))
                 .ToList();
 
             ////Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString())));
             return keys;
-        }
-
-        /// <summary>
-        /// 検索
-        /// </summary>
-        /// <remarks>
-        /// SearchOption から SearchDescription を生成している。
-        /// TODO: 上位に移動
-        /// </remarks>
-        public IEnumerable<ISearchItem> Search(string keyword, SearchOption option, IEnumerable<ISearchItem> entries, CancellationToken token)
-        {
-            var description = new SearchDescription();
-
-            // allow folder
-            if (!option.AllowFolder)
-            {
-                description.PreKeys.Add(new SearchKey("false", SearchConjunction.And, SearchOperatorProfiles.EqualsSearchOperationProfile, SearchPropertyProfiles.IsDirectoryPropertyProfile));
-            }
-
-            // pushpin
-            description.PostKeys.Add(new SearchKey("true", SearchConjunction.Or, SearchOperatorProfiles.EqualsSearchOperationProfile, SearchPropertyProfiles.IsPinnedPropertyProfile));
-
-            return Search(keyword, description, entries, token);
         }
 
         /// <summary>
@@ -150,18 +95,18 @@ namespace NeeLaboratory.IO.Search
             {
                 token.ThrowIfCancellationRequested();
 
-                var match = key.Pattern.CreateFunc(key.Property, key.Word);
+                var filter = key.Filter.CreateFunc(key.Property, key.Format);
 
                 switch (key.Conjunction)
                 {
                     case SearchConjunction.And:
-                        entries = entries.Where(e => match.IsMatch(_context, e)).ToList();
+                        entries = entries.Where(e => filter.IsMatch(_context, e)).ToList();
                         break;
                     case SearchConjunction.Or:
-                        entries = entries.Union(all.Where(e => match.IsMatch(_context, e)));
+                        entries = entries.Union(all.Where(e => filter.IsMatch(_context, e)));
                         break;
                     case SearchConjunction.Not:
-                        entries = entries.Where(e => !match.IsMatch(_context, e));
+                        entries = entries.Where(e => !filter.IsMatch(_context, e));
                         break;
                 }
             }
@@ -173,6 +118,7 @@ namespace NeeLaboratory.IO.Search
 
 
     // TODO: SearchOption のほが名前はふさわしいが競合している
+    // これは SearchCore もしくは SearchContext に直接定義すべきでは？
     public class SearchDescription
     {
         public List<SearchKey> PreKeys { get; } = new();

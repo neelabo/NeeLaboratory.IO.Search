@@ -16,7 +16,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 検索オプション
         /// </summary>
-        SearchOption SearchOption { get; }
+        SearchDescription SearchDescription { get; }
 
         /// <summary>
         /// 検索結果

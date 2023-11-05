@@ -160,7 +160,7 @@ namespace NeeLaboratory.IO.Search
             [MemberNotNull(nameof(_work))]
             private void ResetWork()
             {
-                _work = new SearchKey("", SearchConjunction.And, SearchOperatorProfiles.TrueSearchOperationProfile, SearchPropertyProfiles.TextPropertyProfile);
+                _work = new SearchKey(SearchConjunction.And, SearchFilterProfiles.True, SearchPropertyProfiles.Text, "");
             }
 
             public void Next()
@@ -195,26 +195,26 @@ namespace NeeLaboratory.IO.Search
 
             public void Push()
             {
-                _work.Word += Read();
+                _work.Format += Read();
             }
 
 
             public void Answer(bool isExact)
             {
-                if (string.IsNullOrEmpty(_work.Word))
+                if (string.IsNullOrEmpty(_work.Format))
                 {
                     ResetWork();
                     return;
                 }
 
-                if (_work.Pattern == SearchOperatorProfiles.TrueSearchOperationProfile)
+                if (_work.Filter == SearchFilterProfiles.True)
                 {
-                    _work.Pattern = isExact ? SearchOperatorProfiles.ExactSearchOperationProfile : SearchOperatorProfiles.FuzzySearchOperationProfile;
+                    _work.Filter = isExact ? SearchFilterProfiles.Exact : SearchFilterProfiles.Fuzzy;
                 }
 
-                if (_work.Pattern != SearchOperatorProfiles.ExactSearchOperationProfile && _work.Word[0] == '/')
+                if (_work.Filter != SearchFilterProfiles.Exact && _work.Format[0] == '/')
                 {
-                    var options = _alias.Decode(_work.Word);
+                    var options = _alias.Decode(_work.Format);
                     foreach (var option in options)
                     {
                         if (_options.TryGetValue(option, out var value))
@@ -228,7 +228,7 @@ namespace NeeLaboratory.IO.Search
                                     _work.Property = propertySearchOption.Profile;
                                     break;
                                 case OperationSearchOption operationSearchOption:
-                                    _work.Pattern = operationSearchOption.Profile;
+                                    _work.Filter = operationSearchOption.Profile;
                                     break;
                                 default:
                                     throw new InvalidOperationException($"Not supported search option type: {value.GetType()}");
@@ -236,15 +236,15 @@ namespace NeeLaboratory.IO.Search
                         }
                         else
                         {
-                            throw new SearchKeywordOptionException($"Not supported option: {_work.Word}") { Option = _work.Word };
+                            throw new SearchKeywordOptionException($"Not supported option: {_work.Format}") { Option = _work.Format };
                         }
                     }
-                    _work.Word = "";
+                    _work.Format = "";
                 }
                 else
                 {
                     // 実際にフィルターを生成することでフォーマットをチェックする
-                    var _ = _work.Pattern.CreateFunc(_work.Property, _work.Word);
+                    var _ = _work.Filter.CreateFunc(_work.Property, _work.Format);
 
                     ////Debug.WriteLine($"SearchKey: {_work}");
                     Result.Add(_work);

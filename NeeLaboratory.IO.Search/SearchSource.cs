@@ -15,7 +15,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ノード環境
         /// </summary>
-        private readonly SearchContext _context = new();
+        private readonly NodeContext _context = new();
 
         /// <summary>
         /// ノード群
@@ -44,7 +44,7 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// ノード環境
         /// </summary>
-        public SearchContext Context => _context;
+        public NodeContext Context => _context;
 
         /// <summary>
         /// すべてのNodeを走査

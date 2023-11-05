@@ -20,11 +20,11 @@
 
     public static class SearchPropertyProfiles
     {
-        public static SearchPropertyProfile TextPropertyProfile { get; } = new SearchPropertyProfile("text", StringSearchValue.Default);
-        public static SearchPropertyProfile DatePropertyProfile { get; } = new SearchPropertyProfile("date", DateTimeSearchValue.Default);
+        public static SearchPropertyProfile Text { get; } = new SearchPropertyProfile("text", StringSearchValue.Default);
 
         // TODO: 基本セット以外は外部で定義するように
-        public static SearchPropertyProfile IsDirectoryPropertyProfile { get; } = new SearchPropertyProfile("isdir", BooleanSearchValue.Default);
-        public static SearchPropertyProfile IsPinnedPropertyProfile { get; } = new SearchPropertyProfile("ispinned", BooleanSearchValue.Default);
+        public static SearchPropertyProfile Date { get; } = new SearchPropertyProfile("date", DateTimeSearchValue.Default);
+        public static SearchPropertyProfile IsDirectory { get; } = new SearchPropertyProfile("isdir", BooleanSearchValue.Default);
+        public static SearchPropertyProfile IsPinned { get; } = new SearchPropertyProfile("ispinned", BooleanSearchValue.Default);
     }
 }

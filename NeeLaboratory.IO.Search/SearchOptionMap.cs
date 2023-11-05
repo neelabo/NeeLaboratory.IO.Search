@@ -16,23 +16,23 @@ namespace NeeLaboratory.IO.Search
 
             // TODO: 基本文字列検索セット以外は拡張セットとして外部から追加するように
 
-            Add(SearchPropertyProfiles.TextPropertyProfile);
-            Add(SearchPropertyProfiles.DatePropertyProfile);
-            Add(SearchPropertyProfiles.IsDirectoryPropertyProfile);
-            Add(SearchPropertyProfiles.IsPinnedPropertyProfile);
+            Add(SearchPropertyProfiles.Text);
+            Add(SearchPropertyProfiles.Date);
+            Add(SearchPropertyProfiles.IsDirectory);
+            Add(SearchPropertyProfiles.IsPinned);
 
-            Add(SearchOperatorProfiles.ExactSearchOperationProfile);
-            Add(SearchOperatorProfiles.WordSearchOperationProfile);
-            Add(SearchOperatorProfiles.FuzzySearchOperationProfile);
-            Add(SearchOperatorProfiles.RegularExpressionSearchOperationProfile);
-            Add(SearchOperatorProfiles.RegularExpressionIgnoreSearchOperationProfile);
+            Add(SearchFilterProfiles.Exact);
+            Add(SearchFilterProfiles.Word);
+            Add(SearchFilterProfiles.Fuzzy);
+            Add(SearchFilterProfiles.RegularExpression);
+            Add(SearchFilterProfiles.RegularExpressionIgnoreCase);
 
-            Add(SearchOperatorProfiles.LessThanSearchOperationProfile);
-            Add(SearchOperatorProfiles.LessThanEqualSearchOperationProfile);
-            Add(SearchOperatorProfiles.EqualsSearchOperationProfile);
-            Add(SearchOperatorProfiles.NotEqualsSearchOperationProfile);
-            Add(SearchOperatorProfiles.GreaterThanEqualSearchOperationProfile);
-            Add(SearchOperatorProfiles.GreaterThanSearchOperationProfile);
+            Add(SearchFilterProfiles.LessThan);
+            Add(SearchFilterProfiles.LessThanEqual);
+            Add(SearchFilterProfiles.Equal);
+            Add(SearchFilterProfiles.NotEqual);
+            Add(SearchFilterProfiles.GreaterThanEqual);
+            Add(SearchFilterProfiles.GreaterThan);
         }
 
         public SearchOptionBase this[string key]
@@ -59,7 +59,7 @@ namespace NeeLaboratory.IO.Search
             _map.Add(option.Name, option);
         }
 
-        public void Add(SearchOperatorProfile profile)
+        public void Add(SearchFilterProfile profile)
         {
             var option = new OperationSearchOption("/m." + profile.Name, profile);
             _map.Add(option.Name, option);

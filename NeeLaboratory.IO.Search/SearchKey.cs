@@ -5,19 +5,14 @@
     /// </summary>
     public class SearchKey
     {
-        public SearchKey(string word, SearchConjunction conjunction, SearchOperatorProfile pattern, SearchPropertyProfile property)
+        public SearchKey(SearchConjunction conjunction, SearchFilterProfile filter, SearchPropertyProfile property, string format)
         {
-            Word = word;
             Conjunction = conjunction;
-            Pattern = pattern;
+            Filter = filter;
             Property = property;
+            Format = format;
         }
 
-
-        /// <summary>
-        /// 検索単語
-        /// </summary>
-        public string Word { get; set; }
 
         /// <summary>
         /// 接続詞
@@ -25,15 +20,19 @@
         public SearchConjunction Conjunction { get; set; }
 
         /// <summary>
-        /// 適応パターン
+        /// 検索フィルター
         /// </summary>
-        public SearchOperatorProfile Pattern { get; set; }
+        public SearchFilterProfile Filter { get; set; }
 
         /// <summary>
         /// 検索対象プロパティ
         /// </summary>
         public SearchPropertyProfile Property { get; set; }
 
+        /// <summary>
+        /// 検索フォーマット
+        /// </summary>
+        public string Format { get; set; }
 
 
         public SearchKey Clone()
@@ -45,9 +44,9 @@
         {
             if (other is SearchKey target)
             {
-                return this.Word == target.Word
+                return this.Format == target.Format
                     && this.Conjunction == target.Conjunction
-                    && this.Pattern == target.Pattern
+                    && this.Filter == target.Filter
                     && this.Property == target.Property;
             }
 
@@ -61,7 +60,7 @@
 
         public override string ToString()
         {
-            return $"{Conjunction},{Pattern},\"{Word}\",{Property}";
+            return $"{Conjunction},{Filter},\"{Format}\",{Property}";
         }
     }
 
