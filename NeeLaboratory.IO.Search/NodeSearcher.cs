@@ -7,30 +7,46 @@ namespace NeeLaboratory.IO.Search
     /// <summary>
     /// NoteTree 専用 Searcher
     /// </summary>
-    public class NodeSearcher : Searcher 
+    public class NodeSearcher : Searcher
     {
-        public SearchDescription CreateSearchDescription(bool allowFolder)
-        {
-            var description = new SearchDescription();
+        private bool _allowFolder;
 
-            // allow folder
-            if (!allowFolder)
+
+        public NodeSearcher()
+        {
+            UpdateProperties();
+        }
+
+
+        public bool AllowFolder
+        {
+            get { return _allowFolder; }
+            set
             {
-                description.PreKeys.Add(new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, SearchPropertyProfiles.IsDirectory, "false"));
+                if (_allowFolder != value)
+                {
+                    _allowFolder = value;
+                    UpdateProperties();
+                }
             }
+        }
+
+
+        private void UpdateProperties()
+        {
+            // allow folder
+            PreKeys = AllowFolder ? new() : new() { new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, SearchPropertyProfiles.IsDirectory, "false") };
 
             // pushpin
-            description.PostKeys.Add(new SearchKey(SearchConjunction.Or, SearchFilterProfiles.Equal, SearchPropertyProfiles.IsPinned, "true"));
-
-            return description;
+            PostKeys = new() { new SearchKey(SearchConjunction.Or, SearchFilterProfiles.Equal, SearchPropertyProfiles.IsPinned, "true") };
         }
 
         /// <summary>
         /// 検索
         /// </summary>
-        public IEnumerable<Node> Search(string keyword, SearchDescription description, IEnumerable<Node> entries, CancellationToken token)
+        public IEnumerable<Node> Search(string keyword, IEnumerable<Node> entries, CancellationToken token)
         {
-            return base.Search(keyword, description, entries, token).Cast<Node>().OrderByDescending(e => e.IsPushPin);
+            return base.Search(keyword, entries, token).Cast<Node>().OrderByDescending(e => e.IsPushPin);
         }
     }
 }

@@ -3,11 +3,11 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace NeeLaboratory.IO.Search
 {
-    public class SearchOptionMap
+    public class SearchKeyOptionMap
     {
-        private Dictionary<string, SearchOptionBase> _map;
+        private Dictionary<string, SearchKeyOption> _map;
 
-        public SearchOptionMap()
+        public SearchKeyOptionMap()
         {
             _map = new();
             Add(SearchConjunction.And);
@@ -35,13 +35,13 @@ namespace NeeLaboratory.IO.Search
             Add(SearchFilterProfiles.GreaterThan);
         }
 
-        public SearchOptionBase this[string key]
+        public SearchKeyOption this[string key]
         {
             get { return _map[key]; }
             set { _map[key] = value; }
         }
 
-        public bool TryGetValue(string key, [MaybeNullWhen(false)] out SearchOptionBase value)
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out SearchKeyOption value)
         {
             return _map.TryGetValue(key, out value);
         }
@@ -49,19 +49,19 @@ namespace NeeLaboratory.IO.Search
 
         public void Add(SearchConjunction conjunction)
         {
-            var option = new ConjunctionSearchOption("/c." + conjunction.ToString().ToLower(), conjunction);
+            var option = new ConjunctionSearchKeyOption("/c." + conjunction.ToString().ToLower(), conjunction);
             _map.Add(option.Name, option);
         }
 
         public void Add(SearchPropertyProfile profile)
         {
-            var option = new PropertySearchOption("/p." + profile.Name, profile);
+            var option = new PropertySearchKeyOption("/p." + profile.Name, profile);
             _map.Add(option.Name, option);
         }
 
         public void Add(SearchFilterProfile profile)
         {
-            var option = new OperationSearchOption("/m." + profile.Name, profile);
+            var option = new FilterSearchKeyOption("/m." + profile.Name, profile);
             _map.Add(option.Name, option);
         }
     }

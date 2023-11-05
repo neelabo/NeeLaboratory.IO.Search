@@ -101,21 +101,15 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class SearchExCommandArgs : CommandArgs
     {
-        public SearchExCommandArgs(string keyword, SearchOption option)
+        public SearchExCommandArgs(string keyword)
         {
             Keyword = keyword;
-            Option = option;
         }
 
         /// <summary>
         /// 検索キーワード
         /// </summary>
         public string Keyword { get; set; }
-
-        /// <summary>
-        /// 検索オプション
-        /// </summary>
-        public SearchOption Option { get; set; }
     }
 
     /// <summary>
@@ -153,21 +147,15 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     internal class MultiSearchExCommandArgs : CommandArgs
     {
-        public MultiSearchExCommandArgs(List<string> keywords, SearchDescription option)
+        public MultiSearchExCommandArgs(List<string> keywords)
         {
             Keywords = keywords;
-            Option = option;
         }
 
         /// <summary>
         /// 検索キーワード
         /// </summary>
         public List<string> Keywords { get; set; }
-
-        /// <summary>
-        /// 検索オプション
-        /// </summary>
-        public SearchDescription Option { get; set; }
     }
 
     /// <summary>

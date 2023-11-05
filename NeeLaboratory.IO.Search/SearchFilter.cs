@@ -47,9 +47,9 @@ namespace NeeLaboratory.IO.Search
             : base(property, format)
         {
             var s = format;
-            s = StringUtils.ToNormalizedWord(s, true);
+            s = SearchStringTools.ToNormalizedWord(s, true);
             s = Regex.Escape(s);
-            s = StringUtils.ToFuzzyNumberRegex(s);
+            s = SearchStringTools.ToFuzzyNumberRegex(s);
             _regex = new Regex(s, RegexOptions.Compiled);
         }
 
@@ -71,11 +71,11 @@ namespace NeeLaboratory.IO.Search
         public WordSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
         {
             var s = format;
-            var first = StringUtils.GetNotCodeBlockRegexString(s.First());
-            var last = StringUtils.GetNotCodeBlockRegexString(s.Last());
-            s = StringUtils.ToNormalizedWord(s, false);
+            var first = SearchStringTools.GetNotCodeBlockRegexString(s.First());
+            var last = SearchStringTools.GetNotCodeBlockRegexString(s.Last());
+            s = SearchStringTools.ToNormalizedWord(s, false);
             s = Regex.Escape(s);
-            s = StringUtils.ToFuzzyNumberRegex(s);
+            s = SearchStringTools.ToFuzzyNumberRegex(s);
             if (first != null) s = $"(^|{first}){s}";
             if (last != null) s = $"{s}({last}|$)";
             _regex = new Regex(s, RegexOptions.Compiled);

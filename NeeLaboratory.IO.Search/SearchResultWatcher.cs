@@ -72,7 +72,7 @@ namespace NeeLaboratory.IO.Search
             {
                 try
                 {
-                    var items = _engine.Core.Search(_result.Keyword, _result.SearchDescription, node.AllNodes, CancellationToken.None);
+                    var items = _engine.Core.Search(_result.Keyword, node.AllNodes, CancellationToken.None);
                     foreach (var item in items)
                     {
                         Logger.Trace($"Add: {item.Name}");
@@ -107,7 +107,7 @@ namespace NeeLaboratory.IO.Search
                 {
                     try
                     {
-                        var items = _engine.Core.Search(_result.Keyword, _result.SearchDescription, new List<Node>() { node }, CancellationToken.None);
+                        var items = _engine.Core.Search(_result.Keyword, new List<Node>() { node }, CancellationToken.None);
                         foreach (var item in items)
                         {
                             Logger.Trace($"Add: {item.Name}");
@@ -135,11 +135,6 @@ namespace NeeLaboratory.IO.Search
         /// 検索キーワード
         /// </summary>
         public string Keyword => _result.Keyword;
-
-        /// <summary>
-        /// 検索オプション
-        /// </summary>
-        public SearchDescription SearchDescription => _result.SearchDescription;
 
         /// <summary>
         /// 検索失敗時の例外

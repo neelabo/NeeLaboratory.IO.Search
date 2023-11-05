@@ -41,16 +41,16 @@ namespace NeeLaboratory.IO.Search
             {State.END, State.END, State.END, State.END, }, // S06
         };
 
-        private readonly SearchOptionAliasMap _alias;
-        private readonly SearchOptionMap _options;
+        private readonly SearchKeyOptionAliasMap _alias;
+        private readonly SearchKeyOptionMap _options;
         private readonly List<StateFunc> _stateMap;
 
 
-        public SearchKeyAnalyzer() : this(new SearchOptionMap(), new SearchOptionAliasMap())
+        public SearchKeyAnalyzer() : this(new SearchKeyOptionMap(), new SearchKeyOptionAliasMap())
         {
         }
 
-        public SearchKeyAnalyzer(SearchOptionMap options, SearchOptionAliasMap alias)
+        public SearchKeyAnalyzer(SearchKeyOptionMap options, SearchKeyOptionAliasMap alias)
         {
             _options = options;
             _alias = alias;
@@ -136,14 +136,14 @@ namespace NeeLaboratory.IO.Search
 
         private class Context
         {
-            private readonly SearchOptionMap _options;
-            private readonly SearchOptionAliasMap _alias;
+            private readonly SearchKeyOptionMap _options;
+            private readonly SearchKeyOptionAliasMap _alias;
             private readonly string _source;
             private int _header;
             private SearchKey _work;
 
 
-            public Context(SearchOptionMap options, SearchOptionAliasMap alias, string source)
+            public Context(SearchKeyOptionMap options, SearchKeyOptionAliasMap alias, string source)
             {
                 _options = options;
                 _alias = alias;
@@ -221,13 +221,13 @@ namespace NeeLaboratory.IO.Search
                         {
                             switch (value)
                             {
-                                case ConjunctionSearchOption conjunctionSearchOption:
+                                case ConjunctionSearchKeyOption conjunctionSearchOption:
                                     _work.Conjunction = conjunctionSearchOption.SearchConjunction;
                                     break;
-                                case PropertySearchOption propertySearchOption:
+                                case PropertySearchKeyOption propertySearchOption:
                                     _work.Property = propertySearchOption.Profile;
                                     break;
-                                case OperationSearchOption operationSearchOption:
+                                case FilterSearchKeyOption operationSearchOption:
                                     _work.Filter = operationSearchOption.Profile;
                                     break;
                                 default:

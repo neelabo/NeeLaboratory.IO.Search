@@ -1,8 +1,8 @@
 ﻿namespace NeeLaboratory.IO.Search
 {
-    public abstract class SearchOptionBase
+    public abstract class SearchKeyOption
     {
-        protected SearchOptionBase(string option)
+        protected SearchKeyOption(string option)
         {
             Name = option;
         }
@@ -13,9 +13,9 @@
     /// <summary>
     /// 接続詞オプション
     /// </summary>
-    public class ConjunctionSearchOption : SearchOptionBase
+    public class ConjunctionSearchKeyOption : SearchKeyOption
     {
-        public ConjunctionSearchOption(string option, SearchConjunction conjunction) : base(option)
+        public ConjunctionSearchKeyOption(string option, SearchConjunction conjunction) : base(option)
         {
             SearchConjunction = conjunction;
         }
@@ -26,9 +26,9 @@
     /// <summary>
     /// 検索オプション
     /// </summary>
-    public class OperationSearchOption : SearchOptionBase
+    public class FilterSearchKeyOption : SearchKeyOption
     {
-        public OperationSearchOption(string option, SearchFilterProfile profile) : base(option)
+        public FilterSearchKeyOption(string option, SearchFilterProfile profile) : base(option)
         {
             Profile = profile;
         }
@@ -39,9 +39,9 @@
    /// <summary>
    /// プロパティオプション
    /// </summary>
-    public class PropertySearchOption : SearchOptionBase
+    public class PropertySearchKeyOption : SearchKeyOption
     {
-        public PropertySearchOption(string option, SearchPropertyProfile profile) : base(option)
+        public PropertySearchKeyOption(string option, SearchPropertyProfile profile) : base(option)
         {
             Profile = profile;
         }

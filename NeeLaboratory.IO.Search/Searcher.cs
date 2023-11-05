@@ -28,8 +28,14 @@ namespace NeeLaboratory.IO.Search
         public Searcher(SearchContext context)
         {
             _context = context;
-            _searchKeyAnalyzer = new SearchKeyAnalyzer(_context.Options, _context.OptionAlias);
+            _searchKeyAnalyzer = new SearchKeyAnalyzer(_context.KeyOptions, _context.KeyOptionAlias);
         }
+
+
+        public List<SearchKey> PreKeys { get; set; } = new();
+        
+        public List<SearchKey> PostKeys { get; set; } = new();
+
 
         protected void ThrowIfDisposed()
         {
@@ -58,12 +64,12 @@ namespace NeeLaboratory.IO.Search
         private List<SearchKey> CreateKeys(string source)
         {
             var keys = _searchKeyAnalyzer.Analyze(source)
-                .Where(e => !string.IsNullOrEmpty(e.Format))
-                ////.Select(e => ValidateKey(e))
-                .ToList();
+                .Where(e => !string.IsNullOrEmpty(e.Format));
+
+            keys = PreKeys.Concat(keys).Concat(PostKeys);
 
             ////Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString())));
-            return keys;
+            return keys.ToList();
         }
 
         /// <summary>
@@ -73,7 +79,7 @@ namespace NeeLaboratory.IO.Search
         /// <param name="entries">検索対象</param>
         /// <param name="isSearchFolder">フォルダを検索対象に含めるフラグ</param>
         /// <returns></returns>
-        public IEnumerable<ISearchItem> Search(string keyword, SearchDescription description, IEnumerable<ISearchItem> entries, CancellationToken token)
+        public IEnumerable<ISearchItem> Search(string keyword, IEnumerable<ISearchItem> entries, CancellationToken token)
         {
             ThrowIfDisposed();
             token.ThrowIfCancellationRequested();
@@ -82,7 +88,6 @@ namespace NeeLaboratory.IO.Search
 
             // キーワード登録
             var keys = CreateKeys(keyword);
-            keys = description.PreKeys.Concat(keys).Concat(description.PostKeys).ToList();
 
             if (keys == null || keys.Count == 0)
             {
@@ -116,7 +121,7 @@ namespace NeeLaboratory.IO.Search
     }
 
 
-
+#if false
     // TODO: SearchOption のほが名前はふさわしいが競合している
     // これは SearchCore もしくは SearchContext に直接定義すべきでは？
     public class SearchDescription
@@ -125,4 +130,5 @@ namespace NeeLaboratory.IO.Search
 
         public List<SearchKey> PostKeys { get; } = new();
     }
+#endif
 }

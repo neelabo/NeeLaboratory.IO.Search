@@ -2,11 +2,11 @@
 
 namespace NeeLaboratory.IO.Search
 {
-    public class SearchOptionAliasMap
+    public class SearchKeyOptionAliasMap
     {
         private Dictionary<string, List<string>> _map;
 
-        public SearchOptionAliasMap()
+        public SearchKeyOptionAliasMap()
         {
             _map = new Dictionary<string, List<string>>()
             {

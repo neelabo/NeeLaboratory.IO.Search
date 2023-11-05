@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
 {
-    public static class StringUtils
+    public static class SearchStringTools
     {
         private static readonly Regex _regexSpace = new(@"\s+", RegexOptions.Compiled);
         private static readonly Regex _regexNumber = new(@"0*(\d+)", RegexOptions.Compiled);

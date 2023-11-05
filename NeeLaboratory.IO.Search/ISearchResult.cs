@@ -14,11 +14,6 @@ namespace NeeLaboratory.IO.Search
         string Keyword { get; }
 
         /// <summary>
-        /// 検索オプション
-        /// </summary>
-        SearchDescription SearchDescription { get; }
-
-        /// <summary>
         /// 検索結果
         /// </summary>
         ObservableCollection<NodeContent> Items { get; }

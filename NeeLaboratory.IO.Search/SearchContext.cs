@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace NeeLaboratory.IO.Search
@@ -20,8 +21,9 @@ namespace NeeLaboratory.IO.Search
             _cache = cache;
         }
 
-        public SearchOptionMap Options { get; } = new SearchOptionMap();
-        public SearchOptionAliasMap OptionAlias { get; } = new SearchOptionAliasMap();
+
+        public SearchKeyOptionMap KeyOptions { get; } = new SearchKeyOptionMap();
+        public SearchKeyOptionAliasMap KeyOptionAlias { get; } = new SearchKeyOptionAliasMap();
 
         public FuzzyStringCache FuzzyStringCache => _cache.FuzzyStringCache;
         public WordStringCache WordStringCache => _cache.WordStringCache;

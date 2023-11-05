@@ -4,7 +4,7 @@
     {
         protected override string Convert(string s)
         {
-            return StringUtils.ToNormalizedWord(s, false);
+            return SearchStringTools.ToNormalizedWord(s, false);
         }
     }
 }

@@ -55,13 +55,20 @@ namespace NeeLaboratory.IO.Search
             _commandEngine = new SearchCommandEngine();
         }
 
+       
+        /// <summary>
+        /// 検索にフォルダーを含める
+        /// </summary>
+        public bool AllowFolder
+        {
+            get => _core.AllowFolder;
+            set => _core.AllowFolder = value;
+        }
 
         /// <summary>
         /// 検索エリア
         /// </summary>
         private ObservableCollection<SearchArea> _searchAreas = new();
-
-
 
         /// <summary>
         /// コア検索エンジン
@@ -240,9 +247,8 @@ namespace NeeLaboratory.IO.Search
         /// 検索
         /// </summary>
         /// <param name="keyword"></param>
-        /// <param name="option"></param>
         /// <returns></returns>
-        public async Task<SearchResult> SearchAsync(string keyword, SearchOption option)
+        public async Task<SearchResult> SearchAsync(string keyword)
         {
             ThrowIfDisposed();
 
@@ -251,7 +257,7 @@ namespace NeeLaboratory.IO.Search
             _searchCancellationTokenSource.Dispose();
             _searchCancellationTokenSource = new CancellationTokenSource();
 
-            return await SearchAsync(keyword, option, _searchCancellationTokenSource.Token);
+            return await SearchAsync(keyword, _searchCancellationTokenSource.Token);
         }
 
         /// <summary>
@@ -261,13 +267,13 @@ namespace NeeLaboratory.IO.Search
         /// <param name="option"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<SearchResult> SearchAsync(string keyword, SearchOption option, CancellationToken token)
+        public async Task<SearchResult> SearchAsync(string keyword, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
             ThrowIfDisposed();
 
-            var command = new SearchCommand(this, new SearchExCommandArgs(keyword, option.Clone()));
+            var command = new SearchCommand(this, new SearchExCommandArgs(keyword));
             _commandEngine.Enqueue(command, token);
 
             await command.WaitAsync(token);
@@ -283,13 +289,11 @@ namespace NeeLaboratory.IO.Search
             var sw = Stopwatch.StartNew();
             try
             {
-                var description = _core.CreateSearchDescription(args.Option.AllowFolder);
-                return new SearchResult(args.Keyword, description, _core.Search(args.Keyword, description, _source.AllNodes.ToList(), token));
+                return new SearchResult(args.Keyword, _core.Search(args.Keyword, _source.AllNodes.ToList(), token));
             }
             catch (Exception ex)
             {
-                var description = _core.CreateSearchDescription(args.Option.AllowFolder);
-                return new SearchResult(args.Keyword, description, null, ex);
+                return new SearchResult(args.Keyword, null, ex);
             }
             finally
             {
@@ -313,23 +317,23 @@ namespace NeeLaboratory.IO.Search
         /// マルチ検索
         /// </summary>
 
-        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchDescription option)
+        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords)
         {
             // one command only.
             _searchCancellationTokenSource?.Cancel();
             _searchCancellationTokenSource = new CancellationTokenSource();
 
-            return await MultiSearchAsync(keywords, option, _searchCancellationTokenSource.Token);
+            return await MultiSearchAsync(keywords, _searchCancellationTokenSource.Token);
         }
 
-        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, SearchDescription option, CancellationToken token)
+        public async Task<List<SearchResult>> MultiSearchAsync(IEnumerable<string> keywords, CancellationToken token)
         {
             if (_commandEngine == null)
             {
-                return keywords.Select(e => new SearchResult(e, option, new List<Node>())).ToList();
+                return keywords.Select(e => new SearchResult(e, new List<Node>())).ToList();
             }
 
-            var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs(keywords.ToList(), option));
+            var command = new MultiSearchCommand(this, new MultiSearchExCommandArgs(keywords.ToList()));
             _commandEngine.Enqueue(command, token);
 
             await command.WaitAsync(token);
@@ -338,17 +342,17 @@ namespace NeeLaboratory.IO.Search
 
         internal List<SearchResult> MultiSearch_Execute(MultiSearchExCommandArgs args, CancellationToken token)
         {
-            var units = args.Keywords.Select(e => new MultiSearchUnit(e, args.Option)).ToList();
+            var units = args.Keywords.Select(e => new MultiSearchUnit(e)).ToList();
 
             Parallel.ForEach(units, unit =>
             {
                 try
                 {
-                    unit.Result = new SearchResult(unit.Keyword, unit.Option, _core.Search(unit.Keyword, unit.Option, _source.AllNodes.ToList(), token));
+                    unit.Result = new SearchResult(unit.Keyword, _core.Search(unit.Keyword, _source.AllNodes.ToList(), token));
                 }
                 catch (Exception ex)
                 {
-                    unit.Result = new SearchResult(unit.Keyword, unit.Option, null, ex);
+                    unit.Result = new SearchResult(unit.Keyword, null, ex);
                 }
             });
 
@@ -359,14 +363,12 @@ namespace NeeLaboratory.IO.Search
 
         private class MultiSearchUnit
         {
-            public MultiSearchUnit(string keyword, SearchDescription option)
+            public MultiSearchUnit(string keyword)
             {
                 Keyword = keyword;
-                Option = option;
             }
 
             public string Keyword { get; set; }
-            public SearchDescription Option { get; set; }
             public SearchResult? Result { get; set; }
         }
 

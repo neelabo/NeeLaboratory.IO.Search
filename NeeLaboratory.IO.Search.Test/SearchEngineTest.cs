@@ -69,8 +69,7 @@ namespace NeeLaboratory.IO.Search.Test
 
 
             // 検索１：通常検索
-            var option = new SearchOption(); // { IsPerfect = false };
-            SearchResult result = await engine.SearchAsync("File1", option);
+            SearchResult result = await engine.SearchAsync("File1");
 
             // 結果表示
             foreach (var item in result.Items)
@@ -112,7 +111,8 @@ namespace NeeLaboratory.IO.Search.Test
             engine.DumpTree(true);
             Assert.Equal(10, engine.NodeCount);
 
-            var result = await engine.SearchAsync("SubFolder1", new SearchOption() { AllowFolder = true });
+            engine.AllowFolder = true;
+            var result = await engine.SearchAsync("SubFolder1");
             Assert.Single(result.Items);
         }
 
@@ -138,7 +138,7 @@ namespace NeeLaboratory.IO.Search.Test
         {
             var engine = CreateTestEnvironment();
 
-            SearchResult result = await engine.SearchAsync(keyword, new SearchOption());
+            SearchResult result = await engine.SearchAsync(keyword);
             Assert.Equal(expected, result.Items.Count);
         }
 
@@ -156,7 +156,7 @@ namespace NeeLaboratory.IO.Search.Test
             var keywords = new string[] { "file", "/word あいう", "/word あいうえお", "/word ウエオ" };
             var answers = new int[] { 9, 0, 1, 0 };
 
-            result = await engine.MultiSearchAsync(keywords, new SearchDescription());
+            result = await engine.MultiSearchAsync(keywords);
             Assert.Equal(answers[0], result[0].Items.Count);
             Assert.Equal(answers[1], result[1].Items.Count);
             Assert.Equal(answers[2], result[2].Items.Count);
@@ -172,7 +172,7 @@ namespace NeeLaboratory.IO.Search.Test
         {
             var engine = CreateTestEnvironment();
 
-            var result = await engine.SearchAsync(".txt", new SearchOption());
+            var result = await engine.SearchAsync(".txt");
             var resultCount = result.Items.Count;
 
             var watcher = new SearchResultWatcher(engine, result);
@@ -218,19 +218,19 @@ namespace NeeLaboratory.IO.Search.Test
         {
             string normalized;
 
-            normalized = StringUtils.ToNormalizedWord("ひらがなゔう゛か゛", true);
+            normalized = SearchStringTools.ToNormalizedWord("ひらがなゔう゛か゛", true);
             Assert.Equal("ヒラガナヴヴガ", normalized);
 
-            normalized = StringUtils.ToNormalizedWord("ﾊﾝｶｸｶﾞﾅｳﾞ", true);
+            normalized = SearchStringTools.ToNormalizedWord("ﾊﾝｶｸｶﾞﾅｳﾞ", true);
             Assert.Equal("ハンカクガナヴ", normalized);
 
-            normalized = StringUtils.ToNormalizedWord("混合された日本語ﾃﾞス。", true);
+            normalized = SearchStringTools.ToNormalizedWord("混合された日本語ﾃﾞス。", true);
             Assert.Equal("混合サレタ日本語デス。", normalized);
 
-            normalized = StringUtils.ToNormalizedWord("㌫", true);
+            normalized = SearchStringTools.ToNormalizedWord("㌫", true);
             Assert.Equal("パ-セント", normalized);
 
-            normalized = StringUtils.ToNormalizedWord("♡♥❤?", true);
+            normalized = SearchStringTools.ToNormalizedWord("♡♥❤?", true);
             Assert.Equal("♡♡♡?", normalized);
         }
 
@@ -432,7 +432,7 @@ namespace NeeLaboratory.IO.Search.Test
                 new SampleSearchItem("2018-03-01"),
             };
 
-            var result = search.Search(keyword, new SearchDescription(), items, CancellationToken.None);
+            var result = search.Search(keyword, items, CancellationToken.None);
             Assert.Equal(expected, result.Count());
         }
     }
