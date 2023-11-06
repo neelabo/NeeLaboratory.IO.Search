@@ -5,20 +5,17 @@ namespace NeeLaboratory.IO.Search
 {
     public class SearchContext
     {
-        public static SearchContext Default { get; } = new();
-
-
         private SearchValueCache _cache;
 
 
-        public SearchContext() : this(SearchValueCache.Default)
+        public SearchContext() : this(new SearchValueCache())
         {
-            AddProfile(new DefaultSearchProfile());
         }
 
         public SearchContext(SearchValueCache cache)
         {
             _cache = cache;
+            AddProfile(new DefaultSearchProfile());
         }
 
 
@@ -29,10 +26,11 @@ namespace NeeLaboratory.IO.Search
         public WordStringCache WordStringCache => _cache.WordStringCache;
 
 
-        public void AddProfile(SearchProfile profile)
+        public SearchContext AddProfile(SearchProfile profile)
         {
             KeyOptions.AddRange(profile.Options);
             KeyAlias.AddRange(profile.Alias);
+            return this;
         }
     }
 }

@@ -15,11 +15,6 @@ namespace NeeLaboratory.IO.Search
         private readonly SearchContext _context;
 
 
-        public Searcher()
-            : this(SearchContext.Default)
-        {
-        }
-
         public Searcher(SearchContext context)
         {
             _context = context;
@@ -28,7 +23,7 @@ namespace NeeLaboratory.IO.Search
 
 
         public List<SearchKey> PreKeys { get; set; } = new();
-        
+
         public List<SearchKey> PostKeys { get; set; } = new();
 
 
@@ -54,22 +49,14 @@ namespace NeeLaboratory.IO.Search
         }
 
         /// <summary>
-        /// 検索キーリスト生成
+        /// 生成キー解析
         /// </summary>
-        private List<SearchKey> CreateKeys(string source)
+        /// <param name="keyword"></param>
+        /// <returns></returns>
+        /// <exception cref="SearchKeywordException">フォーマットエラー</exception>
+        public IEnumerable<SearchKey> Analyze(string keyword)
         {
-            var keys = _searchKeyAnalyzer.Analyze(source)
-                .Where(e => !string.IsNullOrEmpty(e.Format));
-
-            if (!keys.Any())
-            {
-                return new List<SearchKey>();
-            }
-
-            keys = PreKeys.Concat(keys).Concat(PostKeys);
-
-            ////Debug.WriteLine("--\n" + string.Join("\n", keys.Select(e => e.ToString())));
-            return keys.ToList();
+            return _searchKeyAnalyzer.Analyze(keyword);
         }
 
         /// <summary>
@@ -77,25 +64,51 @@ namespace NeeLaboratory.IO.Search
         /// </summary>
         /// <param name="keyword">検索キーワード</param>
         /// <param name="entries">検索対象</param>
-        /// <param name="isSearchFolder">フォルダを検索対象に含めるフラグ</param>
         /// <returns></returns>
         public IEnumerable<ISearchItem> Search(string keyword, IEnumerable<ISearchItem> entries, CancellationToken token)
+        {
+            IEnumerable<SearchKey> keys;
+            try
+            {
+                keys = Analyze(keyword);
+            }
+            catch (Exception)
+            {
+                return entries;
+            }
+
+            if (!keys.Any())
+            {
+                return entries;
+            }
+
+            return Search(keys, entries, token);
+        }
+
+        /// <summary>
+        /// 検索
+        /// </summary>
+        /// <param name="keys">検索キー</param>
+        /// <param name="entries">検索対象</param>
+        /// <returns></returns>
+        public IEnumerable<ISearchItem> Search(IEnumerable<SearchKey> keys, IEnumerable<ISearchItem> entries, CancellationToken token)
         {
             ThrowIfDisposed();
             token.ThrowIfCancellationRequested();
 
             var all = entries;
 
-            // キーワード登録
-            var keys = CreateKeys(keyword);
-
-            if (keys == null || keys.Count == 0 || !entries.Any())
+            // キーワードやエントリーが空ならそのまま返す
+            if (!keys.Any() || !entries.Any())
             {
-                return Array.Empty<ISearchItem>();
+                return all;
             }
 
+            // 定義キーを追加
+            var fixedKeys = PreKeys.Concat(keys).Concat(PostKeys);
+
             // キーワードによる絞込
-            foreach (var key in keys)
+            foreach (var key in fixedKeys)
             {
                 token.ThrowIfCancellationRequested();
 

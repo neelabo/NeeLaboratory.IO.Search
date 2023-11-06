@@ -213,7 +213,7 @@ namespace NeeLaboratory.IO.Search
                     var options = _alias.Decode(_work.Format);
                     foreach (var option in options)
                     {
-                        if (_options.TryGetValue(option, out var value))
+                        if (_options.TryGetValue(option.ToLower(), out var value))
                         {
                             switch (value)
                             {
@@ -242,8 +242,13 @@ namespace NeeLaboratory.IO.Search
                     // 実際にフィルターを生成することでフォーマットをチェックする
                     var _ = _work.Filter.CreateFunc(_work.Property, _work.Format);
 
+                    // Format が空でなければ有効
+                    if (!string.IsNullOrEmpty(_work.Format))
+                    {
+                        Result.Add(_work);
+                    }
+
                     ////Debug.WriteLine($"SearchKey: {_work}");
-                    Result.Add(_work);
                     ResetWork();
                 }
             }

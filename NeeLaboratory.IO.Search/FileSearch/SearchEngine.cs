@@ -246,6 +246,16 @@ namespace NeeLaboratory.IO.Search.FileSearch
         }
 
         /// <summary>
+        /// 解析
+        /// </summary>
+        /// <param name="keyword"></param>
+        /// <returns></returns>
+        public IEnumerable<SearchKey> Analyze(string keyword)
+        {
+            return _core.Analyze(keyword);
+        }
+
+        /// <summary>
         /// 検索
         /// </summary>
         /// <param name="keyword"></param>

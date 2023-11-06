@@ -9,7 +9,7 @@ namespace NeeLaboratory.IO.Search.FileNode
     /// </summary>
     public class NodeSearcher : Searcher
     {
-        private bool _allowFolder;
+        private bool _allowFolder = true;
 
 
         public NodeSearcher() : base(CreateContext())
@@ -31,7 +31,7 @@ namespace NeeLaboratory.IO.Search.FileNode
             }
         }
 
-        private static SearchContext CreateContext()
+        public static SearchContext CreateContext()
         {
             var context = new SearchContext();
             context.AddProfile(new DateSearchProfile());

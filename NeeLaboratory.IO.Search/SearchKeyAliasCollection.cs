@@ -36,7 +36,7 @@ namespace NeeLaboratory.IO.Search
 
         public List<string> Decode(string s)
         {
-            if (_items.TryGetValue(s, out var options))
+            if (_items.TryGetValue(s.ToLower(), out var options))
             {
                 return options;
             }
