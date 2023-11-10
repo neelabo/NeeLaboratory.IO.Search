@@ -35,6 +35,8 @@
             Alias.Add("/or", new() { "/c.or" });
             Alias.Add("/not", new() { "/c.not" });
 
+            Alias.Add("/text", new() { "/p.text" });
+
             Alias.Add("/re", new() { "/m.re" });
             Alias.Add("/ire", new() { "/m.ire" });
             Alias.Add("/m0", new() { "/m.exact" });
@@ -42,13 +44,14 @@
             Alias.Add("/m1", new() { "/m.word" });
             Alias.Add("/word", new() { "/m.word" });
             Alias.Add("/m2", new() { "/m.fuzzy" });
+            Alias.Add("/fuzzy", new() { "/m.fuzzy" });
 
             Alias.Add("/lt", new() { "m.lt" });
             Alias.Add("/le", new() { "m.le" });
             Alias.Add("/eq", new() { "m.eq" });
             Alias.Add("/ne", new() { "m.ne" });
             Alias.Add("/ge", new() { "m.ge" });
-            Alias.Add("/gt", new() { "m.gte" });
+            Alias.Add("/gt", new() { "m.gt" });
         }
     }
 
@@ -58,6 +61,7 @@
         {
             Options.Add(DateSearchPropertyProfiles.Date);
 
+            Alias.Add("/date", new() { "/p.date" });
             Alias.Add("/since", new() { "/p.date", "/m.ge" });
             Alias.Add("/until", new() { "/p.date", "/m.le" });
         }

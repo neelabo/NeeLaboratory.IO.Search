@@ -47,6 +47,7 @@ namespace NeeLaboratory.IO.Search.Test
 
             // エンジン初期化
             var engine = new SearchEngine();
+            engine.AllowFolder = false;
             SearchEngine.Logger.SetLevel(SourceLevels.All);
             engine.AddSearchAreas(new NodeArea(_folderRoot, true), new NodeArea(_folderSub1, true), new NodeArea(_folderSub2, true));
             engine.CommandEngineLogger.SetLevel(SourceLevels.All);
@@ -141,6 +142,12 @@ namespace NeeLaboratory.IO.Search.Test
             var engine = CreateTestEnvironment();
 
             SearchResult result = await engine.SearchAsync(keyword);
+
+            foreach(var item in result.Items)
+            {
+                _output.WriteLine($"{(item.FileInfo.IsDirectory ? 'D' : 'F')}: {item.FileInfo.Path}");
+            }
+
             Assert.Equal(expected, result.Items.Count);
         }
 

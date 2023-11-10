@@ -30,8 +30,8 @@
 
     public static class ExtraSearchPropertyProfiles
     {
-        public static SearchPropertyProfile IsDirectory { get; } = new SearchPropertyProfile("isdir", BooleanSearchValue.Default);
-        public static SearchPropertyProfile IsPinned { get; } = new SearchPropertyProfile("ispinned", BooleanSearchValue.Default);
+        public static SearchPropertyProfile IsDirectory { get; } = new SearchPropertyProfile("directory", BooleanSearchValue.Default);
+        public static SearchPropertyProfile IsPinned { get; } = new SearchPropertyProfile("pinned", BooleanSearchValue.Default);
     }
 
 }

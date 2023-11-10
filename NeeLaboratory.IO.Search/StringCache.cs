@@ -19,42 +19,48 @@ namespace NeeLaboratory.IO.Search
 
 
         private readonly Dictionary<string, Item> _cache = new();
-
+        private object _lock = new();
 
         public string GetString(string s)
         {
-            if (_cache.TryGetValue(s, out var result))
+            lock (_lock)
             {
-                result.Timestamp = System.Environment.TickCount;
-                return result.Text;
-            }
+                if (_cache.TryGetValue(s, out var result))
+                {
+                    result.Timestamp = System.Environment.TickCount;
+                    return result.Text;
+                }
 
-            //var value = StringUtils.ToNormalizedWord(s, true);
-            var value = Convert(s);
-            _cache.Add(s, new Item(value, System.Environment.TickCount));
-            return value;
+                //var value = StringUtils.ToNormalizedWord(s, true);
+                var value = Convert(s);
+                _cache.Add(s, new Item(value, System.Environment.TickCount));
+                return value;
+            }
         }
 
         protected abstract string Convert(string s);
 
         public void Cleanup(int milliseconds)
         {
-            var now = System.Environment.TickCount;
-
-            var list = new List<string>();
-            foreach (var pair in _cache)
+            lock (_lock)
             {
-                if (now - pair.Value.Timestamp > milliseconds)
+                var now = System.Environment.TickCount;
+
+                var list = new List<string>();
+                foreach (var pair in _cache)
                 {
-                    list.Add(pair.Key);
+                    if (now - pair.Value.Timestamp > milliseconds)
+                    {
+                        list.Add(pair.Key);
+                    }
                 }
-            }
 
-            Debug.WriteLine($"Cleanup: remove={list.Count}");
+                Debug.WriteLine($"Cleanup: remove={list.Count}");
 
-            foreach (var key in list)
-            {
-                _cache.Remove(key);
+                foreach (var key in list)
+                {
+                    _cache.Remove(key);
+                }
             }
         }
     }

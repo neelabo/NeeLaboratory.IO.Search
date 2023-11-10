@@ -194,7 +194,6 @@ namespace NeeLaboratory.IO.Search
                 _work.Format += Read();
             }
 
-
             public void Answer(bool isExact)
             {
                 if (string.IsNullOrEmpty(_work.Format))
@@ -210,41 +209,55 @@ namespace NeeLaboratory.IO.Search
 
                 if (_work.Filter != SearchFilterProfiles.Exact && _work.Format[0] == '/')
                 {
+                    // エイリアスを展開して適用
                     var options = _alias.Decode(_work.Format);
                     foreach (var option in options)
                     {
-                        if (_options.TryGetValue(option.ToLower(), out var value))
+                        AnswerCore(option);
+                    }
+                }
+                else
+                {
+                    AnswerCore(_work.Format);
+                }
+                _work.Format = "";
+            }
+
+            private void AnswerCore(string format)
+            {
+                if (_work.Filter != SearchFilterProfiles.Exact && format[0] == '/')
+                {
+                    if (_options.TryGetValue(format.ToLower(), out var value))
+                    {
+                        switch (value)
                         {
-                            switch (value)
-                            {
-                                case ConjunctionSearchKeyOption conjunction:
-                                    _work.Conjunction = conjunction.SearchConjunction;
-                                    break;
-                                case PropertySearchKeyOption property:
-                                    _work.Property = property.Profile;
-                                    break;
-                                case FilterSearchKeyOption filter:
-                                    _work.Filter = filter.Profile;
-                                    break;
-                                default:
-                                    throw new InvalidOperationException($"Not supported search option type: {value.GetType()}");
-                            }
-                        }
-                        else
-                        {
-                            throw new SearchKeywordOptionException($"Not supported option: {_work.Format}") { Option = _work.Format };
+                            case ConjunctionSearchKeyOption conjunction:
+                                _work.Conjunction = conjunction.SearchConjunction;
+                                break;
+                            case PropertySearchKeyOption property:
+                                _work.Property = property.Profile;
+                                break;
+                            case FilterSearchKeyOption filter:
+                                _work.Filter = filter.Profile;
+                                break;
+                            default:
+                                throw new InvalidOperationException($"Not supported search option type: {value.GetType()}");
                         }
                     }
-                    _work.Format = "";
+                    else
+                    {
+                        throw new SearchKeywordOptionException($"Not supported option: {_work.Format}") { Option = _work.Format };
+                    }
                 }
                 else
                 {
                     // 実際にフィルターを生成することでフォーマットをチェックする
-                    var _ = _work.Filter.CreateFunc(_work.Property, _work.Format);
+                    var _ = _work.Filter.CreateFunc(_work.Property, format);
 
                     // Format が空でなければ有効
-                    if (!string.IsNullOrEmpty(_work.Format))
+                    if (!string.IsNullOrEmpty(format))
                     {
+                        _work.Format = format;
                         Result.Add(_work);
                     }
 
