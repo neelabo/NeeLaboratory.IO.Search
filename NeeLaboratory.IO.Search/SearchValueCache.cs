@@ -2,18 +2,13 @@
 {
     public class SearchValueCache
     {
-        public SearchValueCache() : this(new FuzzyStringCache(), new WordStringCache())
-        {
-        }
-
-        public SearchValueCache(FuzzyStringCache fuzzyStringCache, WordStringCache wordStringCache)
+        public SearchValueCache(IStringCache fuzzyStringCache, IStringCache wordStringCache)
         {
             FuzzyStringCache = fuzzyStringCache;
             WordStringCache = wordStringCache;
         }
 
-        public FuzzyStringCache FuzzyStringCache { get; } = new FuzzyStringCache();
-        public WordStringCache WordStringCache { get; } = new WordStringCache();
+        public IStringCache FuzzyStringCache { get; }
+        public IStringCache WordStringCache { get; }
     }
-
 }

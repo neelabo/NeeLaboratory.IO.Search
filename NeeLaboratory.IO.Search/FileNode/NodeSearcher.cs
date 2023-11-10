@@ -42,10 +42,10 @@ namespace NeeLaboratory.IO.Search.FileNode
         private void UpdateProperties()
         {
             // allow folder
-            PreKeys = AllowFolder ? new() : new() { new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, NodeSearchPropertyProfiles.IsDirectory, "false") };
+            PreKeys = AllowFolder ? new() : new() { new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, ExtraSearchPropertyProfiles.IsDirectory, "false") };
 
             // pushpin
-            PostKeys = new() { new SearchKey(SearchConjunction.Or, SearchFilterProfiles.Equal, NodeSearchPropertyProfiles.IsPinned, "true") };
+            PostKeys = new() { new SearchKey(SearchConjunction.Or, SearchFilterProfiles.Equal, ExtraSearchPropertyProfiles.IsPinned, "true") };
         }
 
         /// <summary>
@@ -58,29 +58,14 @@ namespace NeeLaboratory.IO.Search.FileNode
     }
 
 
-    public class DateSearchProfile : SearchProfile
-    {
-        public DateSearchProfile()
-        {
-            Options.Add(DateSearchPropertyProfiles.Date);
-
-            Alias.Add("/since", new() { "/p.date", "/m.ge" });
-            Alias.Add("/until", new() { "/p.date", "/m.le" });
-        }
-    }
 
     public class NodeSearchProfile : SearchProfile
     {
         public NodeSearchProfile()
         {
-            Options.Add(NodeSearchPropertyProfiles.IsDirectory);
-            Options.Add(NodeSearchPropertyProfiles.IsPinned);
+            Options.Add(ExtraSearchPropertyProfiles.IsDirectory);
+            Options.Add(ExtraSearchPropertyProfiles.IsPinned);
         }
     }
 
-    public static class NodeSearchPropertyProfiles
-    {
-        public static SearchPropertyProfile IsDirectory { get; } = new SearchPropertyProfile("isdir", BooleanSearchValue.Default);
-        public static SearchPropertyProfile IsPinned { get; } = new SearchPropertyProfile("ispinned", BooleanSearchValue.Default);
-    }
 }

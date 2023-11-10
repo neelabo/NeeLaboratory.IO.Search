@@ -8,7 +8,7 @@ namespace NeeLaboratory.IO.Search
         private SearchValueCache _cache;
 
 
-        public SearchContext() : this(new SearchValueCache())
+        public SearchContext() : this(SearchValueCacheFactory.Create())
         {
         }
 
@@ -22,8 +22,8 @@ namespace NeeLaboratory.IO.Search
         public SearchKeyOptionCollection KeyOptions { get; } = new SearchKeyOptionCollection();
         public SearchKeyAliasCollection KeyAlias { get; } = new SearchKeyAliasCollection();
 
-        public FuzzyStringCache FuzzyStringCache => _cache.FuzzyStringCache;
-        public WordStringCache WordStringCache => _cache.WordStringCache;
+        public IStringCache FuzzyStringCache => _cache.FuzzyStringCache;
+        public IStringCache WordStringCache => _cache.WordStringCache;
 
 
         public SearchContext AddProfile(SearchProfile profile)

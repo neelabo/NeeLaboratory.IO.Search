@@ -28,4 +28,10 @@
         public static SearchPropertyProfile Date { get; } = new SearchPropertyProfile("date", DateTimeSearchValue.Default);
     }
 
+    public static class ExtraSearchPropertyProfiles
+    {
+        public static SearchPropertyProfile IsDirectory { get; } = new SearchPropertyProfile("isdir", BooleanSearchValue.Default);
+        public static SearchPropertyProfile IsPinned { get; } = new SearchPropertyProfile("ispinned", BooleanSearchValue.Default);
+    }
+
 }

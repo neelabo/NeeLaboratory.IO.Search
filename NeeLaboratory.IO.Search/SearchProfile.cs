@@ -52,4 +52,15 @@
         }
     }
 
+    public class DateSearchProfile : SearchProfile
+    {
+        public DateSearchProfile()
+        {
+            Options.Add(DateSearchPropertyProfiles.Date);
+
+            Alias.Add("/since", new() { "/p.date", "/m.ge" });
+            Alias.Add("/until", new() { "/p.date", "/m.le" });
+        }
+    }
+
 }

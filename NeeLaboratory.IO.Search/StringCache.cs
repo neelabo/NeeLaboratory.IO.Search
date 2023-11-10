@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace NeeLaboratory.IO.Search
 {
-    public abstract class StringCache
+    public abstract class StringCache : IStringCache
     {
         private struct Item
         {
