@@ -2,21 +2,24 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace NeeLaboratory.IO.Search
 {
     public abstract class SearchFilter
     {
-        public SearchFilter(SearchPropertyProfile property, string format)
+        public SearchFilter(SearchPropertyProfile property, string? parameter, string format)
         {
             Property = property;
+            Parameter = parameter;
             Format = format;
         }
 
         public SearchPropertyProfile Property { get; }
+        public string? Parameter { get; }
         protected string Format { get; }
 
-        public abstract bool IsMatch(SearchContext context, ISearchItem e);
+        public abstract bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token);
     }
 
 
@@ -25,12 +28,12 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public class TrueSearchFilter : SearchFilter
     {
-        public TrueSearchFilter(SearchPropertyProfile property, string format)
-            : base(property, format)
+        public TrueSearchFilter(SearchPropertyProfile property, string? parameter, string format)
+            : base(property, parameter, format)
         {
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
             return true;
         }
@@ -43,8 +46,8 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public FuzzySearchFilter(SearchPropertyProfile property, string format)
-            : base(property, format)
+        public FuzzySearchFilter(SearchPropertyProfile property, string? parameter, string format)
+            : base(property, parameter, format)
         {
             var s = format;
             s = SearchStringTools.ToNormalizedWord(s, true);
@@ -53,9 +56,9 @@ namespace NeeLaboratory.IO.Search
             _regex = new Regex(s, RegexOptions.Compiled);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var s = e.GetValue(Property).ToString();
+            var s = e.GetValue(Property, Parameter, token).ToString();
             s = context.FuzzyStringCache.GetString(s);
             return _regex.Match(s).Success;
         }
@@ -68,7 +71,8 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public WordSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public WordSearchFilter(SearchPropertyProfile property, string? parameter, string format)
+            : base(property, parameter, format)
         {
             var s = format;
             var first = SearchStringTools.GetNotCodeBlockRegexString(s.First());
@@ -81,9 +85,9 @@ namespace NeeLaboratory.IO.Search
             _regex = new Regex(s, RegexOptions.Compiled);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var s = e.GetValue(Property).ToString();
+            var s = e.GetValue(Property, Parameter, token).ToString();
             s = context.WordStringCache.GetString(s);
             return _regex.Match(s).Success;
         }
@@ -96,15 +100,16 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public ExactSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public ExactSearchFilter(SearchPropertyProfile property, string? parameter, string format)
+            : base(property, parameter, format)
         {
             var s = Regex.Escape(format);
             _regex = new Regex(s, RegexOptions.Compiled);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var s = e.GetValue(Property).ToString();
+            var s = e.GetValue(Property, Parameter, token).ToString();
             return _regex.Match(s).Success;
         }
     }
@@ -116,7 +121,8 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public RegularExpressionSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public RegularExpressionSearchFilter(SearchPropertyProfile property, string? parameter, string format)
+            : base(property, parameter, format)
         {
             try
             {
@@ -128,9 +134,9 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-          var s = e.GetValue(Property).ToString();
+          var s = e.GetValue(Property, Parameter, token).ToString();
             return _regex.Match(s).Success;
         }
     }
@@ -142,7 +148,8 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly Regex _regex;
 
-        public RegularExpressionIgnoreCaseSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public RegularExpressionIgnoreCaseSearchFilter(SearchPropertyProfile property, string? parameter, string format)
+            : base(property, parameter, format)
         {
             try
             {
@@ -154,9 +161,9 @@ namespace NeeLaboratory.IO.Search
             }
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var s = e.GetValue(Property).ToString();
+            var s = e.GetValue(Property, Parameter, token).ToString();
             return _regex.Match(s).Success;
         }
     }
@@ -169,14 +176,15 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public EqualSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public EqualSearchFilter(SearchPropertyProfile property, string? parameter, string format) 
+            : base(property, parameter, format)
         {
             _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var value = e.GetValue(Property);
+            var value = e.GetValue(Property, Parameter, token);
             return value.CompareTo(_referenceValue) == 0;
         }
     }
@@ -188,14 +196,15 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public NotEqualSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public NotEqualSearchFilter(SearchPropertyProfile property, string? parameter, string format) 
+            : base(property, parameter, format)
         {
             _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var value = e.GetValue(Property);
+            var value = e.GetValue(Property, Parameter, token);
             return value.CompareTo(_referenceValue) != 0;
         }
     }
@@ -207,14 +216,15 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public GreaterThanSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public GreaterThanSearchFilter(SearchPropertyProfile property, string? parameter, string format) 
+            : base(property, parameter, format)
         {
             _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var value = e.GetValue(Property);
+            var value = e.GetValue(Property, Parameter, token);
 
             return value.CompareTo(_referenceValue) > 0;
         }
@@ -227,14 +237,15 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public LessThanSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public LessThanSearchFilter(SearchPropertyProfile property, string? parameter, string format) 
+            : base(property, parameter, format)
         {
             _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var value = e.GetValue(Property);
+            var value = e.GetValue(Property, Parameter, token);
 
             return value.CompareTo(_referenceValue) < 0;
         }
@@ -248,14 +259,15 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public GreaterThanEqualSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public GreaterThanEqualSearchFilter(SearchPropertyProfile property, string? parameter, string format) 
+            : base(property, parameter, format)
         {
             _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var value = e.GetValue(Property);
+            var value = e.GetValue(Property, Parameter, token);
 
             return value.CompareTo(_referenceValue) >= 0;
         }
@@ -268,14 +280,15 @@ namespace NeeLaboratory.IO.Search
     {
         private readonly SearchValue _referenceValue;
 
-        public LessThanEqualSearchFilter(SearchPropertyProfile property, string format) : base(property, format)
+        public LessThanEqualSearchFilter(SearchPropertyProfile property, string? parameter, string format)
+            : base(property, parameter, format)
         {
             _referenceValue = property.Parse(format);
         }
 
-        public override bool IsMatch(SearchContext context, ISearchItem e)
+        public override bool IsMatch(SearchContext context, ISearchItem e, CancellationToken token)
         {
-            var value = e.GetValue(Property);
+            var value = e.GetValue(Property, Parameter, token);
 
             return value.CompareTo(_referenceValue) <= 0;
         }

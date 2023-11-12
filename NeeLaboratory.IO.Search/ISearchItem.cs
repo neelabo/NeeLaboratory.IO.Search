@@ -1,8 +1,10 @@
-﻿namespace NeeLaboratory.IO.Search
+﻿using System.Threading;
+
+namespace NeeLaboratory.IO.Search
 {
     public interface ISearchItem
     {
-        SearchValue GetValue(SearchPropertyProfile profile);
+        SearchValue GetValue(SearchPropertyProfile profile, string? parameter, CancellationToken token);
     }
 
 }

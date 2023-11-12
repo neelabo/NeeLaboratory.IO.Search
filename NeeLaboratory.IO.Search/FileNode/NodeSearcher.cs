@@ -42,10 +42,10 @@ namespace NeeLaboratory.IO.Search.FileNode
         private void UpdateProperties()
         {
             // allow folder
-            PreKeys = AllowFolder ? new() : new() { new SearchKey(SearchConjunction.And, SearchFilterProfiles.Equal, ExtraSearchPropertyProfiles.IsDirectory, "false") };
+            PreKeys = AllowFolder ? new() : new() { new SearchKey(SearchConjunction.And, ExtraSearchPropertyProfiles.IsDirectory, null, SearchFilterProfiles.Equal, "false") };
 
             // pushpin
-            PostKeys = new() { new SearchKey(SearchConjunction.Or, SearchFilterProfiles.Equal, ExtraSearchPropertyProfiles.IsPinned, "true") };
+            PostKeys = new() { new SearchKey(SearchConjunction.Or, ExtraSearchPropertyProfiles.IsPinned, null, SearchFilterProfiles.Equal, "true") };
         }
 
         /// <summary>

@@ -112,18 +112,18 @@ namespace NeeLaboratory.IO.Search
             {
                 token.ThrowIfCancellationRequested();
 
-                var filter = key.Filter.CreateFunc(key.Property, key.Format);
+                var filter = key.Filter.CreateFunc(key.Property, key.PropertyParameter, key.Format);
 
                 switch (key.Conjunction)
                 {
                     case SearchConjunction.And:
-                        entries = entries.Where(e => filter.IsMatch(_context, e));
+                        entries = entries.Where(e => filter.IsMatch(_context, e, token));
                         break;
                     case SearchConjunction.Or:
-                        entries = entries.Union(all.Where(e => filter.IsMatch(_context, e)));
+                        entries = entries.Union(all.Where(e => filter.IsMatch(_context, e, token)));
                         break;
                     case SearchConjunction.Not:
-                        entries = entries.Where(e => !filter.IsMatch(_context, e));
+                        entries = entries.Where(e => !filter.IsMatch(_context, e, token));
                         break;
                 }
             }

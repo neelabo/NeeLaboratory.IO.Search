@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -156,7 +157,7 @@ namespace NeeLaboratory.IO.Search
             [MemberNotNull(nameof(_work))]
             private void ResetWork()
             {
-                _work = new SearchKey(SearchConjunction.And, SearchFilterProfiles.True, SearchPropertyProfiles.Text, "");
+                _work = new SearchKey(SearchConjunction.And, SearchPropertyProfiles.Text, null, SearchFilterProfiles.True, "");
             }
 
             public void Next()
@@ -223,11 +224,25 @@ namespace NeeLaboratory.IO.Search
                 _work.Format = "";
             }
 
+            const char Separator = '.';
+
             private void AnswerCore(string format)
             {
                 if (_work.Filter != SearchFilterProfiles.Exact && format[0] == '/')
                 {
-                    if (_options.TryGetValue(format.ToLower(), out var value))
+                    var tokens = format.Split(new char[] { Separator }, StringSplitOptions.TrimEntries)
+                        .Select(e => e.Trim().ToLower())
+                        .ToList();
+
+                    if (tokens.Count < 2)
+                    {
+                        throw new SearchKeywordOptionException($"Not supported option: {_work.Format}") { Option = _work.Format };
+                    }
+
+                    var key = string.Join(Separator, tokens.Take(2));
+                    var parameter = (2 < tokens.Count) ? string.Join(Separator, tokens.Skip(2)) : null;
+
+                    if (_options.TryGetValue(key, out var value))
                     {
                         switch (value)
                         {
@@ -236,6 +251,7 @@ namespace NeeLaboratory.IO.Search
                                 break;
                             case PropertySearchKeyOption property:
                                 _work.Property = property.Profile;
+                                _work.PropertyParameter = parameter;
                                 break;
                             case FilterSearchKeyOption filter:
                                 _work.Filter = filter.Profile;
@@ -252,7 +268,7 @@ namespace NeeLaboratory.IO.Search
                 else
                 {
                     // 実際にフィルターを生成することでフォーマットをチェックする
-                    var _ = _work.Filter.CreateFunc(_work.Property, format);
+                    var _ = _work.Filter.CreateFunc(_work.Property, _work.PropertyParameter, format);
 
                     // Format が空でなければ有効
                     if (!string.IsNullOrEmpty(format))

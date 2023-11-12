@@ -101,7 +101,7 @@ namespace NeeLaboratory.IO.Search.FileNode
         /// <param name="property"></param>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        public SearchValue GetValue(SearchPropertyProfile property)
+        public SearchValue GetValue(SearchPropertyProfile property, string? parameter, CancellationToken token)
         {
             switch (property.Name)
             {
