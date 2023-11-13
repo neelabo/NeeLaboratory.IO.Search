@@ -108,7 +108,7 @@ namespace NeeLaboratory.IO.Search
             }
             catch (Exception ex)
             {
-                throw new SearchKeywordBooleanException($"Boolean parse error: Cannot parse {value}", ex);
+                throw new SearchKeywordBooleanException($"Integer parse error: Cannot parse {value}", ex);
             }
         }
 

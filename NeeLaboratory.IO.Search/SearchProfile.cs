@@ -46,12 +46,12 @@
             Alias.Add("/m2", new() { "/m.fuzzy" });
             Alias.Add("/fuzzy", new() { "/m.fuzzy" });
 
-            Alias.Add("/lt", new() { "m.lt" });
-            Alias.Add("/le", new() { "m.le" });
-            Alias.Add("/eq", new() { "m.eq" });
-            Alias.Add("/ne", new() { "m.ne" });
-            Alias.Add("/ge", new() { "m.ge" });
-            Alias.Add("/gt", new() { "m.gt" });
+            Alias.Add("/lt", new() { "/m.lt" });
+            Alias.Add("/le", new() { "/m.le" });
+            Alias.Add("/eq", new() { "/m.eq" });
+            Alias.Add("/ne", new() { "/m.ne" });
+            Alias.Add("/ge", new() { "/m.ge" });
+            Alias.Add("/gt", new() { "/m.gt" });
         }
     }
 
