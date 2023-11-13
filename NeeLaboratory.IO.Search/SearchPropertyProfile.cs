@@ -28,6 +28,11 @@
         public static SearchPropertyProfile Date { get; } = new SearchPropertyProfile("date", DateTimeSearchValue.Default);
     }
 
+    public static class SizeSearchPropertyProfiles
+    {
+        public static SearchPropertyProfile Size { get; } = new SearchPropertyProfile("size", IntegerSearchValue.Default);
+    }
+
     public static class ExtraSearchPropertyProfiles
     {
         public static SearchPropertyProfile IsDirectory { get; } = new SearchPropertyProfile("directory", BooleanSearchValue.Default);

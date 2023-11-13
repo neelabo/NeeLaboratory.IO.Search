@@ -67,4 +67,14 @@
         }
     }
 
+    public class SizeSearchProfile : SearchProfile
+    {
+        public SizeSearchProfile()
+        {
+            Options.Add(SizeSearchPropertyProfiles.Size);
+
+            Alias.Add("/size", new() { "/p.size" });
+        }
+    }
+
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
@@ -104,7 +105,7 @@ namespace NeeLaboratory.IO.Search
         {
             try
             {
-                return new IntegerSearchValue(int.Parse(value));
+                return new IntegerSearchValue(ParseWithUnit(value));
             }
             catch (Exception ex)
             {
@@ -115,6 +116,29 @@ namespace NeeLaboratory.IO.Search
         public override string ToString()
         {
             return _value.ToString();
+        }
+
+
+        private static int ParseWithUnit(string s)
+        {
+            var regex = new Regex(@"^([+-]?\d+)([kKmMgG])?$");
+            var match = regex.Match(s);
+            if (!match.Success) throw new FormatException();
+
+            var value = int.Parse(match.Groups[1].Value);
+            var scale = match.Groups[2].Value switch
+            {
+                "k" => 1000,
+                "K" => 1024,
+                "m" => 1000 * 1000,
+                "M" => 1024 * 1024,
+                "g" => 1000 * 1000 * 1000,
+                "G" => 1024 * 1024 * 1024,
+                _ => 1,
+            };
+
+            Debug.WriteLine($"int.Parse: {s} -> {value * scale:#,0}");
+            return value * scale;
         }
     }
 
