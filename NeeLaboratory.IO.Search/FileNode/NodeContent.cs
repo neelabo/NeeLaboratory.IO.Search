@@ -95,7 +95,8 @@ namespace NeeLaboratory.IO.Search.FileNode
             get
             {
                 string sizeText = FileInfo.Size >= 0 ? $"Size: {(FileInfo.Size + 1024 - 1) / 1024:#,0} KB\n" : "Size: --\n";
-                return $"{Name}\n{sizeText}Date: {FileInfo.LastWriteTime:yyyy/MM/dd HH:mm}\nFolder: {DirectoryName}";
+                var dateText = FileInfo.LastWriteTime.ToString(SearchDateTimeTools.DateTimeFormat);
+                return $"{Name}\n{sizeText}Date: {dateText}\nFolder: {DirectoryName}";
             }
         }
 

@@ -150,7 +150,6 @@ namespace NeeLaboratory.IO.Search
         public static DateTimeSearchValue Default { get; } = new(default);
 
         private static readonly Regex _regexDateTimeCustom = new(@"^([+-]?\d+)(day|month|year)$");
-        private static readonly string _stringFormat = "yyyy/MM/dd HH:mm";
 
         private readonly DateTime _value;
 
@@ -195,7 +194,7 @@ namespace NeeLaboratory.IO.Search
 
         public override string ToString()
         {
-            return _value.ToString(_stringFormat);
+            return _value.ToString(SearchDateTimeTools.DateTimeFormat);
         }
     }
 
