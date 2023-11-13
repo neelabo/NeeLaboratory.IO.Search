@@ -89,9 +89,9 @@ namespace NeeLaboratory.IO.Search
     {
         public static IntegerSearchValue Default { get; } = new(default);
 
-        private readonly int _value;
+        private readonly long _value;
 
-        public IntegerSearchValue(int value)
+        public IntegerSearchValue(long value)
         {
             _value = value;
         }
@@ -119,13 +119,13 @@ namespace NeeLaboratory.IO.Search
         }
 
 
-        private static int ParseWithUnit(string s)
+        private static long ParseWithUnit(string s)
         {
             var regex = new Regex(@"^([+-]?\d+)([kKmMgG])?$");
             var match = regex.Match(s);
             if (!match.Success) throw new FormatException();
 
-            var value = int.Parse(match.Groups[1].Value);
+            var value = long.Parse(match.Groups[1].Value);
             var scale = match.Groups[2].Value switch
             {
                 "k" => 1000,
