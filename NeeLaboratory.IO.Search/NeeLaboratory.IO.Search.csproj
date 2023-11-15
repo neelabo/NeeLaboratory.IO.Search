@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Platforms>AnyCPU</Platforms>
     <Nullable>enable</Nullable>
     <Version>4.0.0</Version>
     <Authors>NeeLaboratory</Authors>
-    <Copyright>Copyright © 2015-2022 Ito Mitsuhiro (nee)</Copyright>
+    <Copyright>Copyright © 2015-2023 Ito Mitsuhiro (nee)</Copyright>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\.editorconfig" Link=".editorconfig" />

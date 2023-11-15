@@ -4,7 +4,6 @@ using System.Runtime.Serialization;
 // TODO: 定義が細分化されすぎでは？
 namespace NeeLaboratory.IO.Search
 {
-    [Serializable]
     public class SearchKeywordException : Exception
     {
         public SearchKeywordException() : base() { }
@@ -12,7 +11,6 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordException(string message, Exception inner) : base(message, inner) { }
     }
 
-    [Serializable]
     public class SearchKeywordOptionException : SearchKeywordException
     {
         public SearchKeywordOptionException() : base() { }
@@ -20,15 +18,8 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordOptionException(string message, Exception inner) : base(message, inner) { }
 
         public string? Option { get; set; }
-
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-            info.AddValue(nameof(Option), Option);
-        }
     }
 
-    [Serializable]
     public class SearchKeywordRegularExpressionException : SearchKeywordException
     {
         public SearchKeywordRegularExpressionException() : base() { }
@@ -36,7 +27,6 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordRegularExpressionException(string message, Exception inner) : base(message, inner) { }
     }
 
-    [Serializable]
     public class SearchKeywordDateTimeException : SearchKeywordException
     {
         public SearchKeywordDateTimeException() : base() { }
@@ -44,7 +34,6 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordDateTimeException(string message, Exception inner) : base(message, inner) { }
     }
 
-    [Serializable]
     public class SearchKeywordBooleanException : SearchKeywordException
     {
         public SearchKeywordBooleanException() : base() { }
@@ -52,7 +41,6 @@ namespace NeeLaboratory.IO.Search
         public SearchKeywordBooleanException(string message, Exception inner) : base(message, inner) { }
     }
 
-    [Serializable]
     public class SearchKeywordIntegerException : SearchKeywordException
     {
         public SearchKeywordIntegerException() : base() { }
