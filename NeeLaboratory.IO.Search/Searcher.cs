@@ -125,6 +125,9 @@ namespace NeeLaboratory.IO.Search
                     case SearchConjunction.Not:
                         entries = entries.Where(e => !filter.IsMatch(_context, e, token));
                         break;
+                    case SearchConjunction.PreOr:
+                        entries = all.Where(e => filter.IsMatch(_context, e, token)).Union(entries);
+                        break;
                 }
             }
 

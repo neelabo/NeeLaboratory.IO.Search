@@ -16,6 +16,11 @@
         /// NOT接続
         /// </summary>
         Not,
+
+        /// <summary>
+        /// OR接続 (先頭に接続するOR。非公開)
+        /// </summary>
+        PreOr,
     }
 
 
