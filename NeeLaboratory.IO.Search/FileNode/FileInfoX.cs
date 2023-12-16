@@ -10,7 +10,7 @@ namespace NeeLaboratory.IO.Search.FileNode
     /// <summary>
     /// ファイル情報
     /// </summary>
-    public class FileInfo
+    public class FileInfoX
     {
         /// <summary>
         /// パス
@@ -38,7 +38,7 @@ namespace NeeLaboratory.IO.Search.FileNode
         /// </summary>
         /// <param name="path"></param>
         /// <param name="isDirectory"></param>
-        public FileInfo(NodePath nodePath, FileSystemInfo fileSystemInfo)
+        public FileInfoX(NodePath nodePath, FileSystemInfo fileSystemInfo)
         {
             _nodePath = nodePath;
             SetFileSystemInfo(fileSystemInfo);

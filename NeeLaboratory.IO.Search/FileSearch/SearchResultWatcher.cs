@@ -15,6 +15,7 @@ namespace NeeLaboratory.IO.Search.FileSearch
     /// 結果の変更を監視する。
     /// ファイルの状態が変化を検索結果に反映させる
     /// </summary>
+    [Obsolete]
     public class SearchResultWatcher : IDisposable, ISearchResult
     {
         // Logger

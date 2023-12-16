@@ -39,7 +39,7 @@ namespace NeeLaboratory.IO.Search.FileNode
         /// <summary>
         /// ファイル情報
         /// </summary>
-        private readonly FileInfo _fileInfo;
+        private readonly FileInfoX _fileInfo;
 
         /// <summary>
         /// ノード属性
@@ -56,7 +56,7 @@ namespace NeeLaboratory.IO.Search.FileNode
         {
             _nodePath = nodePath;
             IsDirectory = fileSystemInfo.Attributes.HasFlag(FileAttributes.Directory);
-            _fileInfo = new FileInfo(_nodePath, fileSystemInfo);
+            _fileInfo = new FileInfoX(_nodePath, fileSystemInfo);
         }
 
 
@@ -103,7 +103,7 @@ namespace NeeLaboratory.IO.Search.FileNode
         /// <summary>
         /// ファイル情報
         /// </summary>
-        public FileInfo FileInfo
+        public FileInfoX FileInfo
         {
             get { return _fileInfo; }
         }

@@ -17,6 +17,7 @@ namespace NeeLaboratory.IO.Search.FileSearch
     /// <summary>
     /// 検索エンジン
     /// </summary>
+    [Obsolete]
     public class SearchEngine : IDisposable
     {
 
@@ -325,6 +326,8 @@ namespace NeeLaboratory.IO.Search.FileSearch
         }
 
 
+        #region Multi-Search
+
         /// <summary>
         /// マルチ検索
         /// </summary>
@@ -383,6 +386,8 @@ namespace NeeLaboratory.IO.Search.FileSearch
             public string Keyword { get; set; }
             public SearchResult? Result { get; set; }
         }
+
+        #endregion
 
 
         /// <summary>
