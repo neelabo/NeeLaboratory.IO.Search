@@ -75,8 +75,8 @@ namespace NeeLaboratory.IO.Search
             : base(property, parameter, format)
         {
             var s = format;
-            var first = SearchStringTools.GetNotCodeBlockRegexString(s.First());
-            var last = SearchStringTools.GetNotCodeBlockRegexString(s.Last());
+            var first = SearchStringTools.GetCodeBlockRegexString(s.First(), true);
+            var last = SearchStringTools.GetCodeBlockRegexString(s.Last(), true);
             s = SearchStringTools.ToNormalizedWord(s, false);
             s = Regex.Escape(s);
             s = SearchStringTools.ToFuzzyNumberRegex(s);

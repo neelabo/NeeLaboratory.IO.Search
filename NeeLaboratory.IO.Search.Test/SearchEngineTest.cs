@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using System.Collections;
 
 namespace NeeLaboratory.IO.Search.Test
 {
@@ -281,7 +282,98 @@ namespace NeeLaboratory.IO.Search.Test
             var result = search.Search(keyword, items, CancellationToken.None);
             Assert.Equal(expected, result.Count());
         }
+
+        [Fact]
+        public void SearchCoreWordTest()
+        {
+            var context = new SearchContext();
+            var search = new Searcher(context);
+
+            var keyword = "/word AB";
+
+            var result = search.Search(keyword, new SampleSearchItemCollection("AB"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("ABC"), CancellationToken.None);
+            Assert.Empty(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("ABAB"), CancellationToken.None);
+            Assert.Empty(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("BABA"), CancellationToken.None);
+            Assert.Empty(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("ABです"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これはAB"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これはABです"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これはABCです"), CancellationToken.None);
+            Assert.Empty(result);
+
+            keyword = "/word あれ";
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これハあれデス"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これハぽあれデス"), CancellationToken.None);
+            Assert.Empty(result);
+
+            keyword = "/word アレ";
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これはアレです"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これはポアレです"), CancellationToken.None);
+            Assert.Empty(result);
+
+            keyword = "/word 漢字";
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これは漢字です"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これは日本の漢字です"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これは漢字体です"), CancellationToken.None);
+            Assert.Empty(result);
+        }
     }
+
+
+    public class SampleSearchItemCollection : IEnumerable<ISearchItem>
+    {
+        private List<ISearchItem> _items;
+
+        public SampleSearchItemCollection(List<ISearchItem> items)
+        {
+            _items = items;
+        }
+
+        public SampleSearchItemCollection(params string[] items) : this((IEnumerable<string>)items)
+        {
+        }
+
+        public SampleSearchItemCollection(IEnumerable<string> items)
+        {
+            _items = items.Select(e => new SampleSearchItem(e)).ToList<ISearchItem>();
+        }
+
+        public IEnumerator<ISearchItem> GetEnumerator()
+        {
+            return _items.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
+        }
+    }
+
 
     public class SampleSearchItem : ISearchItem
     {

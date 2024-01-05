@@ -48,22 +48,29 @@ namespace NeeLaboratory.IO.Search
         /// <summary>
         /// 単語区切り用の正規表現生成
         /// </summary>
-        public static string? GetNotCodeBlockRegexString(char c)
+        public static string? GetCodeBlockRegexString(char c, bool exception)
         {
-            if ('0' <= c && c <= '9')
-                return @"\D";
-            //else if (('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z'))
-            //    return @"\P{L}";
-            else if (0x3040 <= c && c <= 0x309F)
-                return @"\P{IsHiragana}";
-            else if (0x30A0 <= c && c <= 0x30FF)
-                return @"\P{IsKatakana}";
-            else if ((0x3400 <= c && c <= 0x4DBF) || (0x4E00 <= c && c <= 0x9FFF) || (0xF900 <= c && c <= 0xFAFF))
-                return @"[^\p{IsCJKUnifiedIdeographsExtensionA}\p{IsCJKUnifiedIdeographs}\p{IsCJKCompatibilityIdeographs}]";
-            else if (new Regex(@"^\p{L}").IsMatch(c.ToString()))
-                return @"\P{L}";
-            else
-                return null;
+            var s = c.ToString();
+
+            //lang=regex
+            string[] patterns = [
+                @"[\d]",
+                @"[\p{IsHiragana}]",
+                @"[\p{IsKatakana}\p{IsKatakanaPhoneticExtensions}]",
+                @"[\p{IsCJKUnifiedIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}\p{IsCJKCompatibilityIdeographs}]",
+                @"[\u0020-\u024F-[^\p{L}]]",
+                @"[\p{L}]"
+            ];
+
+            foreach (var pattern in patterns)
+            {
+                if (new Regex(pattern).IsMatch(s))
+                {
+                    return exception ? pattern.Replace("[", "[^") : pattern;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
