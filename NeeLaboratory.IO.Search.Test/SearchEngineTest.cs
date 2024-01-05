@@ -314,6 +314,19 @@ namespace NeeLaboratory.IO.Search.Test
             result = search.Search(keyword, new SampleSearchItemCollection("これはABCです"), CancellationToken.None);
             Assert.Empty(result);
 
+            keyword = "/word 12";
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これは12デス"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これは012デス"), CancellationToken.None);
+            Assert.Single(result);
+
+            result = search.Search(keyword, new SampleSearchItemCollection("これは120デス"), CancellationToken.None);
+            Assert.Empty(result);
+
+            keyword = "/word アレ";
+
             keyword = "/word あれ";
 
             result = search.Search(keyword, new SampleSearchItemCollection("これハあれデス"), CancellationToken.None);
@@ -340,6 +353,18 @@ namespace NeeLaboratory.IO.Search.Test
 
             result = search.Search(keyword, new SampleSearchItemCollection("これは漢字体です"), CancellationToken.None);
             Assert.Empty(result);
+        }
+
+        [Fact]
+        public void SearchCoreWordTSTest()
+        {
+            var context = new SearchContext();
+            var search = new Searcher(context);
+
+            var keyword = "/word TS";
+
+            var result = search.Search(keyword, new SampleSearchItemCollection("TS物です"), CancellationToken.None);
+            Assert.Single(result);
         }
     }
 

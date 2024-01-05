@@ -53,20 +53,20 @@ namespace NeeLaboratory.IO.Search
             var s = c.ToString();
 
             //lang=regex
-            string[] patterns = [
-                @"[\d]",
-                @"[\p{IsHiragana}]",
-                @"[\p{IsKatakana}\p{IsKatakanaPhoneticExtensions}]",
-                @"[\p{IsCJKUnifiedIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}\p{IsCJKCompatibilityIdeographs}]",
-                @"[\u0020-\u024F-[^\p{L}]]",
-                @"[\p{L}]"
+            (string positive, string negative)[] patterns = [
+                (@"\d", @"\D"),
+                (@"\p{IsHiragana}", @"\P{IsHiragana}"),
+                (@"[\p{IsKatakana}\p{IsKatakanaPhoneticExtensions}]", @"[^\p{IsKatakana}\p{IsKatakanaPhoneticExtensions}]"),
+                (@"[\p{IsCJKUnifiedIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}\p{IsCJKCompatibilityIdeographs}]", @"[^\p{IsCJKUnifiedIdeographs}\p{IsCJKUnifiedIdeographsExtensionA}\p{IsCJKCompatibilityIdeographs}]"),
+                (@"[\u0020-\u024F-[\P{L}]]", @"[\u0250-\uFFFF\P{L}]"),
+                (@"\p{L}", @"\P{L}"),
             ];
 
             foreach (var pattern in patterns)
             {
-                if (new Regex(pattern).IsMatch(s))
+                if (new Regex(pattern.positive).IsMatch(s))
                 {
-                    return exception ? pattern.Replace("[", "[^") : pattern;
+                    return exception ? pattern.negative : pattern.positive;
                 }
             }
 
