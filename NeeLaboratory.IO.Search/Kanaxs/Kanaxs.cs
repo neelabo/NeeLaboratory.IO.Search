@@ -661,7 +661,7 @@ namespace CSharp.Japanese.Kanaxs
                 else
                 {
                     // 特定文字の正規化
-                    cs[i] = ToNormalisedChar(c);
+                    cs[i] = ToNormalizedChar(c);
                 }
             }
 
@@ -673,7 +673,7 @@ namespace CSharp.Japanese.Kanaxs
         /// </summary>
         /// <param name="src"></param>
         /// <returns></returns>
-        private static char ToNormalisedChar(char src)
+        private static char ToNormalizedChar(char src)
         {
             return src switch
             {
@@ -687,6 +687,19 @@ namespace CSharp.Japanese.Kanaxs
                 '♦' => '◇',
                 '◆' => '◇',
                 '♣' => '♧',
+                '〇' => '○',
+                '`' => '\'',
+                '‘' => '\'',
+                '’' => '\'',
+                '‛' => '\'',
+                'ʹ' => '\'',
+                'ʻ' => '\'',
+                'ʼ' => '\'',
+                'ʽ' => '\'',
+                '“' => '"',
+                '”' => '"',
+                '‟' => '"',
+                'ʺ' => '"',
                 _ => src,
             };
         }
