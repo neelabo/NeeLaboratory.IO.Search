@@ -1,4 +1,6 @@
-﻿namespace NeeLaboratory.IO.Search
+﻿using System;
+
+namespace NeeLaboratory.IO.Search
 {
     public class SearchPropertyProfile
     {
@@ -10,6 +12,11 @@
 
         public string Name { get; }
         public SearchValue DefaultValue { get; }
+
+        public Type GetValueType()
+        {
+            return DefaultValue.GetValueType();
+        }
 
         public SearchValue Parse(string format)
         {

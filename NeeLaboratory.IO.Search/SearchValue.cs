@@ -10,6 +10,7 @@ namespace NeeLaboratory.IO.Search
     /// </summary>
     public abstract class SearchValue
     {
+        public abstract Type GetValueType();
         public abstract int CompareTo(SearchValue other);
         public abstract SearchValue Parse(string value);
         public override string ToString() => base.ToString() ?? "";
@@ -27,6 +28,11 @@ namespace NeeLaboratory.IO.Search
         public StringSearchValue(string value)
         {
             _value = value;
+        }
+
+        public override Type GetValueType()
+        {
+            return typeof(string);
         }
 
         public override int CompareTo(SearchValue other)
@@ -57,6 +63,11 @@ namespace NeeLaboratory.IO.Search
         public BooleanSearchValue(bool value)
         {
             _value = value;
+        }
+
+        public override Type GetValueType()
+        {
+            return typeof(bool);
         }
 
         public override int CompareTo(SearchValue other)
@@ -94,6 +105,11 @@ namespace NeeLaboratory.IO.Search
         public IntegerSearchValue(long value)
         {
             _value = value;
+        }
+
+        public override Type GetValueType()
+        {
+            return typeof(long);
         }
 
         public override int CompareTo(SearchValue other)
@@ -156,6 +172,11 @@ namespace NeeLaboratory.IO.Search
         public DateTimeSearchValue(DateTime date)
         {
             _value = date;
+        }
+
+        public override Type GetValueType()
+        {
+            return typeof(DateTime);
         }
 
         public override int CompareTo(SearchValue other)
