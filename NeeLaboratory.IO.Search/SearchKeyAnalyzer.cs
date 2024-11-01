@@ -231,7 +231,7 @@ namespace NeeLaboratory.IO.Search
                 if (_work.Filter != SearchFilterProfiles.Exact && format[0] == '/')
                 {
                     var tokens = format.Split(new char[] { Separator }, StringSplitOptions.TrimEntries)
-                        .Select(e => e.Trim().ToLower())
+                        .Select(e => e.Trim().ToLowerInvariant())
                         .ToList();
 
                     if (tokens.Count < 2)

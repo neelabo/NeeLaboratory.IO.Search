@@ -12,6 +12,7 @@ using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.Collections;
+using System.Globalization;
 
 namespace NeeLaboratory.IO.Search.Test
 {
@@ -415,7 +416,7 @@ namespace NeeLaboratory.IO.Search.Test
                 case "text":
                     return new StringSearchValue(_value);
                 case "date":
-                    return new DateTimeSearchValue(DateTime.Parse(_value));
+                    return new DateTimeSearchValue(DateTime.Parse(_value, CultureInfo.CurrentCulture));
                 default:
                     throw new NotSupportedException();
             }

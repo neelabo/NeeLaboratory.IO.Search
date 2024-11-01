@@ -32,7 +32,7 @@ namespace NeeLaboratory.IO.Search
                 // 無効なコードポイントがある場合は正規化はスキップする
             }
 
-            s = s.ToUpper(); // アルファベットを大文字にする
+            s = s.ToUpperInvariant(); // アルファベットを大文字にする
 
             if (isFuzzy)
             {

@@ -36,7 +36,7 @@ namespace NeeLaboratory.IO.Search
 
         public void Add(SearchConjunction conjunction)
         {
-            var option = new ConjunctionSearchKeyOption("/c." + conjunction.ToString().ToLower(), conjunction);
+            var option = new ConjunctionSearchKeyOption("/c." + conjunction.ToString().ToLowerInvariant(), conjunction);
             _items.Add(option.Name, option);
         }
 

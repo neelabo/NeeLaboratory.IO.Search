@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace NeeLaboratory.IO.Search
@@ -37,7 +38,7 @@ namespace NeeLaboratory.IO.Search
 
         public override int CompareTo(SearchValue other)
         {
-            return _value.CompareTo(((StringSearchValue)other)._value);
+            return string.Compare(_value, ((StringSearchValue)other)._value, StringComparison.CurrentCulture);
         }
 
         public override SearchValue Parse(string value)
@@ -131,7 +132,7 @@ namespace NeeLaboratory.IO.Search
 
         public override string ToString()
         {
-            return _value.ToString();
+            return _value.ToString(CultureInfo.InvariantCulture);
         }
 
 
@@ -141,7 +142,7 @@ namespace NeeLaboratory.IO.Search
             var match = regex.Match(s);
             if (!match.Success) throw new FormatException();
 
-            var value = long.Parse(match.Groups[1].Value);
+            var value = long.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
             var scale = match.Groups[2].Value switch
             {
                 "k" => 1000,
@@ -191,7 +192,7 @@ namespace NeeLaboratory.IO.Search
                 var match = _regexDateTimeCustom.Match(value);
                 if (match.Success)
                 {
-                    var num = int.Parse(match.Groups[1].Value);
+                    var num = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
                     var dateTime = match.Groups[2].Value switch
                     {
                         "day" => DateTime.Now.AddDays(num),
@@ -203,7 +204,7 @@ namespace NeeLaboratory.IO.Search
                 }
                 else
                 {
-                    var dateTime = DateTime.Parse(value);
+                    var dateTime = DateTime.Parse(value, CultureInfo.CurrentCulture);
                     return new DateTimeSearchValue(dateTime);
                 }
             }
@@ -215,7 +216,7 @@ namespace NeeLaboratory.IO.Search
 
         public override string ToString()
         {
-            return _value.ToString(SearchDateTimeTools.DateTimeFormat);
+            return _value.ToString(SearchDateTimeTools.DateTimeFormat, CultureInfo.InvariantCulture);
         }
     }
 
