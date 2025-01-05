@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 namespace NeeLaboratory.IO.Search
 {
@@ -19,7 +20,7 @@ namespace NeeLaboratory.IO.Search
 
 
         private readonly Dictionary<string, Item> _cache = new();
-        private object _lock = new();
+        private readonly Lock _lock = new();
 
         public string GetString(string s)
         {

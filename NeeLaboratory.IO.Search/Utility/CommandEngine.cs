@@ -32,7 +32,7 @@ namespace NeeLaboratory.IO.Search.Utility
         /// <summary>
         /// lock
         /// </summary>
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
 
         /// <summary>
         /// 予約コマンドリスト
