@@ -166,7 +166,7 @@ namespace NeeLaboratory.IO.Search
     {
         public static DateTimeSearchValue Default { get; } = new(default);
 
-        private static readonly Regex _regexDateTimeCustom = new(@"^([+-]?\d+)(day|month|year)$");
+        private static readonly Regex _regexDateTimeCustom = new(@"^([+-]?\d+)(days?|months?|years?)$");
 
         private readonly DateTime _value;
 
@@ -195,9 +195,9 @@ namespace NeeLaboratory.IO.Search
                     var num = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
                     var dateTime = match.Groups[2].Value switch
                     {
-                        "day" => DateTime.Now.AddDays(num),
-                        "month" => DateTime.Now.AddMonths(num),
-                        "year" => DateTime.Now.AddYears(num),
+                        "day" or "days" => DateTime.Now.AddDays(num),
+                        "month" or "months" => DateTime.Now.AddMonths(num),
+                        "year" or "years" => DateTime.Now.AddYears(num),
                         _ => throw new NotSupportedException(),
                     };
                     return new DateTimeSearchValue(dateTime);
