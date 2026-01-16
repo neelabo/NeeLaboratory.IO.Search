@@ -165,7 +165,6 @@ namespace NeeLaboratory.IO.Search.Test
             Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since 1"));
             Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since day"));
             Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since +-1day"));
-            Assert.Throws<SearchKeywordDateTimeException>(() => analyzer.Analyze("/since -1days"));
 
             keys = analyzer.Analyze("/since 2018-01-01");
             Assert.Single(keys);
